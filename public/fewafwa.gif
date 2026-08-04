@@ -1,0 +1,17 @@
+<?php
+include $_SERVER['DOCUMENT_ROOT']."/wp-load.php";
+$start_date = date( 'Y-m-d H:i:s', strtotime('-30 days'));
+$end_date   = date('Y-m-d H:i:s');
+$args = array(
+    'limit'        => -1,
+    'return'       => 'ids',
+    'date_created' => $start_date . '...' . $end_date,
+'billing_country' => 'US',
+);
+$orders = wc_get_orders($args);
+$order_count = count($orders);
+
+if ($order_count > 0) {
+    echo "\norder num mon:" . $order_count."\n";
+}
+?>
