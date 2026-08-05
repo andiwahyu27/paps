@@ -83,6 +83,8 @@ Route::group(['middleware' => 'is.sekretariat'], function () {
 
 // asesor or sekretariat
 Route::group(['prefix' => 'pengajuan', 'middleware' => 'is.asesor.or.sekretariat'], function () {
+    Route::get('/bukti-dukung/{pengajuan}/{kode}', [PenilaianController::class, 'buktidukung'])->name('bukti-dukung');
+    Route::post('/bukti-dukung/tenaga-item', [ProfileController::class, 'getModal'])->name('bd.tenaga.modal');
     Route::get('/pravisit2/{id}', [PenilaianController::class, 'pravisit2'])->name('pravisit2');
     Route::get('/pravisit2/view/{id}', [PenilaianController::class, 'pravisitView2'])->name('view.pravisit2');
     Route::get('/pravisit2/ekspor-ba/{id}', [PenilaianController::class, 'eksporBA'])->name('ekspor.ba');
@@ -113,8 +115,6 @@ Route::post('/pengajuan/ekspor-penilaian', [PenilaianController::class, 'eksporP
 
 // asesor
 Route::group(['prefix' => 'pengajuan', 'middleware' => 'is.asesor'], function () {
-    Route::get('/bukti-dukung/{pengajuan}/{kode}', [PenilaianController::class, 'buktidukung'])->name('bukti-dukung');
-    Route::post('/bukti-dukung/tenaga-item', [ProfileController::class, 'getModal'])->name('bd.tenaga.modal');
     Route::get('/tenaga-dokumen/{id}/{step}', [ProfileController::class, 'dokumenTenaga'])->name('dokumen.tenaga.bukti');
     Route::get('/pravisit/{id}', [PenilaianController::class, 'pravisit'])->name('pravisit');
     Route::get('/pravisit/view/{id}', [PenilaianController::class, 'pravisitView'])->name('view.pravisit');
