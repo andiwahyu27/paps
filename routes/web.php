@@ -33,6 +33,7 @@ Route::get('/auth-callback', [LoginController::class, 'handleProviderCallback'])
 Route::get('/redirect-gojags/{type}', [LoginController::class, 'redirectToGojags'])->name('login.gojags');
 Route::get('/callback-gojags', [LoginController::class, 'authenticateWithGojags']);
 Route::get('/login-error', [LoginController::class, 'loginError'])->name('login.error');
+Route::get('/unregistered', [LoginController::class, 'unregistered'])->name('login.unregistered');
 
 Route::get('/', function () {
     return redirect()->route('home');

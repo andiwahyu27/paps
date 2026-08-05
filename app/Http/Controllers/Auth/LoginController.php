@@ -120,31 +120,19 @@ class LoginController extends Controller
                 return redirect()->route('login')->with('error', 'Login gagal: Data pengguna tidak lengkap.');
             }
 
-            //$user = User::updateOrCreate(
-            //    ['email' => $userData->email],
-            //    [
-            //        'name' => $userData->name,
-            //        'password' => Hash::make('Pusdiklat!@#26'),
-            //        'role' => 4,
-            //    ]
-            //);
-          
-          	$user = User::where('email', $userData->email)->first();
-		
-          	if (!$user) {
-              // User baru: buat dengan role default 4
-              $user = User::create([
-                  'email'    => $userData->email,
-                  'name'     => $userData->name,
-                  'password' => Hash::make('Pusdiklat!@#26'),
-                  'role'     => 0,
-              ]);
-          	} else {
-              // User lama: hanya update name, jangan sentuh role
-              $user->update([
-                  'name' => $userData->name,
-              ]);
-          	}
+            $user = User::where('email', $userData->email)->first();
+
+            if (!$user) {
+                // User tidak terdaftar: arahkan ke halaman informasi
+                Log::warning('SSO GOJAGS: User not registered.', ['email' => $userData->email]);
+                return redirect()->route('login.unregistered')
+                    ->with('email', $userData->email);
+            }
+
+            // User lama: hanya update name, jangan sentuh role
+            $user->update([
+                'name' => $userData->name,
+            ]);
 
             auth()->login($user, true);
             StateHelper::clearState(); // Hapus state setelah login berhasil
@@ -161,5 +149,10 @@ class LoginController extends Controller
     public function loginError()
     {
         return view('auth.register');
+    }
+
+    public function unregistered()
+    {
+        return view('auth.unregistered');
     }
 }
