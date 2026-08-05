@@ -6,97 +6,27 @@ use App\Models\DigitalSignature;
 use App\Models\Pengajuan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class TtdController extends Controller
 {
-    /**
-     * Show the digital signature page for public access.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
+    private const SIGNER_TYPES = ['asesor1', 'asesor2', 'asesor3', 'kepala'];
+
     public function index()
     {
-        // Halaman tanda tangan digital dapat diakses tanpa login
-        return view('ttd');
+        abort(404);
     }
 
-    public function create($pengajuanId, Request $request)
+    public function show($token)
     {
-        $pengajuan = Pengajuan::findOrFail($pengajuanId);
-
-        // Get form data from request if available
-        $formData = [
-            'datetime' => $request->get('datetime'),
-            'signature_date' => $request->get('signature_date'),
-            'asesor1_name' => $request->get('asesor1_name'),
-            'asesor2_name' => $request->get('asesor2_name'),
-            'asesor3_name' => $request->get('asesor3_name'),
-            'leader_name' => $request->get('leader_name'),
-            'leader_title' => $request->get('leader_title')
-        ];
-
-        // Save form data to DigitalSignature if present
-        if ($formData['datetime'] && $formData['asesor1_name']) {
-            $this->saveFormDataToDigitalSignature($pengajuan->id, $formData);
-        }
-
-        // Get existing signatures
-        $signatures = DigitalSignature::getPengajuanSignatures($pengajuan->id);
-
-        // Prepare data for view
-        $asesorData = [
-            'asesor1' => ['name' => $formData['asesor1_name'] ?? $pengajuan->asesor1->name, 'title' => 'Ketua Tim Asesor'],
-            'asesor2' => ['name' => $formData['asesor2_name'] ?? $pengajuan->asesor2->name, 'title' => 'Anggota Tim Asesor'],
-            'asesor3' => ['name' => $formData['asesor3_name'] ?? $pengajuan->asesor3->name, 'title' => 'Anggota Tim Asesor']
-        ];
-
-        $leaderData = [
-            'name' => $formData['leader_name'] ?? $pengajuan->profile->nama_pimpinan,
-            'title' => $formData['leader_title'] ?? $pengajuan->profile->jabatan_pimpinan
-        ];
-
-        // Generate Indonesian date format for signature date
-        $defaultDate = 'Jakarta, ' . now()->day . ' ' .
-            ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-             'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][now()->month] .
-            ' ' . now()->year;
-        $signatureDate = $formData['signature_date'] ?? $defaultDate;
-
-        // Get customDateTime from the first available signature's tgl_waktu_surat
-        // Check both signed and pending signatures
-        $allSignatures = DigitalSignature::where('pengajuan_id', $pengajuan->id)
-                                        ->whereIn('status_ttd', ['signed', 'pending'])
-                                        ->orderBy('created_at', 'asc')
-                                        ->get();
-
-        $customDateTime = 'Belum ditentukan';
-        if ($allSignatures->isNotEmpty()) {
-            $firstSignature = $allSignatures->first();
-            $customDateTime = $firstSignature->tgl_waktu_surat ?? 'Belum ditentukan';
-        } else {
-            // If no signatures exist yet, generate current Indonesian datetime as fallback
-            $customDateTime = DigitalSignature::generateIndonesianDateTime();
-        }
-
-        // Get namaLembaga from pengajuan profile
-        $namaLembaga = $pengajuan->profile->nama_lembaga ?? 'Belum ditentukan';
-
-        // Get namaPimpinan from pengajuan profile
-        $namaPimpinan = $pengajuan->profile->nama_pimpinan ?? 'Belum ditentukan';
-
-        return view('ttd', compact('pengajuan', 'signatures', 'formData', 'asesorData', 'leaderData', 'signatureDate', 'customDateTime', 'namaLembaga', 'namaPimpinan'));
+        return $this->renderSignaturePage($this->findByToken($token));
     }
 
-    public function createPost(Request $request, $pengajuanId = null)
+    public function createPost(Request $request)
     {
-        // Get pengajuan_id from route parameter or request body
-        $pengajuanId = $pengajuanId ?? $request->get('pengajuan_id');
-        if (!$pengajuanId) {
-            return response()->json(['error' => 'Pengajuan ID required'], 400);
-        }
-
-        $request->validate([
+        $validated = $request->validate([
+            'token' => ['required', 'regex:/\A[a-f0-9]{40}\z/'],
             'signature_place' => 'required|string|max:100',
             'letter_date' => 'required|date',
             'signature_time' => 'required|date_format:H:i',
@@ -108,392 +38,335 @@ class TtdController extends Controller
             'leader_title' => 'required|string|max:255',
         ]);
 
-        $pengajuan = Pengajuan::findOrFail($pengajuanId);
-
-        // Get form data from request if available
-        $formData = [
-            'signature_place' => $request->get('signature_place'),
-            'letter_date' => $request->get('letter_date'),
-            'signature_time' => $request->get('signature_time'),
-            'timezone' => $request->get('timezone'),
-            'asesor1_name' => $request->get('asesor1_name'),
-            'asesor2_name' => $request->get('asesor2_name'),
-            'asesor3_name' => $request->get('asesor3_name'),
-            'leader_name' => $request->get('leader_name'),
-            'leader_title' => $request->get('leader_title')
-        ];
-
+        $pengajuan = $this->findByToken($validated['token']);
         $letterDateTime = Carbon::createFromFormat(
             'Y-m-d H:i',
-            $formData['letter_date'] . ' ' . $formData['signature_time'],
-            $formData['timezone']
+            $validated['letter_date'] . ' ' . $validated['signature_time'],
+            $validated['timezone']
         );
         $months = [
             1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
             5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
             9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
         ];
+
+        $formData = $validated;
         $formData['datetime'] = DigitalSignature::generateIndonesianDateTime($letterDateTime);
-        $formData['signature_date'] = $formData['signature_place'] . ', ' .
+        $formData['signature_date'] = $validated['signature_place'] . ', ' .
             $letterDateTime->day . ' ' . $months[$letterDateTime->month] . ' ' . $letterDateTime->year;
-        // return $formData;
-        // Save form data to DigitalSignature if present
-        if ($formData['datetime'] && $formData['asesor1_name']) {
-            $this->saveFormDataToDigitalSignature($pengajuan->id, $formData);
-        }
 
-        // Get existing signatures
-        $signatures = DigitalSignature::getPengajuanSignatures($pengajuan->id);
+        $this->saveFormDataToDigitalSignature($pengajuan->id, $formData);
 
-        // Prepare data for view
-        $asesorData = [
-            'asesor1' => ['name' => $formData['asesor1_name'] ?? $pengajuan->asesor1->name, 'title' => 'Ketua Tim Asesor'],
-            'asesor2' => ['name' => $formData['asesor2_name'] ?? $pengajuan->asesor2->name, 'title' => 'Anggota Tim Asesor'],
-            'asesor3' => ['name' => $formData['asesor3_name'] ?? $pengajuan->asesor3->name, 'title' => 'Anggota Tim Asesor']
-        ];
-
-        $leaderData = [
-            'name' => $formData['leader_name'] ?? $pengajuan->profile->nama_pimpinan,
-            'title' => $formData['leader_title'] ?? $pengajuan->profile->jabatan_pimpinan
-        ];
-
-        // Generate Indonesian date format for signature date
-        $defaultDate = 'Jakarta, ' . now()->day . ' ' .
-            ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-             'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][now()->month] .
-            ' ' . now()->year;
-        $signatureDate = $formData['signature_date'] ?? $defaultDate;
-
-        // Get customDateTime from the first available signature's tgl_waktu_surat
-        // Check both signed and pending signatures
-        $allSignatures = DigitalSignature::where('pengajuan_id', $pengajuan->id)
-                                        ->whereIn('status_ttd', ['signed', 'pending'])
-                                        ->orderBy('created_at', 'asc')
-                                        ->get();
-
-        $customDateTime = 'Belum ditentukan';
-        if ($allSignatures->isNotEmpty()) {
-            $firstSignature = $allSignatures->first();
-            $customDateTime = $firstSignature->tgl_waktu_surat ?? 'Belum ditentukan';
-        } else {
-            // If no signatures exist yet, generate current Indonesian datetime as fallback
-            $customDateTime = DigitalSignature::generateIndonesianDateTime();
-        }
-
-        // Get namaLembaga from pengajuan profile
-        $namaLembaga = $pengajuan->profile->nama_lembaga ?? 'Belum ditentukan';
-
-        // Get namaPimpinan from pengajuan profile
-        $namaPimpinan = $pengajuan->profile->nama_pimpinan ?? 'Belum ditentukan';
-
-        return view('ttd', compact('pengajuan', 'signatures', 'formData', 'asesorData', 'leaderData', 'signatureDate', 'customDateTime', 'namaLembaga', 'namaPimpinan'));
+        return $this->renderSignaturePage($pengajuan, $formData);
     }
 
-
-    /**
-     * Show the digital signature page with pengajuan data.
-     *
-     * @param int $pengajuanId
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-    public function createTtd($pengajuanId, Request $request)
+    public function saveSignature(Request $request)
     {
-        $pengajuan = Pengajuan::findOrFail($pengajuanId);
-
-        // Get form data from request if available
-        $formData = [
-            'datetime' => $request->get('datetime'),
-            'signature_date' => $request->get('signature_date'),
-            'asesor1_name' => $request->get('asesor1_name'),
-            'asesor2_name' => $request->get('asesor2_name'),
-            'asesor3_name' => $request->get('asesor3_name'),
-            'leader_name' => $request->get('leader_name'),
-            'leader_title' => $request->get('leader_title')
-        ];
-
-        // Save form data to DigitalSignature if present
-        if ($formData['datetime'] && $formData['asesor1_name']) {
-            $this->saveFormDataToDigitalSignature($pengajuan->id, $formData);
-        }
-
-        // Get existing signatures
-        $signatures = DigitalSignature::getPengajuanSignatures($pengajuan->id);
-
-        // Prepare data for view
-        $asesorData = [
-            'asesor1' => ['name' => $formData['asesor1_name'] ?? $pengajuan->asesor1->name, 'title' => 'Ketua Tim Asesor'],
-            'asesor2' => ['name' => $formData['asesor2_name'] ?? $pengajuan->asesor2->name, 'title' => 'Anggota Tim Asesor'],
-            'asesor3' => ['name' => $formData['asesor3_name'] ?? $pengajuan->asesor3->name, 'title' => 'Anggota Tim Asesor']
-        ];
-
-        $leaderData = [
-            'name' => $formData['leader_name'] ?? $pengajuan->profile->nama_pimpinan,
-            'title' => $formData['leader_title'] ?? $pengajuan->profile->jabatan_pimpinan
-        ];
-
-        // Generate Indonesian date format for signature date
-        $defaultDate = 'Jakarta, ' . now()->day . ' ' .
-            ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-             'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][now()->month] .
-            ' ' . now()->year;
-        $signatureDate = $formData['signature_date'] ?? $defaultDate;
-
-        // Get customDateTime from the first available signature's tgl_waktu_surat
-        // Check both signed and pending signatures
-        $allSignatures = DigitalSignature::where('pengajuan_id', $pengajuan->id)
-                                        ->whereIn('status_ttd', ['signed', 'pending'])
-                                        ->orderBy('created_at', 'asc')
-                                        ->get();
-
-        $customDateTime = 'Belum ditentukan';
-        if ($allSignatures->isNotEmpty()) {
-            $firstSignature = $allSignatures->first();
-            $customDateTime = $firstSignature->tgl_waktu_surat ?? 'Belum ditentukan';
-        } else {
-            // If no signatures exist yet, generate current Indonesian datetime as fallback
-            $customDateTime = DigitalSignature::generateIndonesianDateTime();
-        }
-
-        // Get namaLembaga from pengajuan profile
-        $namaLembaga = $pengajuan->profile->nama_lembaga ?? 'Belum ditentukan';
-
-        // Get namaPimpinan from pengajuan profile
-        $namaPimpinan = $pengajuan->profile->nama_pimpinan ?? 'Belum ditentukan';
-
-        return view('ttd', compact('pengajuan', 'signatures', 'formData', 'asesorData', 'leaderData', 'signatureDate', 'customDateTime', 'namaLembaga', 'namaPimpinan'));
-    }
-
-    /**
-      * Save signature data.
-      *
-      * @param  \Illuminate\Http\Request  $request
-      * @return \Illuminate\Http\JsonResponse
-      */
-     public function saveSignature(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'pengajuan_id' => 'required|integer',
-            'signer_type' => 'required|string|max:50',
-            'signer_name' => 'required|string|max:255',
-            'signer_title' => 'required|string|max:255',
-            'signature_data' => 'required|string'
+        $validated = $request->validate([
+            'token' => ['required', 'regex:/\A[a-f0-9]{40}\z/'],
+            'signer_type' => ['required', 'in:' . implode(',', self::SIGNER_TYPES)],
+            'signature_data' => 'required|string|max:2800000',
         ]);
 
-        if ($validator->fails()) {
+        $pengajuan = $this->findByToken($validated['token']);
+        $signer = $this->getSigner($pengajuan, $validated['signer_type']);
+
+        if (!$signer['name'] || !$signer['title']) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
+                'message' => 'Data penandatangan belum lengkap.',
             ], 422);
         }
 
+        $existing = DigitalSignature::where('pengajuan_id', $pengajuan->id)
+            ->where('jenis_user', $validated['signer_type'])
+            ->where('status_ttd', 'signed')
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Tanda tangan untuk posisi ini sudah tersimpan.',
+            ], 409);
+        }
+
+        $signaturePath = null;
         try {
-            // Get pengajuan from ID
-            $pengajuan = Pengajuan::find($request->pengajuan_id);
-            if (!$pengajuan) {
+            $imageData = $this->decodePng($validated['signature_data']);
+            if ($imageData === false) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Pengajuan not found'
-                ], 404);
+                    'message' => 'File tanda tangan tidak valid.',
+                ], 422);
             }
 
-            // Check if signature already exists to delete old file
-            $existingSignature = DigitalSignature::where([
-                'pengajuan_id' => $pengajuan->id,
-                'jenis_user' => $request->signer_type
-            ])->first();
+            $directory = public_path('tandatangandigital');
+            File::ensureDirectoryExists($directory);
+            $filename = 'signature_' . bin2hex(random_bytes(16)) . '.png';
+            $signaturePath = 'tandatangandigital/' . $filename;
 
-            // Delete old signature file if exists
-            if ($existingSignature && $existingSignature->ttd) {
-                $oldFilePath = public_path($existingSignature->ttd);
-                if (file_exists($oldFilePath)) {
-                    unlink($oldFilePath);
-                }
+            if (file_put_contents(public_path($signaturePath), $imageData, LOCK_EX) === false) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Tanda tangan gagal disimpan.',
+                ], 500);
             }
 
-            // Process signature image data
-            $signatureData = $request->signature_data;
-            $signaturePath = null;
-
-            if ($signatureData) {
-                // Remove data:image/png;base64, prefix if present
-                $imageData = preg_replace('/^data:image\/\w+;base64,/', '', $signatureData);
-                $imageData = base64_decode($imageData);
-
-                // Generate unique filename
-                $filename = 'signature_' . $pengajuan->id . '_' . $request->signer_type . '_' . time() . '.png';
-                $signaturePath = 'tandatangandigital/' . $filename;
-                $fullPath = public_path($signaturePath);
-
-                // Save image file
-                file_put_contents($fullPath, $imageData);
-            }
-
-            // Use updateOrCreate to allow signature replacement
             $signature = DigitalSignature::updateOrCreate(
                 [
                     'pengajuan_id' => $pengajuan->id,
-                    'jenis_user' => $request->signer_type
+                    'jenis_user' => $validated['signer_type'],
                 ],
                 [
-                    'nama_user' => $request->signer_name,
-                    'jabatan_user' => $request->signer_title,
-                    'ttd' => $signaturePath, // Store file path instead of base64 data
+                    'nama_user' => $signer['name'],
+                    'jabatan_user' => $signer['title'],
+                    'ttd' => $signaturePath,
                     'tgl_surat' => now()->format('Y-m-d'),
                     'waktu_surat' => now()->format('H:i:s'),
                     'tgl_waktu_surat' => DigitalSignature::generateIndonesianDateTime(),
-                    'status_ttd' => 'signed'
+                    'status_ttd' => 'signed',
                 ]
             );
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Signature saved successfully',
-                'data' => [
-                    'signature_url' => asset($signature->ttd),
-                    'signed_at' => $signature->updated_at->toISOString()
-                ]
+        } catch (\Throwable $e) {
+            $this->deleteSignatureFile($signaturePath);
+            Log::error('E-TTD signature save failed.', [
+                'pengajuan_id' => $pengajuan->id,
+                'signer_type' => $validated['signer_type'],
             ]);
 
-        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to save signature: ' . $e->getMessage()
+                'message' => 'Tanda tangan gagal disimpan.',
             ], 500);
         }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Signature saved successfully',
+            'data' => [
+                'signer_type' => $signature->jenis_user,
+                'name' => $signature->nama_user,
+                'title' => $signature->jabatan_user,
+                'signature_url' => route('ttd.signature.image', [
+                    'token' => $pengajuan->ttd_token,
+                    'signerType' => $signature->jenis_user,
+                ]),
+                'signed_at' => $signature->updated_at->toISOString(),
+            ],
+        ]);
     }
 
-
-    /**
-     * Get signatures for a specific document.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function getSignatures(Request $request)
+    public function getSignatures($token)
     {
-        try {
-            $pengajuanId = $request->get('pengajuan_id');
+        $pengajuan = $this->findByToken($token);
+        $signatures = DigitalSignature::where('pengajuan_id', $pengajuan->id)
+            ->where('status_ttd', 'signed')
+            ->get()
+            ->keyBy('jenis_user');
 
-            if (!$pengajuanId) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Pengajuan ID is required',
-                ], 400);
-            }
-
-            // Verify pengajuan exists
-            $pengajuan = Pengajuan::find($pengajuanId);
-            if (!$pengajuan) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Pengajuan not found'
-                ], 404);
-            }
-
-            $signatures = DigitalSignature::getPengajuanSignatures($pengajuan->id);
-            $isFullySigned = DigitalSignature::isPengajuanFullySigned($pengajuan->id);
-
-            // Map signatures to expected format
-            $mappedSignatures = $signatures->map(function ($signature) {
-                // Convert file path to full URL for display
-                $ttdUrl = $signature->ttd ? asset($signature->ttd) : null;
-
-                return [
-                    'jenis_user' => $signature->jenis_user,
-                    'nama_user' => $signature->nama_user,
-                    'jabatan_user' => $signature->jabatan_user,
-                    'ttd' => $ttdUrl,
-                    'tgl_waktu_surat' => $signature->tgl_waktu_surat,
-                    'status_ttd' => $signature->status_ttd
-                ];
-            });
-
-            return response()->json([
-                'status' => 'success',
-                'data' => [
-                    'signatures' => $mappedSignatures,
-                    'signature_count' => $signatures->count(),
-                    'is_fully_signed' => $isFullySigned
-                ]
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to retrieve signatures: ' . $e->getMessage()
-            ], 500);
+        $data = [];
+        foreach (self::SIGNER_TYPES as $signerType) {
+            $signature = $signatures->get($signerType);
+            $data[$signerType] = $signature ? [
+                'signed' => true,
+                'name' => $signature->nama_user,
+                'title' => $signature->jabatan_user,
+                'signed_at' => optional($signature->updated_at)->toISOString(),
+                'signature_url' => route('ttd.signature.image', [
+                    'token' => $pengajuan->ttd_token,
+                    'signerType' => $signerType,
+                ]),
+            ] : ['signed' => false];
         }
+
+        return response()->json([
+            'signatures' => $data,
+            'is_fully_signed' => collect($data)->every(function ($signature) {
+                return $signature['signed'];
+            }),
+        ]);
     }
 
-    /**
-     * Save form data from modal to DigitalSignature records.
-     *
-     * @param \App\Models\Pengajuan $pengajuan
-     * @param \Illuminate\Http\Request $request
-     * @return void
-     */
-    private function saveFormDataToDigitalSignature($pengajuanId, $formData)
+    public function signatureImage($token, $signerType)
     {
-        $userData = [
-             'asesor1' => [
-                 'jenis_user' => 'asesor1',
-                 'nama_user' => $formData['asesor1_name'],
-                 'jabatan_user' => 'Ketua Tim Asesor'
-             ],
-             'asesor2' => [
-                 'jenis_user' => 'asesor2',
-                 'nama_user' => $formData['asesor2_name'],
-                 'jabatan_user' => 'Anggota Tim Asesor'
-             ],
-             'asesor3' => [
-                 'jenis_user' => 'asesor3',
-                 'nama_user' => $formData['asesor3_name'],
-                 'jabatan_user' => 'Anggota Tim Asesor'
-             ],
-             'kepala' => [
-                 'jenis_user' => 'kepala',
-                 'nama_user' => $formData['leader_name'],
-                 'jabatan_user' => $formData['leader_title']
-             ]
-         ];
-
-         $tglSurat = $formData['letter_date'] ?? Carbon::now()->format('Y-m-d');
-         $waktuSurat = ($formData['signature_time'] ?? Carbon::now()->format('H:i')) . ':00';
-         $tglWaktuSurat = $formData['datetime'] ?? DigitalSignature::generateIndonesianDateTime();
-
-        foreach ($userData as $user) {
-            if (!empty($user['nama_user'])) {
-                DigitalSignature::updateOrCreate(
-                    [
-                        'pengajuan_id' => $pengajuanId,
-                        'jenis_user' => $user['jenis_user']
-                    ],
-                    [
-                        'nama_user' => $user['nama_user'],
-                        'jabatan_user' => $user['jabatan_user'],
-                        'tgl_surat' => $tglSurat,
-                        'waktu_surat' => $waktuSurat,
-                        'tgl_waktu_surat' => $tglWaktuSurat,
-                        'status_ttd' => 'pending'
-                    ]
-                );
-            }
+        if (!in_array($signerType, self::SIGNER_TYPES, true)) {
+            abort(404);
         }
+
+        $pengajuan = $this->findByToken($token);
+        $signature = DigitalSignature::where('pengajuan_id', $pengajuan->id)
+            ->where('jenis_user', $signerType)
+            ->where('status_ttd', 'signed')
+            ->firstOrFail();
+        $path = public_path($signature->ttd);
+
+        if (!$signature->ttd || !is_file($path) || realpath($path) === false ||
+            strpos(realpath($path), realpath(public_path('tandatangandigital')) . DIRECTORY_SEPARATOR) !== 0) {
+            abort(404);
+        }
+
+        return response()->file($path, [
+            'Content-Type' => 'image/png',
+            'Cache-Control' => 'no-store',
+        ]);
     }
 
-    /**
-     * Download signed document (optional - for future enhancement).
-     *
-     * @return \Illuminate\Http\Response
-     */
+    public function resetTtd(Request $request)
+    {
+        $validated = $request->validate([
+            'token' => ['required', 'regex:/\A[a-f0-9]{40}\z/'],
+            'signer_type' => ['required', 'in:' . implode(',', self::SIGNER_TYPES)],
+        ]);
+        $pengajuan = $this->findByToken($validated['token']);
+        $signature = DigitalSignature::where('pengajuan_id', $pengajuan->id)
+            ->where('jenis_user', $validated['signer_type'])
+            ->first();
+
+        if ($signature) {
+            $this->deleteSignatureFile($signature->ttd);
+            $signature->delete();
+        }
+
+        Log::info('E-TTD signature reset.', [
+            'pengajuan_id' => $pengajuan->id,
+            'signer_type' => $validated['signer_type'],
+            'user_id' => auth()->id(),
+        ]);
+
+        return response()->json(['status' => 'success', 'message' => 'Tanda tangan berhasil direset.']);
+    }
+
+    public function rotateToken($id)
+    {
+        $pengajuan = Pengajuan::findOrFail($id);
+        $pengajuan->ttd_token = Pengajuan::generateUniqueTtdToken();
+        $pengajuan->saveQuietly();
+
+        Log::info('E-TTD token rotated.', [
+            'pengajuan_id' => $pengajuan->id,
+            'user_id' => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Link E-TTD berhasil dirotasi.');
+    }
+
     public function downloadDocument(Request $request)
     {
-        // Implementasi untuk download dokumen yang sudah ditandatangani
-        // Saat ini hanya mengembalikan response sukses
+        $request->validate(['token' => ['required', 'regex:/\A[a-f0-9]{40}\z/']]);
+        $this->findByToken($request->token);
+
         return response()->json([
             'status' => 'success',
             'message' => 'Dokumen siap didownload',
         ]);
+    }
+
+    private function findByToken($token)
+    {
+        if (!is_string($token) || !preg_match('/\A[a-f0-9]{40}\z/', $token)) {
+            abort(404);
+        }
+
+        return Pengajuan::where('ttd_token', $token)->firstOrFail();
+    }
+
+    private function getSigner(Pengajuan $pengajuan, $signerType)
+    {
+        if ($signerType === 'kepala') {
+            return [
+                'name' => optional($pengajuan->profile)->nama_pimpinan,
+                'title' => optional($pengajuan->profile)->jabatan_pimpinan,
+            ];
+        }
+
+        $asesor = $pengajuan->{$signerType};
+
+        return [
+            'name' => optional($asesor)->name,
+            'title' => $signerType === 'asesor1' ? 'Ketua Tim Asesor' : 'Anggota Tim Asesor',
+        ];
+    }
+
+    private function decodePng($signatureData)
+    {
+        if (!preg_match('/\Adata:image\/png;base64,([A-Za-z0-9+\/=]+)\z/', $signatureData, $matches)) {
+            return false;
+        }
+
+        $decoded = base64_decode($matches[1], true);
+        if ($decoded === false || strlen($decoded) > 2 * 1024 * 1024) {
+            return false;
+        }
+
+        $imageInfo = @getimagesizefromstring($decoded);
+        if (!$imageInfo || ($imageInfo['mime'] ?? null) !== 'image/png') {
+            return false;
+        }
+
+        return $decoded;
+    }
+
+    private function deleteSignatureFile($relativePath)
+    {
+        if (!$relativePath) {
+            return;
+        }
+
+        $root = realpath(public_path('tandatangandigital'));
+        $path = realpath(public_path($relativePath));
+        if ($root && $path && strpos($path, $root . DIRECTORY_SEPARATOR) === 0 && is_file($path)) {
+            @unlink($path);
+        }
+    }
+
+    private function renderSignaturePage(Pengajuan $pengajuan, array $formData = [])
+    {
+        $signatures = DigitalSignature::getPengajuanSignatures($pengajuan->id);
+        $pending = DigitalSignature::where('pengajuan_id', $pengajuan->id)
+            ->whereIn('status_ttd', ['signed', 'pending'])
+            ->orderBy('created_at', 'asc')
+            ->first();
+        $asesorData = [
+            'asesor1' => ['name' => optional($pengajuan->asesor1)->name, 'title' => 'Ketua Tim Asesor'],
+            'asesor2' => ['name' => optional($pengajuan->asesor2)->name, 'title' => 'Anggota Tim Asesor'],
+            'asesor3' => ['name' => optional($pengajuan->asesor3)->name, 'title' => 'Anggota Tim Asesor'],
+        ];
+        $leaderData = [
+            'name' => optional($pengajuan->profile)->nama_pimpinan,
+            'title' => optional($pengajuan->profile)->jabatan_pimpinan,
+        ];
+        $signatureDate = $formData['signature_date'] ?? null;
+        $customDateTime = $pending->tgl_waktu_surat ?? DigitalSignature::generateIndonesianDateTime();
+        $namaLembaga = optional($pengajuan->profile)->nama_lembaga ?? 'Belum ditentukan';
+        $namaPimpinan = optional($pengajuan->profile)->nama_pimpinan ?? 'Belum ditentukan';
+
+        return view('ttd', compact(
+            'pengajuan', 'signatures', 'formData', 'asesorData', 'leaderData',
+            'signatureDate', 'customDateTime', 'namaLembaga', 'namaPimpinan'
+        ));
+    }
+
+    private function saveFormDataToDigitalSignature($pengajuanId, $formData)
+    {
+        $userData = [
+            ['jenis_user' => 'asesor1', 'nama_user' => $formData['asesor1_name'], 'jabatan_user' => 'Ketua Tim Asesor'],
+            ['jenis_user' => 'asesor2', 'nama_user' => $formData['asesor2_name'], 'jabatan_user' => 'Anggota Tim Asesor'],
+            ['jenis_user' => 'asesor3', 'nama_user' => $formData['asesor3_name'], 'jabatan_user' => 'Anggota Tim Asesor'],
+            ['jenis_user' => 'kepala', 'nama_user' => $formData['leader_name'], 'jabatan_user' => $formData['leader_title']],
+        ];
+
+        foreach ($userData as $user) {
+            DigitalSignature::updateOrCreate(
+                ['pengajuan_id' => $pengajuanId, 'jenis_user' => $user['jenis_user'], 'status_ttd' => 'pending'],
+                [
+                    'nama_user' => $user['nama_user'],
+                    'jabatan_user' => $user['jabatan_user'],
+                    'tgl_surat' => $formData['letter_date'],
+                    'waktu_surat' => $formData['signature_time'] . ':00',
+                    'tgl_waktu_surat' => $formData['datetime'],
+                    'status_ttd' => 'pending',
+                ]
+            );
+        }
     }
 }

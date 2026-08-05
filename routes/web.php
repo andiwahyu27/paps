@@ -46,13 +46,20 @@ Route::post('/back-to-reality', [SekretariatController::class, 'backToReality'])
 
 // Public routes - dapat diakses tanpa login
 Route::get('/ttd', [TtdController::class, 'index'])->name('ttd.public');
-Route::post('/ettd/save-signature', [TtdController::class, 'saveSignature'])->name('ttd.save');
-Route::get('/ttd/signatures', [TtdController::class, 'getSignatures'])->name('ttd.signatures');
+Route::post('/ettd/save-signature', [TtdController::class, 'saveSignature'])
+    ->middleware('throttle:20,1')
+    ->name('ttd.save');
 Route::post('/ttd/download', [TtdController::class, 'downloadDocument'])->name('ttd.download');
-Route::get('/ttd/{pengajuanId}', [TtdController::class, 'create'])->name('ttd.create');
 Route::post('/ttd', [TtdController::class, 'createPost'])->name('ttd.create.post');
-Route::post('/ttd/{pengajuanId}', [TtdController::class, 'createPost'])->name('ttd.create.with.id');
-Route::post('/ettd/reset-signature', [TtdController::class, 'resetTtd'])->name('ttd.reset');
+Route::get('/ttd/{token}', [TtdController::class, 'show'])
+    ->where('token', '[a-f0-9]{40}')
+    ->name('ttd.show');
+Route::post('/ettd/reset-signature', [TtdController::class, 'resetTtd'])
+    ->middleware(['auth', 'is.sekretariat'])
+    ->name('ttd.reset');
+Route::post('/pengajuan/{id}/ttd-token/rotate', [TtdController::class, 'rotateToken'])
+    ->middleware(['auth', 'is.sekretariat'])
+    ->name('ttd.token.rotate');
 
 Route::get('/tandatangan', function () {
     return view('ttd');

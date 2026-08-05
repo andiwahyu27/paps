@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Tanda Tangan Berita Acara Akreditasi PSTK 2026</title>
+    <title>Tanda Tangan Berita Acara Akreditasi PSTK 2025</title>
     <style>
         * {
             margin: 0;
@@ -15,7 +15,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -25,96 +25,26 @@
             margin: 0 auto;
             background: white;
             border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(191, 87, 0, 0.15);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             overflow: hidden;
-            border-top: 6px solid #f7941d;
         }
 
         .header {
-            background: linear-gradient(135deg, #ef6c00 0%, #f7941d 55%, #fbb040 100%);
+            background: linear-gradient(45deg, #2c3e50, #3498db);
             color: white;
             padding: 30px;
             text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .header::before {
-            content: '';
-            position: absolute;
-            top: -40%;
-            right: -10%;
-            width: 260px;
-            height: 260px;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 50%;
-        }
-
-        .header::after {
-            content: '';
-            position: absolute;
-            bottom: -60%;
-            left: -5%;
-            width: 220px;
-            height: 220px;
-            background: rgba(255, 255, 255, 0.06);
-            border-radius: 50%;
         }
 
         .header h1 {
-            font-size: 2.2em;
-            margin-bottom: 8px;
-            letter-spacing: 0.5px;
-            position: relative;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .header p {
-            font-size: 1.1em;
-            opacity: 0.95;
-            position: relative;
-        }
-
-        .header .header-tag {
-            display: inline-block;
-            margin-top: 12px;
-            padding: 4px 14px;
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            border-radius: 20px;
-            font-size: 0.75em;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            position: relative;
-        }
-
-        .header-logo {
-            position: absolute;
-            top: 18px;
-            left: 22px;
-            width: 110px;
-            height: 110px;
-            background: white;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 6px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
-            z-index: 2;
-        }
-
-        .header-logo img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-        }
-
-        @media (max-width: 560px) {
-            .header-logo {
-                width: 44px;
-                height: 44px;
-                top: 14px;
-                left: 14px;
-            }
+            font-size: 1.2em;
+            opacity: 0.9;
         }
 
         .main-content {
@@ -122,8 +52,8 @@
         }
 
         .document-container {
-            background: #fffaf5;
-            border: 1px solid #ffe0b2;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
             border-radius: 10px;
             padding: 30px;
             margin-bottom: 30px;
@@ -134,21 +64,25 @@
             position: absolute;
             top: 15px;
             right: 15px;
-            background: #ef6c00;
+            background: linear-gradient(45deg, #3498db, #2980b9);
             color: white;
             border: none;
             border-radius: 20px;
-            padding: 8px 16px;
-            font-size: 0.85em;
+            padding: 8px 15px;
+            font-size: 0.9em;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 6px rgba(239, 108, 0, 0.35);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
         }
 
         .share-button:hover {
-            background: #d35400;
-            transform: translateY(-1px);
+            background: linear-gradient(45deg, #2980b9, #3498db);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
         }
 
         .share-button:active {
@@ -157,99 +91,53 @@
 
         .document-title {
             text-align: center;
-            font-size: 1.7em;
+            font-size: 1.8em;
             font-weight: bold;
-            margin-bottom: 6px;
-            color: #b34700;
-            letter-spacing: 0.3px;
-        }
-
-        .document-title-underline {
-            width: 1000px;
-            height: 4px;
-            background: #f7941d;
-            border-radius: 4px;
-            margin: 0 auto 24px auto;
+            margin-bottom: 20px;
+            color: #2c3e50;
         }
 
         .document-content {
             line-height: 1.8;
-            color: #4a3728;
+            color: #34495e;
             margin-bottom: 30px;
         }
 
-        .document-content ol {
-            background: #fff6ec;
-            border-left: 4px solid #f7941d;
-            border-radius: 6px;
-            padding: 16px 16px 16px 36px;
-        }
-
-        .document-content strong {
-            color: #b34700;
-        }
-
-        .signature-block {
+        .signature-section {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 40px;
             margin-top: 40px;
-            align-items: start;
         }
 
-        .signature-col-title {
-            font-weight: 700;
-            color: #b34700;
-            text-align: left;
-            margin-bottom: 18px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #ffd699;
+        .signature-left {
+            text-align: center;
         }
 
-        .signer-row {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            margin-bottom: 22px;
-            text-align: left;
-        }
-
-        .signer-row:last-child {
-            margin-bottom: 0;
-        }
-
-        .signer-label {
-            min-width: 120px;
-            font-size: 0.85em;
-            color: #8a5a2b;
-        }
-
-        .signer-name {
-            font-weight: bold;
-            color: #2c2c2c;
+        .signature-right {
+            text-align: center;
         }
 
         .signature-box {
-            width: 170px;
-            height: 90px;
-            flex-shrink: 0;
-            border: 2px dashed #f7941d;
+            width: 200px;
+            height: 100px;
+            border: 2px solid #3498db;
             border-radius: 8px;
+            margin: 20px auto;
             position: relative;
             background: white;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
         }
 
         .signature-box:hover {
-            border-color: #d35400;
-            box-shadow: 0 3px 10px rgba(247, 148, 29, 0.25);
+            border-color: #2980b9;
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
         }
 
         .signature-box.signed {
-            border: 2px solid #ef6c00;
-            border-style: solid;
-            background: #fffaf3;
+            border-color: #27ae60;
+            background: #f8fff8;
         }
 
         .signature-placeholder {
@@ -257,25 +145,71 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: #b98a55;
-            font-size: 0.8em;
-            text-align: center;
-            width: 90%;
+            color: #7f8c8d;
+            font-size: 0.9em;
             pointer-events: none;
         }
 
+        .signature-canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 6px;
+        }
+
         .signature-name {
-            margin-top: 4px;
+            margin-top: 10px;
             font-weight: bold;
-            color: #2c2c2c;
+            color: #2c3e50;
         }
 
-        .kepala-block {
+        .signature-title {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        .members-section {
+            margin-top: 40px;
+        }
+
+        .members-title {
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .member-signature {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+
+        .member-info {
             text-align: center;
+            min-width: 200px;
         }
 
-        .kepala-block .signature-box {
-            margin: 16px auto;
+        .member-signature-box {
+            width: 150px;
+            height: 80px;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            position: relative;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .member-signature-box:hover {
+            border-color: #2980b9;
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        }
+
+        .member-signature-box.signed {
+            border-color: #27ae60;
+            background: #f8fff8;
         }
 
         .controls {
@@ -287,43 +221,48 @@
         }
 
         .btn {
-            padding: 12px 26px;
+            padding: 12px 25px;
             border: none;
             border-radius: 25px;
             cursor: pointer;
-            font-size: 0.95em;
+            font-size: 1em;
             font-weight: 600;
-            transition: all 0.2s ease;
-            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .btn-primary {
-            background: #ef6c00;
+            background: linear-gradient(45deg, #3498db, #2980b9);
             color: white;
         }
 
         .btn-primary:hover {
-            background: #d35400;
-            transform: translateY(-1px);
+            background: linear-gradient(45deg, #2980b9, #3498db);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
         }
 
         .btn-secondary {
-            background: #e0d5c7;
-            color: #4a3728;
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+            color: white;
         }
 
         .btn-secondary:hover {
-            background: #cdbfab;
+            background: linear-gradient(45deg, #7f8c8d, #95a5a6);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(127, 140, 141, 0.4);
         }
 
         .btn-success {
-            background: #ef6c00;
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
             color: white;
-            box-shadow: 0 4px 12px rgba(239, 108, 0, 0.35);
         }
 
         .btn-success:hover {
-            background: #d35400;
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
         }
 
         .modal {
@@ -334,7 +273,7 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background: rgba(74, 40, 10, 0.55);
+            background: rgba(0, 0, 0, 0.8);
         }
 
         .modal-content {
@@ -345,7 +284,6 @@
             width: 90%;
             max-width: 600px;
             position: relative;
-            border-top: 5px solid #f7941d;
         }
 
         .modal-header {
@@ -354,12 +292,12 @@
         }
 
         .modal-header h2 {
-            color: #b34700;
-            margin-bottom: 8px;
+            color: #2c3e50;
+            margin-bottom: 10px;
         }
 
         .canvas-container {
-            border: 2px solid #f7941d;
+            border: 2px solid #3498db;
             border-radius: 10px;
             margin: 20px 0;
             background: white;
@@ -373,24 +311,24 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #4a3728;
+            color: #2c3e50;
         }
 
         .form-group input,
         .form-group select {
             width: 100%;
             padding: 12px 15px;
-            border: 2px solid #f0e0cc;
+            border: 2px solid #e9ecef;
             border-radius: 8px;
             font-size: 1em;
-            transition: border-color 0.2s ease;
+            transition: border-color 0.3s ease;
         }
 
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
-            border-color: #f7941d;
-            box-shadow: 0 0 0 3px rgba(247, 148, 29, 0.12);
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
         }
 
         .form-row {
@@ -400,7 +338,7 @@
         }
 
         .signature-form {
-            background: #fff6ec;
+            background: #f8f9fa;
             padding: 20px;
             border-radius: 10px;
             margin-bottom: 20px;
@@ -408,7 +346,7 @@
 
         .signature-form h3 {
             margin-bottom: 15px;
-            color: #b34700;
+            color: #2c3e50;
             text-align: center;
         }
 
@@ -428,24 +366,23 @@
             position: absolute;
             right: 15px;
             top: 15px;
-            font-size: 26px;
+            font-size: 28px;
             font-weight: bold;
             cursor: pointer;
-            color: #b98a55;
+            color: #aaa;
         }
 
         .close:hover {
-            color: #4a3728;
+            color: #000;
         }
 
         .status-info {
-            background: #fff6ec;
-            border: 1px solid #ffd699;
+            background: #e8f5e8;
+            border: 1px solid #27ae60;
             border-radius: 8px;
             padding: 15px;
             margin: 20px 0;
             text-align: center;
-            color: #4a3728;
         }
 
         .status-incomplete {
@@ -453,7 +390,7 @@
             border: 1px solid #ffc107;
         }
 
-        /* Celebration Effects - orange palette, simplified */
+        /* Celebration Effects */
         .celebration-overlay {
             position: fixed;
             top: 0;
@@ -466,26 +403,38 @@
 
         .confetti {
             position: absolute;
-            width: 9px;
-            height: 9px;
-            background: #f7941d;
+            width: 10px;
+            height: 10px;
+            background: #ff6b6b;
             animation: fall 3s linear infinite;
         }
 
         .confetti:nth-child(2n) {
-            background: #ef6c00;
+            background: #4ecdc4;
         }
 
         .confetti:nth-child(3n) {
-            background: #fbb040;
+            background: #45b7d1;
         }
 
         .confetti:nth-child(4n) {
-            background: #ffd699;
+            background: #f9ca24;
         }
 
         .confetti:nth-child(5n) {
-            background: #d35400;
+            background: #6c5ce7;
+        }
+
+        .confetti:nth-child(6n) {
+            background: #a29bfe;
+        }
+
+        .confetti:nth-child(7n) {
+            background: #fd79a8;
+        }
+
+        .confetti:nth-child(8n) {
+            background: #00b894;
         }
 
         @keyframes fall {
@@ -500,22 +449,56 @@
             }
         }
 
+        .fireworks {
+            position: absolute;
+            border-radius: 50%;
+            animation: firework 1s ease-out infinite;
+        }
+
+        @keyframes firework {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0;
+            }
+        }
+
         .celebration-message {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, #ef6c00, #f7941d, #fbb040);
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #f9ca24);
+            background-size: 400% 400%;
+            animation: rainbow 2s ease infinite;
             color: white;
             padding: 30px 50px;
             border-radius: 20px;
-            font-size: 1.8em;
+            font-size: 2em;
             font-weight: bold;
             text-align: center;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
             z-index: 10000;
             opacity: 0;
             animation: celebration-popup 4s ease-in-out;
+        }
+
+        @keyframes rainbow {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
         }
 
         @keyframes celebration-popup {
@@ -526,7 +509,7 @@
 
             20% {
                 opacity: 1;
-                transform: translate(-50%, -50%) scale(1.05);
+                transform: translate(-50%, -50%) scale(1.1);
             }
 
             30% {
@@ -546,7 +529,7 @@
 
         .sparkle {
             position: absolute;
-            background: #ffd699;
+            background: #ffd700;
             border-radius: 50%;
             animation: sparkle 1.5s ease-in-out infinite;
         }
@@ -566,19 +549,47 @@
         }
 
         .status-complete {
-            background: #ef6c00;
-            border: 2px solid #d35400;
+            background: linear-gradient(45deg, #00b894, #00cec9);
+            border: 2px solid #00b894;
             color: white;
+            animation: pulse-success 2s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes pulse-success {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(0, 184, 148, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 30px rgba(0, 184, 148, 0.6);
+            }
+        }
+
+        .status-complete::before {
+            content: '🚁';
+            position: absolute;
+            right: -30px;
+            animation: slide-emoji 3s linear infinite;
+        }
+
+        @keyframes slide-emoji {
+            0% {
+                right: -30px;
+            }
+
+            100% {
+                right: 100%;
+            }
         }
 
         @media (max-width: 768px) {
-            .signature-block {
+            .signature-section {
                 grid-template-columns: 1fr;
-                gap: 28px;
-            }
-
-            .signer-row {
-                flex-wrap: wrap;
+                gap: 20px;
             }
 
             .controls {
@@ -592,26 +603,20 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="header-logo">
-                <img src="{{ $logoBps ?? 'https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg?utm_source=id.wikipedia.org&utm_campaign=index&utm_content=original' }}"
-                    alt="Logo BPS">
-            </div>
-            <h1>PENANDATANGANAN DIGITAL</h1>
-            <p>{{ strtoupper($namaLembaga ?? 'LEMBAGA BELUM DITENTUKAN') }}</p>
-            <div class="header-tag">Berita Acara Akreditasi PSTK {{ date('Y') }}</div>
+            <h1>📋 Penandatanganan Digital</h1>
+            <p>Berita Acara Akreditasi PSTK 2025</p>
         </div>
 
         <div class="main-content">
             <div class="document-container">
                 <button class="share-button" onclick="shareDocument()">
-                    Share Link
+                    🔗 Share Link
                 </button>
                 <div class="document-title">
                     BERITA ACARA<br>
                     VISITASI TIM ASESOR AKREDITASI<br>
                     {{ strtoupper($namaLembaga ?? 'LEMBAGA BELUM DITENTUKAN') }}
                 </div>
-                <div class="document-title-underline"></div>
 
                 <div class="document-content">
                     <p>Pada hari ini, <strong>{{ $customDateTime ?? 'Belum ditentukan' }}</strong>,
@@ -633,63 +638,53 @@
                             {{ $asesorData['asesor3']['title'] ?? 'Anggota Tim Asesor' }}</li>
                     </ol>
 
-                    <p style="margin-top: 16px;">Berdasarkan hasil visitasi dan verifikasi terhadap bahan/dokumen,
-                        Tim Asesor memberikan hasil rekomendasi untuk memenuhi persyaratan Akreditasi sebagaimana
-                        catatan terlampir.</p>
+                    <p>Berdasarkan hasil visitasi dan verifikasi terhadap bahan/dokumen, Tim Asesor memberikan hasil
+                        rekomendasi untuk memenuhi persyaratan Akreditasi sebagaimana catatan terlampir.</p>
 
-                    <p style="margin-top: 16px;"><strong>Demikian, Berita Acara ini dibuat untuk dapat diketahui
-                            bersama:</strong></p>
+                    <p><strong>Demikian, Berita Acara ini dibuat untuk dapat diketahui bersama:</strong></p>
                 </div>
 
-                <div class="signature-block">
-                    <!-- Kolom kiri: Ketua + Anggota, rata kiri, sejajar -->
-                    <div class="signature-col signature-col-left">
-                        <div class="signature-col-title">Tim Asesor</div>
-
-                        <div class="signer-row">
-                            <div class="signature-box" onclick="openSignatureModal('asesor1')">
-                                <div class="signature-placeholder">Klik untuk tanda tangan</div>
-                            </div>
-                            <div>
-                                <div class="signer-label">Ketua Tim Asesor</div>
-                                <div class="signature-name">{{ $asesorData['asesor1']['name'] ?? 'Belum ditentukan' }}</div>
-                            </div>
+                <div class="signature-section">
+                    <div class="signature-left">
+                        <div class="signature-name">Ketua Tim Asesor</div>
+                        <div class="signature-box" onclick="openSignatureModal('asesor1')">
+                            <div class="signature-placeholder">Klik untuk tanda tangan</div>
                         </div>
-
-                        <div class="signer-row">
-                            <div class="member-signature-box signature-box" onclick="openSignatureModal('asesor2')">
-                                <div class="signature-placeholder">Klik untuk tanda tangan</div>
-                            </div>
-                            <div>
-                                <div class="signer-label">Anggota Tim Asesor</div>
-                                <div class="signature-name">{{ $asesorData['asesor2']['name'] ?? 'Belum ditentukan' }}</div>
-                            </div>
-                        </div>
-
-                        <div class="signer-row">
-                            <div class="member-signature-box signature-box" onclick="openSignatureModal('asesor3')">
-                                <div class="signature-placeholder">Klik untuk tanda tangan</div>
-                            </div>
-                            <div>
-                                <div class="signer-label">Anggota Tim Asesor</div>
-                                <div class="signature-name">{{ $asesorData['asesor3']['name'] ?? 'Belum ditentukan' }}</div>
-                            </div>
-                        </div>
-
-                        <div style="margin-top: 14px; color: #8a5a2b; font-size: 0.9em;">
-                            {{ $signatureDate ?? 'Jakarta, 24 Juni ' . date('Y') }}
+                        <div class="signature-name">{{ $asesorData['asesor1']['name'] ?? 'Belum ditentukan' }}</div>
+                        <div style="margin-top: 20px; color: #7f8c8d;">{{ $signatureDate ?? 'Jakarta, 24 Juni 2025' }}
                         </div>
                     </div>
 
-                    <!-- Kolom kanan: Kepala Lembaga -->
-                    <div class="signature-col kepala-block">
-                        <div class="signature-col-title" style="text-align:center; border-bottom:none;">
+                    <div class="signature-right">
+                        <div class="signature-name">
                             {{ $leaderData['title'] ?? 'Kepala ' . ($namaLembaga ?? 'Lembaga Belum Ditentukan') }}
                         </div>
                         <div class="signature-box" onclick="openSignatureModal('kepala')">
                             <div class="signature-placeholder">Klik untuk tanda tangan</div>
                         </div>
                         <div class="signature-name">{{ $leaderData['name'] ?? 'Belum ditentukan' }}</div>
+                    </div>
+                </div>
+
+                <div class="members-section">
+                    <div class="members-title">Anggota:</div>
+
+                    <div class="member-signature">
+                        <div class="member-info">
+                            <strong>1. {{ $asesorData['asesor2']['name'] ?? 'Belum ditentukan' }}</strong>
+                        </div>
+                        <div class="member-signature-box" onclick="openSignatureModal('asesor2')">
+                            <div class="signature-placeholder">Klik untuk tanda tangan</div>
+                        </div>
+                    </div>
+
+                    <div class="member-signature">
+                        <div class="member-info">
+                            <strong>2. {{ $asesorData['asesor3']['name'] ?? 'Belum ditentukan' }}</strong>
+                        </div>
+                        <div class="member-signature-box" onclick="openSignatureModal('asesor3')">
+                            <div class="signature-placeholder">Klik untuk tanda tangan</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -699,9 +694,9 @@
             </div>
 
             <div class="controls" id="submitControls" style="display: none; text-align: center;">
-                <button class="btn btn-success" onclick="submitDocument()">SUBMIT TANDA TANGAN</button>
-                {{-- <button class="btn btn-danger" onclick="resetTtd()">RESET TANDA TANGAN</button> --}}
-                {{-- <button class="btn btn-primary" onclick="downloadDocument()" style="margin-left: 10px;">DOWNLOAD PDF</button> --}}
+                <button class="btn btn-success" onclick="submitDocument()">✍️ SUBMIT TANDA TANGAN</button>
+                {{-- <button class="btn btn-danger" onclick="resetTtd()">♻️ RESET TANDA TANGAN</button> --}}
+                {{-- <button class="btn btn-primary" onclick="downloadDocument()" style="margin-left: 10px;">📄 DOWNLOAD PDF</button> --}}
             </div>
 
         </div>
@@ -718,7 +713,7 @@
 
             <!-- Form Data Penandatangan -->
             <div class="signature-form">
-                <h3>Data Penandatangan</h3>
+                <h3>📝 Data Penandatangan</h3>
                 <form id="signatureForm">
                     <div class="form-row">
                         <div class="form-group">
@@ -733,13 +728,13 @@
                         </div>
                     </div>
                     <input type="hidden" id="signerType" name="jenis_user">
-                    <input type="hidden" id="ttdToken" name="token" value="{{ $pengajuan->ttd_token }}">
+                    <input type="hidden" id="pengajuanId" name="pengajuan_id" value="{{ $pengajuan->id ?? '' }}">
                 </form>
             </div>
 
             <!-- Canvas Tanda Tangan -->
             <div class="modal-header">
-                <h3>Area Tanda Tangan</h3>
+                <h3>✍️ Area Tanda Tangan</h3>
                 <p>Gambar tanda tangan Anda di area di bawah ini</p>
             </div>
             <div class="canvas-container">
@@ -747,15 +742,14 @@
             </div>
 
             <div class="modal-controls">
-                <button class="btn btn-secondary" onclick="clearCanvas()">Hapus</button>
-                <button class="btn btn-primary" onclick="saveSignature()">Simpan</button>
+                <button class="btn btn-secondary" onclick="clearCanvas()">🗑️ Hapus</button>
+                <button class="btn btn-primary" onclick="saveSignature()">✅ Simpan</button>
             </div>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
-        const ttdToken = @json($pengajuan->ttd_token);
         let canvas, ctx;
         let isDrawing = false;
         let currentSignatureTarget = null;
@@ -769,7 +763,7 @@
             // Set canvas style
             ctx.lineWidth = 2;
             ctx.lineCap = 'round';
-            ctx.strokeStyle = '#4a3728';
+            ctx.strokeStyle = '#2c3e50';
 
             // Mouse events
             canvas.addEventListener('mousedown', startDrawing);
@@ -841,7 +835,7 @@
                 const modalHeader = document.querySelector('.modal-header p');
                 modalHeader.textContent =
                     'Mengganti tanda tangan yang sudah ada. Tanda tangan baru akan menimpa yang lama.';
-                modalHeader.style.color = '#d35400';
+                modalHeader.style.color = '#e67e22';
             } else {
                 // Reset to original message
                 const modalHeader = document.querySelector('.modal-header p');
@@ -898,6 +892,8 @@
             const signerName = document.getElementById('signerName').value.trim();
             const signerTitle = document.getElementById('signerTitle').value.trim();
             const signerType = document.getElementById('signerType').value;
+            const pengajuanId = document.getElementById('pengajuanId').value;
+
             if (!signerName || !signerTitle) {
                 alert('Nama dan jabatan harus diisi!');
                 return;
@@ -920,7 +916,7 @@
             // Show loading state
             const saveBtn = document.querySelector('.modal-controls .btn-primary');
             const originalText = saveBtn.innerHTML;
-            saveBtn.innerHTML = 'Menyimpan...';
+            saveBtn.innerHTML = '⏳ Menyimpan...';
             saveBtn.disabled = true;
 
             try {
@@ -933,8 +929,10 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify({
+                        pengajuan_id: {{ $pengajuan->id ?? 0 }},
                         signer_type: signerType,
-                        token: ttdToken,
+                        signer_name: signerName,
+                        signer_title: signerTitle,
                         signature_data: signatureData
                     })
                 });
@@ -965,25 +963,32 @@
                         signatureBox.classList.add('signed');
                         signatureBox.style.transform = 'scale(1)';
 
-                        // Small confirmation mark on the signature box
+                        // Add a small celebration for individual signature
                         const miniCelebration = document.createElement('div');
-                        miniCelebration.innerHTML = '&#10003;';
+                        miniCelebration.innerHTML = '✅';
                         miniCelebration.style.position = 'absolute';
                         miniCelebration.style.top = '-10px';
                         miniCelebration.style.right = '-10px';
-                        miniCelebration.style.width = '22px';
-                        miniCelebration.style.height = '22px';
-                        miniCelebration.style.lineHeight = '22px';
-                        miniCelebration.style.textAlign = 'center';
-                        miniCelebration.style.borderRadius = '50%';
-                        miniCelebration.style.background = '#ef6c00';
-                        miniCelebration.style.color = '#fff';
-                        miniCelebration.style.fontSize = '13px';
+                        miniCelebration.style.fontSize = '24px';
+                        miniCelebration.style.animation = 'celebration-popup 1s ease-out';
                         miniCelebration.style.zIndex = '1000';
                         signatureBox.style.position = 'relative';
                         signatureBox.appendChild(miniCelebration);
 
+                        setTimeout(() => {
+                            if (miniCelebration.parentNode) {
+                                miniCelebration.parentNode.removeChild(miniCelebration);
+                            }
+                        }, 1000);
+
                     }, 150);
+
+                    // Remove success message alert
+                    // const isReplacement = signatures[currentSignatureTarget] && signatures[currentSignatureTarget].data !== signatureData;
+                    // const message = isReplacement ?
+                    //     `Tanda tangan berhasil diganti!\nNama: ${signerName}\nJabatan: ${signerTitle}` :
+                    //     `Tanda tangan berhasil disimpan!\nNama: ${signerName}\nJabatan: ${signerTitle}`;
+                    // alert(message);
 
                     // Update signature count
                     setTimeout(() => {
@@ -1015,14 +1020,20 @@
             if (signedCount > 0) {
                 statusContainer.className = 'status-info';
                 if (signedCount === 4) {
-                    statusElement.textContent = 'Semua tanda tangan telah lengkap! Silakan submit dokumen.';
+                    statusElement.textContent = '✅ Semua tanda tangan telah lengkap! Silakan submit dokumen.';
                     statusContainer.className = 'status-info';
-                    statusContainer.style.background = '#fff0e0';
-                    statusContainer.style.border = '1px solid #f7941d';
-                    statusContainer.style.color = '#b34700';
+                    statusContainer.style.background = '#d4edda';
+                    statusContainer.style.border = '1px solid #c3e6cb';
+                    statusContainer.style.color = '#155724';
 
                     // Show submit button
                     submitControls.style.display = 'flex';
+
+                    // Add pulse animation to submit button
+                    setTimeout(() => {
+                        const submitBtn = submitControls.querySelector('.btn-success');
+                        submitBtn.style.animation = 'pulse-success 1.5s ease-in-out infinite';
+                    }, 100);
                 }
             } else {
                 statusContainer.className = 'status-info status-incomplete';
@@ -1038,27 +1049,30 @@
                 return;
             }
 
+            console.log('Document submitted, triggering celebration...'); // Debug log
+
             // Update status to submitted
             const statusElement = document.getElementById('statusText');
             const statusContainer = document.getElementById('status');
             const submitControls = document.getElementById('submitControls');
 
-            statusElement.textContent = 'DOKUMEN BERHASIL DITANDATANGANI';
+            statusElement.textContent = '🎉 DOKUMEN BERHASI DITANDATANGANI! 🎉';
             statusContainer.className = 'status-info status-complete';
 
             // Hide submit button
             submitControls.style.display = 'none';
 
-            // Trigger celebration with slight delay
+            // Force trigger celebration with slight delay
             setTimeout(() => {
+                console.log('About to trigger celebration...'); // Debug log
                 triggerCelebration();
             }, 500);
 
             // Disable all signature boxes to prevent further editing
-            const allSignatureBoxes = document.querySelectorAll('.signature-box');
+            const allSignatureBoxes = document.querySelectorAll('.signature-box, .member-signature-box');
             allSignatureBoxes.forEach(box => {
                 box.style.pointerEvents = 'none';
-                box.style.opacity = '0.9';
+                box.style.opacity = '0.8';
                 box.onclick = null;
             });
 
@@ -1066,6 +1080,8 @@
         }
 
         function triggerCelebration() {
+            console.log('Celebration triggered!'); // Debug log
+
             // Create celebration overlay
             const overlay = document.createElement('div');
             overlay.className = 'celebration-overlay';
@@ -1075,23 +1091,30 @@
             const message = document.createElement('div');
             message.className = 'celebration-message';
             message.innerHTML = `
-                Berhasil!<br>
-                <span style="font-size: 0.6em;">Berita Acara Berhasil Ditandatangani</span><br>
-                <span style="font-size: 0.45em;">Akreditasi PSTK 2026 Selesai</span>
+                🎊 SELAMAT! 🎊<br>
+                <span style="font-size: 0.7em;">Berita Acara Berhasil Ditandatangani!</span><br>
+                <span style="font-size: 0.5em;">🎉 Akreditasi PSTK 2025 Selesai! 🎉</span>
             `;
             message.style.display = 'block';
             message.style.opacity = '1';
             document.body.appendChild(message);
 
-            // Create confetti (kept light and orange-toned)
-            for (let i = 0; i < 60; i++) {
+            // Create confetti
+            for (let i = 0; i < 100; i++) {
                 setTimeout(() => {
                     createConfetti(overlay);
-                }, i * 60);
+                }, i * 50);
             }
 
-            // Create sparkles around signed boxes
-            const signatureBoxes = document.querySelectorAll('.signature-box.signed');
+            // Create fireworks
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                    createFirework(overlay);
+                }, i * 500);
+            }
+
+            // Create sparkles around signature boxes
+            const signatureBoxes = document.querySelectorAll('.signature-box.signed, .member-signature-box.signed');
             signatureBoxes.forEach((box, index) => {
                 setTimeout(() => {
                     createSparkles(box);
@@ -1127,10 +1150,31 @@
             }, 5000);
         }
 
+        function createFirework(container) {
+            const firework = document.createElement('div');
+            firework.className = 'fireworks';
+            firework.style.left = Math.random() * 100 + '%';
+            firework.style.top = Math.random() * 50 + '%';
+            firework.style.width = (Math.random() * 100 + 50) + 'px';
+            firework.style.height = firework.style.width;
+
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7', '#a29bfe'];
+            firework.style.background =
+                `radial-gradient(circle, ${colors[Math.floor(Math.random() * colors.length)]} 0%, transparent 70%)`;
+
+            container.appendChild(firework);
+
+            setTimeout(() => {
+                if (firework.parentNode) {
+                    firework.parentNode.removeChild(firework);
+                }
+            }, 1000);
+        }
+
         function createSparkles(element) {
             const rect = element.getBoundingClientRect();
 
-            for (let i = 0; i < 8; i++) {
+            for (let i = 0; i < 12; i++) {
                 const sparkle = document.createElement('div');
                 sparkle.className = 'sparkle';
                 sparkle.style.left = (rect.left + Math.random() * rect.width) + 'px';
@@ -1195,7 +1239,7 @@
                             font-family: Arial, sans-serif;
                             padding: 20px;
                             margin: 0;
-                            background: #fff3e0;
+                            background: #f5f5f5;
                         }
                         .document-container {
                             background: white;
@@ -1204,17 +1248,17 @@
                             margin: 0 auto;
                             box-shadow: 0 0 10px rgba(0,0,0,0.1);
                         }
-                        .signature-box {
-                            border: 1px solid #f7941d;
+                        .signature-box, .member-signature-box {
+                            border: 1px solid #ccc;
                             display: flex;
                             align-items: center;
                             justify-content: center;
                         }
                         .signature-placeholder {
-                            color: #b98a55;
+                            color: #999;
                             font-style: italic;
                         }
-                        .signature-box img {
+                        .signature-box img, .member-signature-box img {
                             max-width: 100%;
                             max-height: 100%;
                             object-fit: contain;
@@ -1222,7 +1266,7 @@
                         .button-container {
                             text-align: center;
                             margin-top: 30px;
-                            background: #fff3e0;
+                            background: #f5f5f5;
                             padding: 20px;
                         }
                         .btn-preview {
@@ -1233,8 +1277,8 @@
                             margin: 0 5px;
                             font-weight: bold;
                         }
-                        .btn-print { background: #ef6c00; color: white; }
-                        .btn-close { background: #b98a55; color: white; }
+                        .btn-print { background: #3498db; color: white; }
+                        .btn-close { background: #95a5a6; color: white; }
                         @media print {
                             body { margin: 0; padding: 0; background: white; }
                             .button-container { display: none; }
@@ -1244,8 +1288,8 @@
                 <body>
                     ${documentHtml}
                     <div class="button-container">
-                        <button onclick="window.print()" class="btn-preview btn-print">Print</button>
-                        <button onclick="window.close()" class="btn-preview btn-close">Tutup</button>
+                        <button onclick="window.print()" class="btn-preview btn-print">🖨️ Print</button>
+                        <button onclick="window.close()" class="btn-preview btn-close">❌ Tutup</button>
                     </div>
                 </body>
                 </html>
@@ -1272,13 +1316,14 @@
 
         // Share document link
         function shareDocument() {
-            if (!ttdToken) {
-                alert('Token E-TTD tidak ditemukan!');
+            const pengajuanId = document.getElementById('pengajuanId').value;
+            if (!pengajuanId) {
+                alert('ID Pengajuan tidak ditemukan!');
                 return;
             }
 
             const currentDomain = window.location.origin;
-            const shareUrl = `${currentDomain}/ttd/${ttdToken}`;
+            const shareUrl = `${currentDomain}/ttd/${pengajuanId}`;
 
             // Try to copy to clipboard
             if (navigator.clipboard && window.isSecureContext) {
@@ -1303,7 +1348,7 @@
                 left: 0;
                 width: 100%;
                 height: 100%;
-                background: rgba(74, 40, 10, 0.55);
+                background: rgba(0, 0, 0, 0.8);
                 z-index: 10000;
                 display: flex;
                 align-items: center;
@@ -1319,14 +1364,13 @@
                     width: 90%;
                     text-align: center;
                     position: relative;
-                    border-top: 5px solid #f7941d;
                 ">
-                    <h3 style="margin-bottom: 20px; color: #b34700;">Share Document</h3>
-                    <p style="margin-bottom: 15px; color: #8a5a2b;">Copy link di bawah ini untuk membagikan dokumen:</p>
+                    <h3 style="margin-bottom: 20px; color: #2c3e50;">📤 Share Document</h3>
+                    <p style="margin-bottom: 15px; color: #7f8c8d;">Copy link di bawah ini untuk membagikan dokumen:</p>
                     <input type="text" value="${shareUrl}" readonly style="
                         width: 100%;
                         padding: 12px;
-                        border: 2px solid #f7941d;
+                        border: 2px solid #3498db;
                         border-radius: 8px;
                         font-size: 14px;
                         margin-bottom: 20px;
@@ -1334,16 +1378,16 @@
                     " onclick="this.select()">
                     <div>
                         <button onclick="copyToClipboardFallback('${shareUrl}')" style="
-                            background: #ef6c00;
+                            background: linear-gradient(45deg, #3498db, #2980b9);
                             color: white;
                             border: none;
                             padding: 10px 20px;
                             border-radius: 20px;
                             margin-right: 10px;
                             cursor: pointer;
-                        ">Copy</button>
+                        ">📋 Copy</button>
                         <button onclick="document.body.removeChild(this.closest('div').parentElement)" style="
-                            background: #b98a55;
+                            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
                             color: white;
                             border: none;
                             padding: 10px 20px;
@@ -1447,7 +1491,7 @@
                 }
             }
             doc.text('Darusman', 40, yPosition + 40);
-            doc.text('Jakarta, 24 Juni 2026', 40, yPosition + 50);
+            doc.text('Jakarta, 24 Juni 2025', 40, yPosition + 50);
 
             // Right signature
             doc.text('{{ $namaLembaga }}', 120, yPosition);
@@ -1483,7 +1527,7 @@
 
             // Save the PDF
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
-            const fileName = `Berita_Acara_Akreditasi_PSTK_${date('Y')}_${timestamp}.pdf`;
+            const fileName = `Berita_Acara_Akreditasi_PSTK_2025_${timestamp}.pdf`;
             doc.save(fileName);
         }
 
@@ -1507,28 +1551,20 @@
 
         async function fetchSignatureUpdates(isInitialLoad = false) {
             try {
-                if (!ttdToken) return;
+                const pengajuanId = '{{ $pengajuan->id ?? '' }}';
+                if (!pengajuanId) return;
 
-                const response = await fetch(`/api/ttd/${ttdToken}/signatures`);
+                const response = await fetch(`/api/signatures?pengajuan_id=${pengajuanId}`);
                 const result = await response.json();
 
-                if (response.ok && result.signatures) {
-                    const currentSignatureCount = Object.values(result.signatures)
-                        .filter(signature => signature.signed).length;
+                if (result.status === 'success') {
+                    const currentSignatureCount = result.data.signature_count;
 
                     // On initial load, load all existing signatures
                     // On subsequent calls, only process new signatures
                     if (isInitialLoad || currentSignatureCount > lastSignatureCount) {
                         // Update signatures object with data
-                        Object.entries(result.signatures).forEach(([signerType, signature]) => {
-                            if (!signature.signed) return;
-                            const sig = {
-                                jenis_user: signerType,
-                                nama_user: signature.name,
-                                jabatan_user: signature.title,
-                                tgl_waktu_surat: signature.signed_at,
-                                ttd: signature.signature_url
-                            };
+                        result.data.signatures.forEach(sig => {
                             if (!signatures[sig.jenis_user]) {
                                 signatures[sig.jenis_user] = {
                                     name: sig.nama_user,
@@ -1552,16 +1588,16 @@
                     }
 
                     // Update document status if fully signed
-                    if (result.is_fully_signed && Object.keys(signatures).length === 4) {
+                    if (result.data.is_fully_signed && Object.keys(signatures).length === 4) {
                         const statusElement = document.getElementById('statusText');
                         const statusContainer = document.getElementById('status');
                         const submitControls = document.getElementById('submitControls');
 
-                        statusElement.textContent = 'Semua tanda tangan telah lengkap! Silakan submit dokumen.';
+                        statusElement.textContent = '✅ Semua tanda tangan telah lengkap! Silakan submit dokumen.';
                         statusContainer.className = 'status-info';
-                        statusContainer.style.background = '#fff0e0';
-                        statusContainer.style.border = '1px solid #f7941d';
-                        statusContainer.style.color = '#b34700';
+                        statusContainer.style.background = '#d4edda';
+                        statusContainer.style.border = '1px solid #c3e6cb';
+                        statusContainer.style.color = '#155724';
                         submitControls.style.display = 'block';
                     }
                 }
@@ -1588,11 +1624,11 @@
                 position: fixed;
                 top: 20px;
                 right: 20px;
-                background: linear-gradient(135deg, #ef6c00 0%, #f7941d 100%);
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 color: white;
                 padding: 15px 20px;
                 border-radius: 10px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
                 z-index: 10000;
                 font-family: 'Segoe UI', sans-serif;
                 font-size: 14px;
@@ -1601,8 +1637,13 @@
             `;
 
             notification.innerHTML = `
-                <div style="font-weight: bold;">Tanda Tangan Baru</div>
-                <div style="font-size: 12px; opacity: 0.9;">${signature.nama_user} telah menandatangani dokumen</div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 20px;">🚁</span>
+                    <div>
+                        <div style="font-weight: bold;">Tanda Tangan Baru!</div>
+                        <div style="font-size: 12px; opacity: 0.9;">${signature.nama_user} telah menandatangani dokumen</div>
+                    </div>
+                </div>
             `;
 
             // Add animation keyframes if not already added
@@ -1640,7 +1681,8 @@
             updateSignatureCount();
 
             // Load existing signatures from server
-             if (ttdToken) {
+            const pengajuanId = '{{ $pengajuan->id ?? '' }}';
+            if (pengajuanId) {
                 fetchSignatureUpdates(true).then(() => {
                     startPolling(); // Start real-time polling after initial load
                 });

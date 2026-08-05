@@ -27,4 +27,9 @@ Route::get('dbtest', function() {
   ], 200);
 });
 
-Route::get('/signatures', [TtdController::class, 'getSignatures']);
+Route::get('/ttd/{token}/signatures', [TtdController::class, 'getSignatures'])
+    ->where('token', '[a-f0-9]{40}')
+    ->name('ttd.signatures');
+Route::get('/ttd/{token}/signatures/{signerType}/image', [TtdController::class, 'signatureImage'])
+    ->where(['token' => '[a-f0-9]{40}', 'signerType' => 'asesor1|asesor2|asesor3|kepala'])
+    ->name('ttd.signature.image');

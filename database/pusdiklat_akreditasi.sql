@@ -933,6 +933,7 @@ INSERT INTO `tb_pelatihan_tenagas` (`id`, `id_pelatihan`, `id_tenaga`, `jenis_te
 
 CREATE TABLE `tb_pengajuans` (
   `id` int(11) NOT NULL,
+  `ttd_token` varchar(64) DEFAULT NULL,
   `id_profile` int(11) NOT NULL,
   `surat_permohonan` varchar(255) NOT NULL,
   `surat_akreditasi_lembaga` varchar(255) DEFAULT NULL,
@@ -1412,7 +1413,8 @@ ALTER TABLE `tb_pelatihan_tenagas`
 -- Indexes for table `tb_pengajuans`
 --
 ALTER TABLE `tb_pengajuans`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `tb_pengajuans_ttd_token_unique` (`ttd_token`);
 
 --
 -- Indexes for table `tb_penilaians`

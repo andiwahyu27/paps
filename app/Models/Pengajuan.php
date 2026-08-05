@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Pengajuan extends Model
 {
@@ -13,6 +14,24 @@ class Pengajuan extends Model
 
     protected $table = "tb_pengajuans";
     protected $guarded = ["id", "created_at", "updated_at", "deleted_at"];
+
+    protected static function booted()
+    {
+        static::creating(function (self $pengajuan) {
+            if (!$pengajuan->ttd_token) {
+                $pengajuan->ttd_token = self::generateUniqueTtdToken();
+            }
+        });
+    }
+
+    public static function generateUniqueTtdToken(): string
+    {
+        do {
+            $token = bin2hex(random_bytes(20));
+        } while (self::where('ttd_token', $token)->exists());
+
+        return $token;
+    }
     
     /**
      * Find pengajuan by ID

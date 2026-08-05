@@ -270,7 +270,7 @@
                 </div>
                 <form id="confirmSignatureForm" action="{{ route('ttd.create.post') }}" method="POST">
                     @csrf
-                    <input type="hidden" name="pengajuan_id" value="{{ $pengajuan->id }}">
+                    <input type="hidden" name="token" value="{{ $pengajuan->ttd_token }}">
                     <div class="modal-body">
                         <div class="alert alert-info">
                             <i class="bx bx-info-circle"></i>
