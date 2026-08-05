@@ -268,7 +268,7 @@
                     <h5 class="modal-title">Konfirmasi Data Tanda Tangan</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="confirmSignatureForm" action="/ttd" method="POST">
+                <form id="confirmSignatureForm" action="{{ route('ttd.create.post') }}" method="POST">
                     @csrf
                     <input type="hidden" name="pengajuan_id" value="{{ $pengajuan->id }}">
                     <div class="modal-body">
@@ -292,9 +292,6 @@
                                     value="{{ $pengajuan->asesor2 ? $pengajuan->asesor2->name : '' }}"
                                     placeholder="Masukkan nama Asesor 2" required>
                             </div>
-                        </div>
-
-                        <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label"><strong>Asesor 3</strong></label>
                                 <input type="text" class="form-control" id="asesor3_name" name="asesor3_name"
@@ -320,9 +317,24 @@
 
                         <div class="row mb-3">
                             <div class="col-md-6">
+                                <label class="form-label"><strong>Tempat Surat *</strong></label>
+                                <input type="text" class="form-control" id="signature_place" name="signature_place"
+                                    value="" maxlength="100" required>
+                            </div>
+                            <div class="col-md-6">
                                 <label class="form-label"><strong>Tanggal Surat *</strong></label>
                                 <input type="date" class="form-control" id="letter_date" name="letter_date"
                                     value="{{ \Carbon\Carbon::now()->format('Y-m-d') }}" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label"><strong>Zona Waktu *</strong></label>
+                                <select class="form-select" id="timezone" name="timezone" required>
+                                    <option value="Asia/Jakarta">WIB (UTC+7)</option>
+                                    <option value="Asia/Makassar">WITA (UTC+8)</option>
+                                    <option value="Asia/Jayapura">WIT (UTC+9)</option>
+                                </select>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label"><strong>Waktu Surat *</strong></label>
@@ -334,7 +346,7 @@
                         <div class="row mb-3">
                             <div class="col-md-12">
                                 <label class="form-label"><strong>Tanggal dan Waktu Tanda Tangan</strong></label>
-                                <input type="text" class="form-control" id="signature_datetime" name="signature_datetime"
+                                <input type="text" class="form-control" id="signature_datetime" name="datetime"
                                     readonly>
                                 <div class="form-text">Otomatis tergenerate dari tanggal dan waktu surat</div>
                             </div>
@@ -343,9 +355,9 @@
                         <div class="row mb-3">
                             <div class="col-md-12">
                                 <label class="form-label"><strong>Tanggal Surat</strong></label>
-                                <input type="text" class="form-control" id="signature_date" name="signature_date"
-                                    readonly>
-                                <div class="form-text">Otomatis tergenerate dari tanggal surat</div>
+                                <input type="text" class="form-control" id="signature_date_preview" readonly>
+                                <input type="hidden" id="signature_date" name="signature_date">
+                                <div class="form-text">Format tanggal surat yang akan digunakan pada dokumen</div>
                             </div>
                         </div>
                     </div>
@@ -363,8 +375,15 @@
         function updateFormattedDateTime() {
             const letterDate = document.getElementById('letter_date').value;
             const signatureTime = document.getElementById('signature_time').value;
+            const place = document.getElementById('signature_place').value.trim();
+            const timezone = document.getElementById('timezone').value;
+            const timezoneLabels = {
+                'Asia/Jakarta': 'Waktu Indonesia Barat',
+                'Asia/Makassar': 'Waktu Indonesia Tengah',
+                'Asia/Jayapura': 'Waktu Indonesia Timur'
+            };
 
-            if (letterDate && signatureTime) {
+            if (letterDate && signatureTime && place) {
                 const date = new Date(letterDate + 'T' + signatureTime);
 
                 // Indonesian day names
@@ -379,19 +398,20 @@
                 const hours = date.getHours().toString().padStart(2, '0');
                 const minutes = date.getMinutes().toString().padStart(2, '0');
 
-                // Format: "Hari Tanggal DD Bulan YYYY, Pukul HH.MM Waktu Indonesia Barat"
-                const formattedDateTime = `${dayName} Tanggal ${day} ${monthName} ${year}, Pukul ${hours}.${minutes} Waktu Indonesia Barat`;
+                const formattedDateTime = `${dayName} Tanggal ${day} ${monthName} ${year}, Pukul ${hours}.${minutes} ${timezoneLabels[timezone]}`;
                 document.getElementById('signature_datetime').value = formattedDateTime;
 
-                // Format: "Jakarta, DD Bulan YYYY"
-                const formattedDate = `Jakarta, ${day} ${monthName} ${year}`;
+                const formattedDate = `${place}, ${day} ${monthName} ${year}`;
                 document.getElementById('signature_date').value = formattedDate;
+                document.getElementById('signature_date_preview').value = formattedDate;
             }
         }
 
         // Add event listeners
+        document.getElementById('signature_place').addEventListener('input', updateFormattedDateTime);
         document.getElementById('letter_date').addEventListener('change', updateFormattedDateTime);
         document.getElementById('signature_time').addEventListener('change', updateFormattedDateTime);
+        document.getElementById('timezone').addEventListener('change', updateFormattedDateTime);
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', updateFormattedDateTime);
@@ -404,8 +424,15 @@
             const asesor3Name = document.getElementById('asesor3_name').value;
             const leaderName = document.getElementById('leader_name').value;
             const leaderTitle = document.getElementById('leader_title').value;
+            const signaturePlace = document.getElementById('signature_place').value;
 
             // Validate all required fields
+            if (!signaturePlace.trim()) {
+                alert('Silakan isi tempat surat.');
+                e.preventDefault();
+                return;
+            }
+
             if (!signatureDateTime.trim()) {
                 alert('Silakan isi tanggal dan waktu tanda tangan.');
                 e.preventDefault();

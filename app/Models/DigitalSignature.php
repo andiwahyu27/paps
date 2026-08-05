@@ -118,6 +118,13 @@ class DigitalSignature extends Model
             $dateTime = Carbon::now('Asia/Jakarta');
         }
 
+        $timezoneLabels = [
+            'Asia/Jakarta' => 'Waktu Indonesia Barat',
+            'Asia/Makassar' => 'Waktu Indonesia Tengah',
+            'Asia/Jayapura' => 'Waktu Indonesia Timur',
+        ];
+        $timezoneLabel = $timezoneLabels[$dateTime->getTimezone()->getName()] ?? 'Waktu Indonesia Barat';
+
         // Array hari dalam bahasa Indonesia
         $days = [
             'Sunday' => 'Minggu',
@@ -142,6 +149,6 @@ class DigitalSignature extends Model
         $year = $dateTime->format('Y');
         $time = $dateTime->format('H.i');
 
-        return "{$dayName} Tanggal {$day} {$monthName} {$year}, Pukul {$time} Waktu Indonesia Barat";
+        return "{$dayName} Tanggal {$day} {$monthName} {$year}, Pukul {$time} {$timezoneLabel}";
     }
 }

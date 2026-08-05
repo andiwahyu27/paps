@@ -96,18 +96,46 @@ class TtdController extends Controller
             return response()->json(['error' => 'Pengajuan ID required'], 400);
         }
 
+        $request->validate([
+            'signature_place' => 'required|string|max:100',
+            'letter_date' => 'required|date',
+            'signature_time' => 'required|date_format:H:i',
+            'timezone' => 'required|in:Asia/Jakarta,Asia/Makassar,Asia/Jayapura',
+            'asesor1_name' => 'required|string|max:255',
+            'asesor2_name' => 'required|string|max:255',
+            'asesor3_name' => 'required|string|max:255',
+            'leader_name' => 'required|string|max:255',
+            'leader_title' => 'required|string|max:255',
+        ]);
+
         $pengajuan = Pengajuan::findOrFail($pengajuanId);
 
         // Get form data from request if available
         $formData = [
-            'datetime' => $request->get('datetime'),
-            'signature_date' => $request->get('signature_date'),
+            'signature_place' => $request->get('signature_place'),
+            'letter_date' => $request->get('letter_date'),
+            'signature_time' => $request->get('signature_time'),
+            'timezone' => $request->get('timezone'),
             'asesor1_name' => $request->get('asesor1_name'),
             'asesor2_name' => $request->get('asesor2_name'),
             'asesor3_name' => $request->get('asesor3_name'),
             'leader_name' => $request->get('leader_name'),
             'leader_title' => $request->get('leader_title')
         ];
+
+        $letterDateTime = Carbon::createFromFormat(
+            'Y-m-d H:i',
+            $formData['letter_date'] . ' ' . $formData['signature_time'],
+            $formData['timezone']
+        );
+        $months = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+        $formData['datetime'] = DigitalSignature::generateIndonesianDateTime($letterDateTime);
+        $formData['signature_date'] = $formData['signature_place'] . ', ' .
+            $letterDateTime->day . ' ' . $months[$letterDateTime->month] . ' ' . $letterDateTime->year;
         // return $formData;
         // Save form data to DigitalSignature if present
         if ($formData['datetime'] && $formData['asesor1_name']) {
@@ -430,9 +458,9 @@ class TtdController extends Controller
              ]
          ];
 
-        $tglSurat = Carbon::now();
-        $waktuSurat = Carbon::now()->format('H:i:s');
-        $tglWaktuSurat = DigitalSignature::generateIndonesianDateTime();
+         $tglSurat = $formData['letter_date'] ?? Carbon::now()->format('Y-m-d');
+         $waktuSurat = ($formData['signature_time'] ?? Carbon::now()->format('H:i')) . ':00';
+         $tglWaktuSurat = $formData['datetime'] ?? DigitalSignature::generateIndonesianDateTime();
 
         foreach ($userData as $user) {
             if (!empty($user['nama_user'])) {
