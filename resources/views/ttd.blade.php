@@ -734,6 +734,7 @@
                     </div>
                     <input type="hidden" id="signerType" name="jenis_user">
                     <input type="hidden" id="ttdToken" name="token" value="{{ $pengajuan->ttd_token }}">
+                    <input type="hidden" id="beritaAcaraStatus" value="{{ $pengajuan->berita_acara ?? '' }}">
                 </form>
             </div>
 
