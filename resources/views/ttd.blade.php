@@ -699,7 +699,7 @@
             </div>
 
             <div class="controls" id="submitControls" style="display: none; text-align: center;">
-                <button class="btn btn-success" id="submitBaBtn" onclick="submitDocument()">SUBMIT BERITA ACARA</button>
+                <button class="btn btn-success" id="submitBaBtn" onclick="submitDocument()">SUBMIT BERITA ACARA V2</button>
                 <button class="btn btn-danger" id="resetBaBtn" onclick="resetBeritaAcara()" style="display:none;">RESET BERITA ACARA</button>
                 {{-- <button class="btn btn-primary" onclick="downloadDocument()" style="margin-left: 10px;">DOWNLOAD PDF</button> --}}
             </div>
