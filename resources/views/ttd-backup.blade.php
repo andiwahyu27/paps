@@ -694,8 +694,8 @@
             </div>
 
             <div class="controls" id="submitControls" style="display: none; text-align: center;">
-                <button class="btn btn-success" onclick="submitDocument()">✍️ SUBMIT TANDA TANGAN</button>
-                {{-- <button class="btn btn-danger" onclick="resetTtd()">♻️ RESET TANDA TANGAN</button> --}}
+                <button class="btn btn-success" id="submitBaBtn" onclick="submitDocument()">📄 SUBMIT BERITA ACARA</button>
+                <button class="btn btn-danger" id="resetBaBtn" onclick="resetBeritaAcara()" style="display:none;">♻️ RESET BERITA ACARA</button>
                 {{-- <button class="btn btn-primary" onclick="downloadDocument()" style="margin-left: 10px;">📄 DOWNLOAD PDF</button> --}}
             </div>
 
@@ -729,6 +729,7 @@
                     </div>
                     <input type="hidden" id="signerType" name="jenis_user">
                     <input type="hidden" id="pengajuanId" name="pengajuan_id" value="{{ $pengajuan->id ?? '' }}">
+                    <input type="hidden" id="beritaAcaraStatus" value="{{ $pengajuan->berita_acara ?? '' }}">
                 </form>
             </div>
 
@@ -1014,6 +1015,17 @@
             const statusElement = document.getElementById('statusText');
             const statusContainer = document.getElementById('status');
             const submitControls = document.getElementById('submitControls');
+            const beritaAcaraStatus = document.getElementById('beritaAcaraStatus')?.value;
+            const submitBaBtn = document.getElementById('submitBaBtn');
+            const resetBaBtn = document.getElementById('resetBaBtn');
+
+            if (beritaAcaraStatus && beritaAcaraStatus !== '-') {
+                if (submitBaBtn) submitBaBtn.style.display = 'none';
+                if (resetBaBtn) resetBaBtn.style.display = 'inline-block';
+                statusElement.textContent = '✅ Berita Acara telah disubmit. Semua tanda tangan lengkap.';
+                submitControls.style.display = 'flex';
+                return;
+            }
 
             statusElement.textContent = `Tanda tangan tersimpan (${signedCount}/4 selesai)`;
 
