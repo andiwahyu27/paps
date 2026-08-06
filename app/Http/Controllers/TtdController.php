@@ -132,6 +132,7 @@ class TtdController extends Controller
             Log::error('E-TTD signature save failed.', [
                 'pengajuan_id' => $pengajuan->id,
                 'signer_type' => $validated['signer_type'],
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
