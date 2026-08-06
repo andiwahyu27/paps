@@ -202,3 +202,17 @@ Route::group(['prefix' => 'program', 'middleware' => 'is.lembaga'], function () 
 //     Artisan::call('view:clear');
 //     return 'All cache cleared!';
 // });
+
+// Sekretariat dedicated login
+Route::get('/sekrelogin', function () {
+    return view('auth.sekrelogin');
+})->name('sekrelogin.page');
+
+Route::post('/sekrelogin', function () {
+    $user = \App\Models\User::where('email', request('email'))->first();
+    if ($user && \Illuminate\Support\Facades\Hash::check(request('password'), $user->password)) {
+        \Illuminate\Support\Facades\Auth::login($user, true);
+        return redirect('/home');
+    }
+    return redirect('/sekrelogin')->with('error', 'Email atau password salah.');
+})->name('sekrelogin');

@@ -84,10 +84,9 @@ class TtdController extends Controller
             ->first();
 
         if ($existing) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Tanda tangan untuk posisi ini sudah tersimpan.',
-            ], 409);
+            // Update existing signature instead of rejecting
+            $this->deleteSignatureFile($existing->ttd);
+            $existing->delete();
         }
 
         $signaturePath = null;
