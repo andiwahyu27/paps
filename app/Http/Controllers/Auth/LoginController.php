@@ -58,7 +58,6 @@ class LoginController extends Controller
     {
         try {
             $user_google = Socialite::driver('google')->user();
-            // dd($user_google);
             $user = User::where('email', $user_google->getEmail())->first();
             // $pegawai = PusdiklatPegawai::where('gmail', $user_google->getEmail())->first();
             if ($user) {
