@@ -9,10 +9,13 @@
             Hubungi tim sekretariat akreditasi untuk mendaftarkan akun.
         </p>
         <div class="text-center">
-            <a href="{{ route('login') }}" class="d-flex align-items-center justify-content-center">
-                <i class="bx bx-chevron-left scaleX-n1-rtl bx-sm"></i>
-                Kembali ke halaman login
-            </a>
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="btn btn-primary d-flex align-items-center justify-content-center mx-auto px-4">
+                    <i class="bx bx-arrow-back me-2"></i>
+                    Kembali ke halaman login
+                </button>
+            </form>
         </div>
     </div>
 </div>

@@ -55,7 +55,7 @@ class HomeController extends Controller
 
                 return view('lembaga.home', ['pengajuans' => $pengajuans, 'isPrakom' => $isPrakom, 'isStatistisi' => $isStatistisi]);
             default:
-                abort(403);
+                return view('auth.unregistered');
                 // dd(auth()->user()->role);
         }
     }
