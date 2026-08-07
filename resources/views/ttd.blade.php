@@ -121,6 +121,36 @@
             padding: 30px;
         }
 
+        .ettd-tabs {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid #e8c9a8;
+            margin-bottom: 24px;
+        }
+
+        .ettd-tab {
+            border: 0;
+            background: transparent;
+            color: #8a5a2b;
+            padding: 12px 20px;
+            cursor: pointer;
+            font: inherit;
+        }
+
+        .ettd-tab.active {
+            color: #b34700;
+            border-bottom: 3px solid #f7941d;
+            font-weight: 600;
+        }
+
+        .ettd-panel {
+            display: none;
+        }
+
+        .ettd-panel.active {
+            display: block;
+        }
+
         .document-container {
             background: #fffaf5;
             border: 1px solid #ffe0b2;
@@ -602,16 +632,11 @@
         </div>
 
         <div class="main-content">
-            <ul class="nav nav-tabs mb-4" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#signatureTab" type="button" role="tab">Tanda Tangan</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#notesTab" type="button" role="tab">Catatan</button>
-                </li>
-            </ul>
-            <div class="tab-content">
-                <div class="tab-pane fade show active" id="signatureTab" role="tabpanel">
+            <div class="ettd-tabs" role="tablist">
+                <button class="ettd-tab active" type="button" role="tab" data-tab="signatureTab">Tanda Tangan</button>
+                <button class="ettd-tab" type="button" role="tab" data-tab="notesTab">Catatan</button>
+            </div>
+            <div class="ettd-panel active" id="signatureTab" role="tabpanel">
             <div class="document-container">
                 <button class="share-button" onclick="shareDocument()">
                     Share Link
@@ -709,12 +734,14 @@
             </div>
 
             <div class="controls" id="submitControls" style="display: none; text-align: center;">
-                <button class="btn btn-success" id="submitBaBtn" onclick="submitDocument()">SUBMIT BERITA ACARA</button>
+                @if($isSekretariat)
+                    <button class="btn btn-success" id="submitBaBtn" onclick="submitDocument()">SUBMIT BERITA ACARA</button>
+                @endif
                 <button class="btn btn-danger" id="resetBaBtn" onclick="resetBeritaAcara()" style="display:none;">RESET BERITA ACARA</button>
             </div>
 
                 </div>
-                <div class="tab-pane fade" id="notesTab" role="tabpanel">
+                <div class="ettd-panel" id="notesTab" role="tabpanel">
                     <div class="document-container">
                         <h3>Catatan Hasil Visitasi</h3>
                         @forelse($catatanVisitasi as $catatan)
@@ -785,6 +812,15 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
+        document.querySelectorAll('.ettd-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.ettd-tab').forEach(item => item.classList.remove('active'));
+                document.querySelectorAll('.ettd-panel').forEach(panel => panel.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab)?.classList.add('active');
+            });
+        });
+
         const ttdToken = @json($pengajuan->ttd_token);
         let canvas, ctx;
         let isDrawing = false;
@@ -1050,6 +1086,7 @@
                 if (submitBaBtn) submitBaBtn.style.display = 'none';
                 if (resetBaBtn) resetBaBtn.style.display = document.getElementById('isSekretariat')?.value === '1' ? 'inline-block' : 'none';
                 statusElement.textContent = 'Berita Acara telah disubmit. Semua tanda tangan lengkap.';
+                statusContainer.className = 'status-info status-complete';
                 submitControls.style.display = 'flex';
                 return;
             }
@@ -1075,6 +1112,9 @@
         }
 
         async function submitDocument() {
+            if (document.getElementById('beritaAcaraStatus')?.value === 'submitted') {
+                return;
+            }
             const signedCount = Object.keys(signatures).length;
 
             if (signedCount !== 4) {

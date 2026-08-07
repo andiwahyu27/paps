@@ -52,6 +52,7 @@ Route::post('/ettd/save-signature', [TtdController::class, 'saveSignature'])
     ->middleware('throttle:20,1')
     ->name('ttd.save');
 Route::post('/ettd/submit-ba', [TtdController::class, 'submitBeritaAcara'])
+    ->middleware(['auth', 'is.sekretariat'])
     ->name('ttd.submit.ba');
 Route::post('/ettd/reset-ba', [TtdController::class, 'resetBeritaAcara'])
     ->middleware(['auth', 'is.sekretariat'])
