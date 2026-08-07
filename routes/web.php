@@ -30,7 +30,9 @@ Route::get('/auth-redirect', [LoginController::class, 'redirectToProvider'])->na
 Route::get('/auth-callback', [LoginController::class, 'handleProviderCallback']);
 
 // Login via Gojags
-Route::get('/redirect-gojags/{type}', [LoginController::class, 'redirectToGojags'])->name('login.gojags');
+Route::get('/redirect-gojags/{type}', [LoginController::class, 'redirectToGojags'])
+    ->whereIn('type', ['sso', 'google'])
+    ->name('login.gojags');
 Route::get('/callback-gojags', [LoginController::class, 'authenticateWithGojags']);
 Route::get('/login-error', [LoginController::class, 'loginError'])->name('login.error');
 Route::get('/unregistered', [LoginController::class, 'unregistered'])->name('login.unregistered');

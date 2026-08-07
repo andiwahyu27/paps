@@ -36,4 +36,12 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    'gojags' => [
+        'url' => env('APP_GOJAGS_URL'),
+        'client_uuid' => env('PAPS_UUID'),
+        'jwt_secret' => env('JWT_SECRET'),
+        'issuer' => env('GOJAGS_JWT_ISSUER'),
+        'audience' => env('GOJAGS_JWT_AUDIENCE', 'paps'),
+    ],
+
 ];

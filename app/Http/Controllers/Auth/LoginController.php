@@ -68,21 +68,37 @@ class LoginController extends Controller
                     ->with('error', 'Akun ' . $user_google->getEmail() . ' belum terdaftar dalam sistem, harap hubungi admin.');;
             }
         } catch (\Exception $e) {
-            return redirect()->route('login');
+            Log::error('Google authentication failed.', [
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'ip' => $request->ip(),
+            ]);
+
+            return redirect()
+                ->route('login')
+                ->with('error', 'Login Google gagal. Silakan coba kembali.');
         }
     }
 
     // SSO Gojags
     public function redirectToGojags($type)
     {
-        if (!env('APP_GOJAGS_URL') || !env('PAPS_UUID')) {
+        if (!config('services.gojags.url') || !config('services.gojags.client_uuid')) {
             Log::error('SSO GOJAGS: Missing required environment variables (APP_GOJAGS_URL or PAPS_UUID).');
             return redirect()->route('login')->with('error', 'Konfigurasi SSO tidak lengkap. Harap hubungi administrator.');
         }
 
         $state = StateHelper::generateState();
-        $uuid = env('PAPS_UUID');
-        $redirectUrl = env('APP_GOJAGS_URL') . "/auth/client?uuid={$uuid}&state={$state}&realm={$type}";
+        $uuid = config('services.gojags.client_uuid');
+        $gojagsUrl = rtrim(config('services.gojags.url'), '/');
+
+        $query = http_build_query([
+            'uuid' => $uuid,
+            'state' => $state,
+            'realm' => $type,
+        ]);
+
+        $redirectUrl = $gojagsUrl . '/auth/client?' . $query;
 
         Log::info('SSO GOJAGS: Redirecting to Gojags.', ['url' => $redirectUrl]);
 
@@ -110,7 +126,9 @@ class LoginController extends Controller
             $userData = JwtHelper::validateToken($token);
 
             if (!$userData) {
-                Log::warning('SSO GOJAGS: Invalid token.', ['token' => $token]);
+                            Log::warning('SSO GOJAGS: Invalid token.', [
+                'ip' => $request->ip(),
+            ]);
                 return redirect()->route('login')->with('error', 'Login gagal: Token tidak valid.');
             }
 
@@ -119,7 +137,9 @@ class LoginController extends Controller
                 return redirect()->route('login')->with('error', 'Login gagal: Data pengguna tidak lengkap.');
             }
 
-            $user = User::where('email', $userData->email)->first();
+            $email = strtolower(trim($userData->email));
+
+            $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
 
             if (!$user) {
                 // User tidak terdaftar: arahkan ke halaman informasi
@@ -133,8 +153,17 @@ class LoginController extends Controller
                 'name' => $userData->name,
             ]);
 
-            auth()->login($user, true);
-            StateHelper::clearState(); // Hapus state setelah login berhasil
+            auth()->login($user, false);
+            $sessionState = StateHelper::getState();
+            StateHelper::clearState();
+
+            if (
+                !$state ||
+                !$sessionState ||
+                !hash_equals($sessionState, $state)
+            ) {
+                // gagal
+            }
 
             Log::info('SSO GOJAGS: User authenticated successfully.', ['email' => $user->email]);
 

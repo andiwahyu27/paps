@@ -35,9 +35,20 @@
     </div>
 </form> --}}
 <div class="my-3">
-    <a href="{{route('login.gojags', ['type' => 'sso'])}}" class="btn btn-primary d-grid"><i class='bx bx-log-in-circle' ></i></i>Log in with SSO BPS</a>
+    <a href="{{route('login.gojags', ['type' => 'sso'])}}" class="btn btn-primary w-100"><i class='bx bx-log-in-circle me-2' ></i><span>Masuk dengan SSO BPS</span></a>
 </div>
 <div class="my-3">
-    <a href="{{route('login.gojags', ['type' => 'google'])}}" class="btn btn-outline-primary d-grid"><i class="bx bxl-google"></i>Log in with Google</a>
+    <a href="{{route('login.gojags', ['type' => 'google'])}}" class="btn btn-outline-primary w-100"><i class="bx bxl-google me-2"></i><span>Masuk dengan Google</span></a>
 </div>
+@if (session('error'))
+    <div class="alert alert-danger" role="alert">
+        {{ session('error') }}
+    </div>
+@endif
+
+@if ($errors->any())
+    <div class="alert alert-danger" role="alert">
+        {{ $errors->first() }}
+    </div>
+@endif
 @endsection
