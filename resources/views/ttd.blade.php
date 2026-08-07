@@ -602,6 +602,16 @@
         </div>
 
         <div class="main-content">
+            <ul class="nav nav-tabs mb-4" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#signatureTab" type="button" role="tab">Tanda Tangan</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#notesTab" type="button" role="tab">Catatan</button>
+                </li>
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="signatureTab" role="tabpanel">
             <div class="document-container">
                 <button class="share-button" onclick="shareDocument()">
                     Share Link
@@ -701,9 +711,27 @@
             <div class="controls" id="submitControls" style="display: none; text-align: center;">
                 <button class="btn btn-success" id="submitBaBtn" onclick="submitDocument()">SUBMIT BERITA ACARA</button>
                 <button class="btn btn-danger" id="resetBaBtn" onclick="resetBeritaAcara()" style="display:none;">RESET BERITA ACARA</button>
-                {{-- <button class="btn btn-primary" onclick="downloadDocument()" style="margin-left: 10px;">DOWNLOAD PDF</button> --}}
             </div>
 
+                </div>
+                <div class="tab-pane fade" id="notesTab" role="tabpanel">
+                    <div class="document-container">
+                        <h3>Catatan Hasil Visitasi</h3>
+                        @forelse($catatanVisitasi as $catatan)
+                            @php($item = $items->get($catatan->id_item_penilaian))
+                            @php($unsur = $item ? $unsurs->get($item->id_unsur) : null)
+                            <div class="border-bottom py-3">
+                                <strong>{{ $item->kode_item ?? 'Item' }} — {{ $item->nama_item ?? '' }}</strong>
+                                @if($unsur)<div class="text-muted small">{{ $unsur->nama_unsur }}</div>@endif
+                                @if($catatan->catatan)<div class="mt-2"><strong>Catatan:</strong><br>{{ $catatan->catatan }}</div>@endif
+                                @if($catatan->rekomendasi)<div class="mt-2"><strong>Rekomendasi:</strong><br>{{ $catatan->rekomendasi }}</div>@endif
+                            </div>
+                        @empty
+                            <p class="text-muted">Belum ada catatan hasil visitasi.</p>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -734,7 +762,8 @@
                     </div>
                     <input type="hidden" id="signerType" name="jenis_user">
                     <input type="hidden" id="ttdToken" name="token" value="{{ $pengajuan->ttd_token }}">
-                    <input type="hidden" id="beritaAcaraStatus" value="{{ $pengajuan->berita_acara ?? '' }}">
+                    <input type="hidden" id="beritaAcaraStatus" value="{{ $baSubmitted ? 'submitted' : '' }}">
+                    <input type="hidden" id="isSekretariat" value="{{ $isSekretariat ? '1' : '0' }}">
                 </form>
             </div>
 
@@ -824,6 +853,9 @@
         }
 
         function openSignatureModal(target) {
+            if (document.getElementById('beritaAcaraStatus')?.value === 'submitted') {
+                return;
+            }
             currentSignatureTarget = target;
             document.getElementById('signatureModal').style.display = 'block';
 
@@ -1014,9 +1046,9 @@
             const submitBaBtn = document.getElementById('submitBaBtn');
             const resetBaBtn = document.getElementById('resetBaBtn');
 
-            if (beritaAcaraStatus && beritaAcaraStatus !== '-') {
+            if (beritaAcaraStatus === 'submitted') {
                 if (submitBaBtn) submitBaBtn.style.display = 'none';
-                if (resetBaBtn) resetBaBtn.style.display = 'inline-block';
+                if (resetBaBtn) resetBaBtn.style.display = document.getElementById('isSekretariat')?.value === '1' ? 'inline-block' : 'none';
                 statusElement.textContent = 'Berita Acara telah disubmit. Semua tanda tangan lengkap.';
                 submitControls.style.display = 'flex';
                 return;
@@ -1042,13 +1074,28 @@
             }
         }
 
-        function submitDocument() {
+        async function submitDocument() {
             const signedCount = Object.keys(signatures).length;
 
             if (signedCount !== 4) {
                 alert('Semua tanda tangan harus lengkap sebelum submit!');
                 return;
             }
+
+            const response = await fetch('{{ route('ttd.submit.ba') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({ token: ttdToken })
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                alert(result.message || 'Berita Acara gagal disubmit.');
+                return;
+            }
+            document.getElementById('beritaAcaraStatus').value = 'submitted';
 
             // Update status to submitted
             const statusElement = document.getElementById('statusText');
@@ -1058,8 +1105,12 @@
             statusElement.textContent = 'DOKUMEN BERHASIL DITANDATANGANI';
             statusContainer.className = 'status-info status-complete';
 
-            // Hide submit button
-            submitControls.style.display = 'none';
+            // Replace Submit with Reset (only Secretariat may see Reset)
+            if (document.getElementById('submitBaBtn')) document.getElementById('submitBaBtn').style.display = 'none';
+            if (document.getElementById('resetBaBtn')) {
+                document.getElementById('resetBaBtn').style.display = document.getElementById('isSekretariat')?.value === '1' ? 'inline-block' : 'none';
+            }
+            submitControls.style.display = 'flex';
 
             // Trigger celebration with slight delay
             setTimeout(() => {
@@ -1075,6 +1126,26 @@
             });
 
             // No automatic redirect - user stays on current page after celebration
+        }
+
+        async function resetBeritaAcara() {
+            if (document.getElementById('isSekretariat')?.value !== '1') return;
+            if (!confirm('Reset Berita Acara?\n\nBerita acara akan dibuka kembali sehingga tanda tangan dapat diperbaiki. Tanda tangan yang sudah tersimpan tidak akan dihapus.')) return;
+
+            const response = await fetch('{{ route('ttd.reset.ba') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({ token: ttdToken })
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                alert(result.message || 'Reset Berita Acara gagal.');
+                return;
+            }
+            window.location.reload();
         }
 
         function triggerCelebration() {
@@ -1563,8 +1634,8 @@
                         updateSignatureCount();
                     }
 
-                    // Update document status if fully signed
-                    if (result.is_fully_signed && Object.keys(signatures).length === 4) {
+                    // Update document status if fully signed and still editable
+                    if (!result.ba_submitted && result.is_fully_signed && Object.keys(signatures).length === 4) {
                         const statusElement = document.getElementById('statusText');
                         const statusContainer = document.getElementById('status');
                         const submitControls = document.getElementById('submitControls');
@@ -1575,6 +1646,9 @@
                         statusContainer.style.border = '1px solid #f7941d';
                         statusContainer.style.color = '#b34700';
                         submitControls.style.display = 'block';
+                    } else if (result.ba_submitted) {
+                        document.getElementById('beritaAcaraStatus').value = 'submitted';
+                        updateSignatureCount();
                     }
                 }
             } catch (error) {

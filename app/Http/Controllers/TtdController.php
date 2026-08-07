@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\DigitalSignature;
+use App\Models\Item;
+use App\Models\Penilaian;
+use App\Models\Unsur;
 use App\Models\Pengajuan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -39,6 +42,9 @@ class TtdController extends Controller
         ]);
 
         $pengajuan = $this->findByToken($validated['token']);
+        if ($pengajuan->ba_submitted_at) {
+            return response()->json(['status' => 'error', 'message' => 'Berita Acara telah disubmit.'], 409);
+        }
         $letterDateTime = Carbon::createFromFormat(
             'Y-m-d H:i',
             $validated['letter_date'] . ' ' . $validated['signature_time'],
@@ -69,6 +75,12 @@ class TtdController extends Controller
         ]);
 
         $pengajuan = $this->findByToken($validated['token']);
+        if ($pengajuan->ba_submitted_at) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Berita Acara telah disubmit. Reset Berita Acara terlebih dahulu untuk mengubah tanda tangan.',
+            ], 409);
+        }
         $signer = $this->getSigner($pengajuan, $validated['signer_type']);
 
         if (!$signer['name'] || !$signer['title']) {
@@ -80,15 +92,8 @@ class TtdController extends Controller
 
         $existing = DigitalSignature::where('pengajuan_id', $pengajuan->id)
             ->where('jenis_user', $validated['signer_type'])
-            ->where('status_ttd', 'signed')
             ->first();
-
-        if ($existing) {
-            // Update existing signature instead of rejecting
-            $this->deleteSignatureFile($existing->ttd);
-            $existing->delete();
-        }
-
+        $previousSignaturePath = $existing ? $existing->ttd : null;
         $signaturePath = null;
         try {
             $imageData = $this->decodePng($validated['signature_data']);
@@ -126,6 +131,9 @@ class TtdController extends Controller
                     'status_ttd' => 'signed',
                 ]
             );
+            if ($previousSignaturePath && $previousSignaturePath !== $signaturePath) {
+                $this->deleteSignatureFile($previousSignaturePath);
+            }
         } catch (\Throwable $e) {
             $this->deleteSignatureFile($signaturePath);
             Log::error('E-TTD signature save failed.', [
@@ -184,6 +192,7 @@ class TtdController extends Controller
             'is_fully_signed' => collect($data)->every(function ($signature) {
                 return $signature['signed'];
             }),
+            'ba_submitted' => (bool) $pengajuan->ba_submitted_at,
         ]);
     }
 
@@ -218,6 +227,9 @@ class TtdController extends Controller
             'signer_type' => ['required', 'in:' . implode(',', self::SIGNER_TYPES)],
         ]);
         $pengajuan = $this->findByToken($validated['token']);
+        if ($pengajuan->ba_submitted_at) {
+            return response()->json(['status' => 'error', 'message' => 'Reset Berita Acara terlebih dahulu.'], 409);
+        }
         $signature = DigitalSignature::where('pengajuan_id', $pengajuan->id)
             ->where('jenis_user', $validated['signer_type'])
             ->first();
@@ -234,6 +246,29 @@ class TtdController extends Controller
         ]);
 
         return response()->json(['status' => 'success', 'message' => 'Tanda tangan berhasil direset.']);
+    }
+
+    public function submitBeritaAcara(Request $request)
+    {
+        $validated = $request->validate(['token' => ['required', 'regex:/\A[a-f0-9]{40}\z/']]);
+        $pengajuan = $this->findByToken($validated['token']);
+        if ($pengajuan->ba_submitted_at) {
+            return response()->json(['status' => 'success', 'message' => 'Berita Acara sudah disubmit.']);
+        }
+        if (!DigitalSignature::isPengajuanFullySigned($pengajuan->id)) {
+            return response()->json(['status' => 'error', 'message' => 'Semua tanda tangan harus lengkap sebelum submit.'], 422);
+        }
+        $pengajuan->forceFill(['ba_submitted_at' => now()])->saveQuietly();
+        return response()->json(['status' => 'success', 'message' => 'Berita Acara berhasil disubmit.']);
+    }
+
+    public function resetBeritaAcara(Request $request)
+    {
+        $validated = $request->validate(['token' => ['required', 'regex:/\A[a-f0-9]{40}\z/']]);
+        $pengajuan = $this->findByToken($validated['token']);
+        $pengajuan->forceFill(['ba_submitted_at' => null])->saveQuietly();
+        Log::info('E-TTD Berita Acara reset.', ['pengajuan_id' => $pengajuan->id, 'user_id' => auth()->id()]);
+        return response()->json(['status' => 'success', 'message' => 'Berita Acara berhasil direset.']);
     }
 
     public function rotateToken($id)
@@ -321,10 +356,13 @@ class TtdController extends Controller
 
     private function renderSignaturePage(Pengajuan $pengajuan, array $formData = [])
     {
-        $signatures = DigitalSignature::getPengajuanSignatures($pengajuan->id);
+        $signatures = DigitalSignature::where('pengajuan_id', $pengajuan->id)
+            ->where('status_ttd', 'signed')
+            ->get()
+            ->keyBy('jenis_user');
         $pending = DigitalSignature::where('pengajuan_id', $pengajuan->id)
-            ->whereIn('status_ttd', ['signed', 'pending'])
-            ->orderBy('created_at', 'asc')
+            ->where('status_ttd', 'signed')
+            ->latest('created_at')
             ->first();
         $asesorData = [
             'asesor1' => ['name' => optional($pengajuan->asesor1)->name, 'title' => 'Ketua Tim Asesor'],
@@ -337,12 +375,24 @@ class TtdController extends Controller
         ];
         $signatureDate = $formData['signature_date'] ?? null;
         $customDateTime = $pending->tgl_waktu_surat ?? DigitalSignature::generateIndonesianDateTime();
+        $baSubmitted = (bool) $pengajuan->ba_submitted_at;
+        $isSekretariat = auth()->check() && (int) auth()->user()->role === 2;
+        $catatanVisitasi = Penilaian::where('id_pengajuan', $pengajuan->id)
+            ->where('pra_paska', 'pra2')
+            ->where(function ($query) {
+                $query->whereNotNull('catatan')->orWhereNotNull('rekomendasi');
+            })
+            ->orderBy('id_item_penilaian')->get();
+        $items = Item::whereIn('id', $catatanVisitasi->pluck('id_item_penilaian'))->get()->keyBy('id');
+        $unsurs = Unsur::whereIn('id', $items->pluck('id_unsur'))->get()->keyBy('id');
         $namaLembaga = optional($pengajuan->profile)->nama_lembaga ?? 'Belum ditentukan';
         $namaPimpinan = optional($pengajuan->profile)->nama_pimpinan ?? 'Belum ditentukan';
 
         return view('ttd', compact(
             'pengajuan', 'signatures', 'formData', 'asesorData', 'leaderData',
-            'signatureDate', 'customDateTime', 'namaLembaga', 'namaPimpinan'
+            'signatureDate', 'customDateTime', 'namaLembaga', 'namaPimpinan',
+            'baSubmitted', 'catatanVisitasi', 'items', 'unsurs',
+            'isSekretariat'
         ));
     }
 
@@ -356,15 +406,20 @@ class TtdController extends Controller
         ];
 
         foreach ($userData as $user) {
+            $signature = DigitalSignature::where('pengajuan_id', $pengajuanId)
+                ->where('jenis_user', $user['jenis_user'])
+                ->first();
+            $status = $signature && $signature->status_ttd === 'signed' ? 'signed' : 'pending';
+
             DigitalSignature::updateOrCreate(
-                ['pengajuan_id' => $pengajuanId, 'jenis_user' => $user['jenis_user'], 'status_ttd' => 'pending'],
+                ['pengajuan_id' => $pengajuanId, 'jenis_user' => $user['jenis_user']],
                 [
                     'nama_user' => $user['nama_user'],
                     'jabatan_user' => $user['jabatan_user'],
                     'tgl_surat' => $formData['letter_date'],
                     'waktu_surat' => $formData['signature_time'] . ':00',
                     'tgl_waktu_surat' => $formData['datetime'],
-                    'status_ttd' => 'pending',
+                    'status_ttd' => $status,
                 ]
             );
         }

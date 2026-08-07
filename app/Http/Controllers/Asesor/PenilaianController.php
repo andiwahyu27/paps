@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Asesor;
 use App\Helpers\Uploadfile;
 use App\Http\Controllers\Controller;
 use App\Models\DokumenPelatihan;
+use App\Models\DigitalSignature;
 use App\Models\Fasilitas;
 use App\Models\Item;
 use App\Models\Pelatihan;
@@ -1066,7 +1067,12 @@ class PenilaianController extends Controller
             $jenis_pengajuan = 'Statistik';
         }
 
-        $templateProcessor = new TemplateProcessor('template_berita_acara.docx');
+        $signatures = DigitalSignature::where('pengajuan_id', $pengajuan->id)
+            ->where('status_ttd', 'signed')
+            ->get()
+            ->keyBy('jenis_user');
+        $templatePath = $this->prepareBaTemplateWithSignaturePlaceholders();
+        $templateProcessor = new TemplateProcessor($templatePath);
         $templateProcessor->setValue('nama_lemdik', $nama_lemdik);
         $templateProcessor->setValue('hari_penyebut', $hari_penyebut);
         $templateProcessor->setValue('tanggal_penyebut', $tanggal_penyebut);
@@ -1081,6 +1087,17 @@ class PenilaianController extends Controller
         $templateProcessor->setValue('end_reupload', $end_reupload);
         $templateProcessor->setValue('start_regrade', $start_regrade);
         $templateProcessor->setValue('jenis_pengajuan', $jenis_pengajuan);
+        foreach (['asesor1', 'asesor2', 'asesor3', 'kepala'] as $signerType) {
+            $signature = $signatures->get($signerType);
+            $path = $signature && $signature->ttd ? public_path($signature->ttd) : null;
+            if ($path && is_file($path)) {
+                $templateProcessor->setImageValue('ttd_' . $signerType, [
+                    'path' => $path, 'width' => 110, 'height' => 45, 'ratio' => true,
+                ]);
+            } else {
+                $templateProcessor->setValue('ttd_' . $signerType, '');
+            }
+        }
 
         // Catatan noteA
         $itemsA = Penilaian::where('id_item_penilaian', 1)
@@ -1291,6 +1308,26 @@ class PenilaianController extends Controller
         $templateProcessor->saveAs($tempFile);
 
         return response()->download($tempFile, $fileName)->deleteFileAfterSend(true);
+    }
+
+    private function prepareBaTemplateWithSignaturePlaceholders()
+    {
+        $source = public_path('template_berita_acara.docx');
+        $target = tempnam(sys_get_temp_dir(), 'paps-ba-');
+        copy($source, $target);
+        $zip = new \ZipArchive();
+        if ($zip->open($target) !== true) {
+            throw new \RuntimeException('Template Berita Acara tidak dapat dibuka.');
+        }
+        $xml = $zip->getFromName('word/document.xml');
+        foreach (['asesor1', 'asesor2', 'asesor3', 'kepala'] as $signerType) {
+            $needle = '${nama_' . $signerType . '}';
+            $replacement = '${ttd_' . $signerType . '}&#xA;' . $needle;
+            $xml = preg_replace('/' . preg_quote($needle, '/') . '/', $replacement, $xml, 1);
+        }
+        $zip->addFromString('word/document.xml', $xml);
+        $zip->close();
+        return $target;
     }
 
     public function eksporRekomendasi($id)

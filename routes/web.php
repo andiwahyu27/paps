@@ -51,6 +51,11 @@ Route::get('/ttd', [TtdController::class, 'index'])->name('ttd.public');
 Route::post('/ettd/save-signature', [TtdController::class, 'saveSignature'])
     ->middleware('throttle:20,1')
     ->name('ttd.save');
+Route::post('/ettd/submit-ba', [TtdController::class, 'submitBeritaAcara'])
+    ->name('ttd.submit.ba');
+Route::post('/ettd/reset-ba', [TtdController::class, 'resetBeritaAcara'])
+    ->middleware(['auth', 'is.sekretariat'])
+    ->name('ttd.reset.ba');
 Route::post('/ttd/download', [TtdController::class, 'downloadDocument'])->name('ttd.download');
 Route::post('/ttd', [TtdController::class, 'createPost'])->name('ttd.create.post');
 Route::get('/ttd/{token}', [TtdController::class, 'show'])
