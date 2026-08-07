@@ -40,9 +40,6 @@
     <!-- Page -->
     <link rel="stylesheet" href="{{ asset('/sneat/assets/vendor/css/pages/page-auth.css') }}" />
 
-    <!-- jquery -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-
     <!-- Helpers -->
     <script src="{{ asset('/sneat/assets/vendor/js/helpers.js') }}"></script>
 
