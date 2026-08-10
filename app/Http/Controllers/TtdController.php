@@ -410,12 +410,13 @@ class TtdController extends Controller
         $unsurs = Unsur::whereIn('id', $items->pluck('id_unsur'))->get()->keyBy('id');
         $namaLembaga = optional($pengajuan->profile)->nama_lembaga ?? 'Belum ditentukan';
         $tahunPengajuan = optional($pengajuan->created_at)->format('Y') ?? date('Y');
+        $visitasiUrl = route('visitasi', ['id' => $pengajuan->id]);
         $namaPimpinan = optional($pengajuan->profile)->nama_pimpinan ?? 'Belum ditentukan';
 
         return view('ttd', compact(
             'pengajuan', 'signatures', 'formData', 'asesorData', 'leaderData',
             'signatureDate', 'customDateTime', 'namaLembaga', 'namaPimpinan',
-            'baSubmitted', 'catatanVisitasi', 'items', 'unsurs', 'tahunPengajuan',
+            'baSubmitted', 'catatanVisitasi', 'items', 'unsurs', 'tahunPengajuan', 'visitasiUrl',
             'isSekretariat'
         ));
     }

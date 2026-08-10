@@ -220,6 +220,25 @@
             position: relative;
         }
 
+        .back-button {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: #b98a55;
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .back-button:hover {
+            color: white;
+            background: #8a5a2b;
+        }
+
         .share-button {
             position: absolute;
             top: 15px;
@@ -694,6 +713,7 @@
             </div>
             <div class="ettd-panel active" id="signatureTab" role="tabpanel">
             <div class="document-container">
+                <a class="back-button" href="{{ $visitasiUrl }}">Kembali</a>
                 <button class="share-button" onclick="shareDocument()">
                     Share Link
                 </button>
