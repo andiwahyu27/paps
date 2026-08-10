@@ -523,6 +523,27 @@
 
         @keyframes ettd-spin { to { transform: rotate(360deg); } }
 
+        .btn-ettd {
+            background: #ef6c00;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(239, 108, 0, 0.35);
+        }
+
+        .btn-ettd:hover {
+            background: #d35400;
+            transform: translateY(-1px);
+            color: #fff;
+        }
+
+        .btn-ettd:active { transform: translateY(0); }
+
         .signature-preview { max-width: 100%; max-height: 180px; margin: 16px auto; display: block; object-fit: contain; }
 
         .signature-form {
@@ -828,10 +849,10 @@
 
             <div class="controls" id="submitControls" style="display: none; text-align: center;">
                 @if($isSekretariat && !$baSubmitted)
-                    <button class="btn btn-success" id="submitBaBtn" onclick="submitDocument()">SUBMIT BERITA ACARA</button>
-                    <button class="btn btn-warning" id="resetAllSignaturesBtn" onclick="resetAllSignatures()" style="display:none;">RESET TANDA TANGAN</button>
+                    <button class="btn-ettd" id="submitBaBtn" onclick="submitDocument()">SUBMIT BERITA ACARA</button>
+                    <button class="btn-ettd" id="resetAllSignaturesBtn" onclick="resetAllSignatures()" style="display:none;">RESET TANDA TANGAN</button>
                 @endif
-                <button class="btn btn-danger" id="resetBaBtn" onclick="resetBeritaAcara()" style="display:none;">RESET BERITA ACARA</button>
+                <button class="btn-ettd" id="resetBaBtn" onclick="resetBeritaAcara()" style="display:none;">RESET BERITA ACARA</button>
             </div>
 
                 </div>
@@ -1393,7 +1414,7 @@
 
         function confirmResetAllSignatures() {
             return new Promise(resolve => {
-                showEttdModal('Reset Tanda Tangan', '<p class="mb-0">Reset semua tanda tangan?</p><p class="text-muted mt-2 mb-0">Semua tanda tangan yang tersimpan akan dihapus dan harus dibuat ulang.</p>', '<button type="button" class="btn btn-secondary" id="cancelResetBtn">Tidak</button><button type="button" class="btn btn-danger" id="confirmResetBtn">Ya, Reset</button>');
+                showEttdModal('Reset Tanda Tangan', '<p class="mb-0">Reset semua tanda tangan?</p><p class="text-muted mt-2 mb-0">Semua tanda tangan yang tersimpan akan dihapus dan harus dibuat ulang.</p>', '<button type="button" class="btn-ettd" id="cancelResetBtn">Tidak</button><button type="button" class="btn-ettd" id="confirmResetBtn">Ya, Reset</button>');
                 document.getElementById('cancelResetBtn').onclick = () => { closeEttdModal(); resolve(false); };
                 document.getElementById('confirmResetBtn').onclick = () => { closeEttdModal(); resolve(true); };
             });
@@ -1421,7 +1442,7 @@
 
         async function resetBeritaAcara() {
             if (document.getElementById('isSekretariat')?.value !== '1') return;
-            if (!confirm('Reset Berita Acara?\n\nBerita acara akan dibuka kembali sehingga tanda tangan dapat diperbaiki. Tanda tangan yang sudah tersimpan tidak akan dihapus.')) return;
+            if (!await confirmResetBeritaAcara()) return;
 
             const response = await fetch('{{ route('ttd.reset.ba') }}', {
                 method: 'POST',
@@ -1433,10 +1454,18 @@
             });
             const result = await response.json();
             if (!response.ok) {
-                alert(result.message || 'Reset Berita Acara gagal.');
+                showEttdModal('Gagal', '<p>' + (result.message || 'Reset Berita Acara gagal.') + '</p>', '<button type="button" class="btn-ettd" onclick="closeEttdModal()">Tutup</button>');
                 return;
             }
             window.location.reload();
+        }
+
+        function confirmResetBeritaAcara() {
+            return new Promise(resolve => {
+                showEttdModal('Reset Berita Acara', '<p class="mb-0">Reset Berita Acara?</p><p class="text-muted mt-2 mb-0">Berita acara akan dibuka kembali sehingga tanda tangan dapat diperbaiki. Tanda tangan yang sudah tersimpan tidak akan dihapus.</p>', '<button type="button" class="btn-ettd" id="cancelResetBaBtn">Tidak</button><button type="button" class="btn-ettd" id="confirmResetBaBtn">Ya, Reset</button>');
+                document.getElementById('cancelResetBaBtn').onclick = () => { closeEttdModal(); resolve(false); };
+                document.getElementById('confirmResetBaBtn').onclick = () => { closeEttdModal(); resolve(true); };
+            });
         }
 
         function triggerCelebration() {
@@ -1661,7 +1690,7 @@
 
         function showShareModal(shareUrl) {
             const body = `<input id="ettdShareUrl" class="ettd-share-input" type="text" value="${shareUrl}" readonly>`;
-            const footer = `<button type="button" class="btn btn-secondary" onclick="closeEttdModal()">Tutup</button><button type="button" class="btn btn-primary" onclick="copyShareLink()">Copy Link</button>`;
+            const footer = `<button type="button" class="btn-ettd" onclick="closeEttdModal()">Tutup</button><button type="button" class="btn-ettd" onclick="copyShareLink()">Copy Link</button>`;
             showEttdModal('Bagikan Link E-TTD', body, footer);
         }
 
@@ -1673,13 +1702,13 @@
                 input.select();
                 document.execCommand('copy');
             }
-            showEttdModal('Link Berhasil Disalin', `<p class="mb-0">Link E-TTD sudah disalin ke clipboard.</p><input class="ettd-share-input mt-3" type="text" value="${input.value}" readonly>`, `<button type="button" class="btn btn-primary" onclick="closeEttdModal()">Tutup</button>`);
+            showEttdModal('Link Berhasil Disalin', `<p class="mb-0">Link E-TTD sudah disalin ke clipboard.</p><input class="ettd-share-input mt-3" type="text" value="${input.value}" readonly>`, `<button type="button" class="btn-ettd" onclick="closeEttdModal()">Tutup</button>`);
         }
 
         // Share document link
         function shareDocument() {
             if (!ttdToken) {
-                showEttdModal('Link Tidak Tersedia', '<p class="mb-0">Token E-TTD tidak ditemukan.</p>', '<button type="button" class="btn btn-primary" onclick="closeEttdModal()">Tutup</button>');
+                showEttdModal('Link Tidak Tersedia', '<p class="mb-0">Token E-TTD tidak ditemukan.</p>', '<button type="button" class="btn-ettd" onclick="closeEttdModal()">Tutup</button>');
                 return;
             }
             const shareUrl = `${window.location.origin}/ttd/${ttdToken}`;
