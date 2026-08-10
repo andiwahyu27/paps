@@ -176,6 +176,41 @@
             background: #fffaf5;
         }
 
+        .ettd-modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(74, 55, 40, 0.55);
+        }
+
+        .ettd-modal-backdrop.show { display: flex; }
+
+        .ettd-modal-card {
+            width: min(100%, 520px);
+            background: #fffaf5;
+            border: 1px solid #e8c9a8;
+            border-radius: 12px;
+            box-shadow: 0 12px 35px rgba(74, 55, 40, 0.25);
+            overflow: hidden;
+        }
+
+        .ettd-modal-header, .ettd-modal-footer {
+            padding: 16px 20px;
+            background: #fff0e0;
+        }
+
+        .ettd-modal-header { border-bottom: 1px solid #e8c9a8; }
+        .ettd-modal-footer { border-top: 1px solid #e8c9a8; text-align: right; }
+        .ettd-modal-body { padding: 20px; color: #4a3728; }
+        .ettd-modal-title { margin: 0; color: #8a5a2b; font-size: 1.15rem; }
+        .ettd-modal-close { border: 0; background: transparent; color: #8a5a2b; font-size: 1.5rem; float: right; cursor: pointer; }
+        .ettd-share-input { width: 100%; padding: 10px; border: 1px solid #e8c9a8; border-radius: 6px; color: #4a3728; background: #fff; }
+        .ettd-modal-footer .btn + .btn { margin-left: 8px; }
+
         .document-container {
             background: #fffaf5;
             border: 1px solid #ffe0b2;
@@ -801,6 +836,17 @@
         </div>
     </div>
 
+    <div id="ettdModal" class="ettd-modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="ettd-modal-card">
+            <div class="ettd-modal-header">
+                <button type="button" class="ettd-modal-close" onclick="closeEttdModal()">&times;</button>
+                <h3 id="ettdModalTitle" class="ettd-modal-title"></h3>
+            </div>
+            <div id="ettdModalBody" class="ettd-modal-body"></div>
+            <div id="ettdModalFooter" class="ettd-modal-footer"></div>
+        </div>
+    </div>
+
     <!-- Modal untuk tanda tangan -->
     <div id="signatureModal" class="modal">
         <div class="modal-content">
@@ -1207,9 +1253,17 @@
             // No automatic redirect - user stays on current page after celebration
         }
 
+        function confirmResetAllSignatures() {
+            return new Promise(resolve => {
+                showEttdModal('Reset Tanda Tangan', '<p class="mb-0">Reset semua tanda tangan?</p><p class="text-muted mt-2 mb-0">Semua tanda tangan yang tersimpan akan dihapus dan harus dibuat ulang.</p>', '<button type="button" class="btn btn-secondary" id="cancelResetBtn">Tidak</button><button type="button" class="btn btn-danger" id="confirmResetBtn">Ya, Reset</button>');
+                document.getElementById('cancelResetBtn').onclick = () => { closeEttdModal(); resolve(false); };
+                document.getElementById('confirmResetBtn').onclick = () => { closeEttdModal(); resolve(true); };
+            });
+        }
+
         async function resetAllSignatures() {
             if (document.getElementById('isSekretariat')?.value !== '1') return;
-            if (!confirm('Reset semua tanda tangan?\n\nSemua tanda tangan yang tersimpan akan dihapus dan harus dibuat ulang.')) return;
+            if (!await confirmResetAllSignatures()) return;
 
             const response = await fetch('{{ route('ttd.reset.all') }}', {
                 method: 'POST',
@@ -1452,32 +1506,50 @@
             }
         }
 
+        function closeEttdModal() {
+            const modal = document.getElementById('ettdModal');
+            modal.classList.remove('show');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+
+        function showEttdModal(title, body, footer) {
+            document.getElementById('ettdModalTitle').textContent = title;
+            document.getElementById('ettdModalBody').innerHTML = body;
+            document.getElementById('ettdModalFooter').innerHTML = footer || '';
+            const modal = document.getElementById('ettdModal');
+            modal.classList.add('show');
+            modal.setAttribute('aria-hidden', 'false');
+        }
+
+        function showShareModal(shareUrl) {
+            const body = `<input id="ettdShareUrl" class="ettd-share-input" type="text" value="${shareUrl}" readonly>`;
+            const footer = `<button type="button" class="btn btn-secondary" onclick="closeEttdModal()">Tutup</button><button type="button" class="btn btn-primary" onclick="copyShareLink()">Copy Link</button>`;
+            showEttdModal('Bagikan Link E-TTD', body, footer);
+        }
+
+        async function copyShareLink() {
+            const input = document.getElementById('ettdShareUrl');
+            try {
+                await navigator.clipboard.writeText(input.value);
+            } catch (error) {
+                input.select();
+                document.execCommand('copy');
+            }
+            showEttdModal('Link Berhasil Disalin', `<p class="mb-0">Link E-TTD sudah disalin ke clipboard.</p><input class="ettd-share-input mt-3" type="text" value="${input.value}" readonly>`, `<button type="button" class="btn btn-primary" onclick="closeEttdModal()">Tutup</button>`);
+        }
+
         // Share document link
         function shareDocument() {
             if (!ttdToken) {
-                alert('Token E-TTD tidak ditemukan!');
+                showEttdModal('Link Tidak Tersedia', '<p class="mb-0">Token E-TTD tidak ditemukan.</p>', '<button type="button" class="btn btn-primary" onclick="closeEttdModal()">Tutup</button>');
                 return;
             }
-
-            const currentDomain = window.location.origin;
-            const shareUrl = `${currentDomain}/ttd/${ttdToken}`;
-
-            // Try to copy to clipboard
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(shareUrl).then(() => {
-                    alert('Link berhasil disalin ke clipboard!\n\n' + shareUrl);
-                }).catch(() => {
-                    // Fallback if clipboard API fails
-                    showShareModal(shareUrl);
-                });
-            } else {
-                // Fallback for older browsers or non-secure contexts
-                showShareModal(shareUrl);
-            }
+            const shareUrl = `${window.location.origin}/ttd/${ttdToken}`;
+            showShareModal(shareUrl);
         }
 
-        // Show share modal as fallback
-        function showShareModal(shareUrl) {
+        // Legacy fallback retained for compatibility; primary share modal is showEttdModal.
+        function showShareModalLegacy(shareUrl) {
             const modal = document.createElement('div');
             modal.style.cssText = `
                 position: fixed;
