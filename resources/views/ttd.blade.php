@@ -521,6 +521,28 @@
         .upload-loading { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 16px 0; color: #8a5a2b; font-weight: 600; }
         .upload-loading-spinner { width: 24px; height: 24px; border: 3px solid #e8c9a8; border-top-color: #f7941d; border-radius: 50%; animation: ettd-spin 0.8s linear infinite; }
 
+        #signatureFile {
+            display: block;
+            width: 100%;
+            padding: 6px 10px;
+            font-size: 0.815rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #4a3728;
+            background-color: #fff;
+            border: 1px solid #d4c3a8;
+            border-radius: 6px;
+        }
+        #signatureFile:focus { border-color: #f7941d; box-shadow: 0 0 0 3px rgba(247,148,29,0.12); outline: 0; }
+
+        .form-label {
+            display: inline-block;
+            margin-bottom: 6px;
+            font-size: 0.9em;
+            font-weight: 500;
+            color: #694a2c;
+        }
+
         @keyframes ettd-spin { to { transform: rotate(360deg); } }
 
         .btn-ettd {
