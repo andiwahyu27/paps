@@ -533,6 +533,36 @@
             border: 1px solid #d4c3a8;
             border-radius: 6px;
         }
+        #signatureFile::-webkit-file-upload-button {
+            padding: 5px 12px;
+            margin: -6px 10px -6px -10px;
+            background: #ef6c00;
+            color: #fff;
+            border: 0;
+            border-radius: 4px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        #signatureFile::-webkit-file-upload-button:hover {
+            background: #d35400;
+        }
+        #signatureFile::file-selector-button {
+            padding: 5px 12px;
+            margin-right: 10px;
+            background: #ef6c00;
+            color: #fff;
+            border: 0;
+            border-radius: 4px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        #signatureFile::file-selector-button:hover {
+            background: #d35400;
+        }
         #signatureFile:focus { border-color: #f7941d; box-shadow: 0 0 0 3px rgba(247,148,29,0.12); outline: 0; }
 
         .form-label {
