@@ -1071,11 +1071,7 @@ class PenilaianController extends Controller
             $jenis_pengajuan = 'Statistik';
         }
 
-        $signatures = DigitalSignature::where('pengajuan_id', $pengajuan->id)
-            ->where('status_ttd', 'signed')
-            ->get()
-            ->keyBy('jenis_user');
-        $templatePath = $this->prepareBaTemplateWithSignaturePlaceholders();
+        $templatePath = public_path('template_berita_acara.docx');
         $templateProcessor = new TemplateProcessor($templatePath);
         $templateProcessor->setValue('nama_lemdik', $nama_lemdik);
         $templateProcessor->setValue('hari_penyebut', $hari_penyebut);
@@ -1091,17 +1087,6 @@ class PenilaianController extends Controller
         $templateProcessor->setValue('end_reupload', $end_reupload);
         $templateProcessor->setValue('start_regrade', $start_regrade);
         $templateProcessor->setValue('jenis_pengajuan', $jenis_pengajuan);
-        foreach (['asesor1', 'asesor2', 'asesor3', 'kepala'] as $signerType) {
-            $signature = $signatures->get($signerType);
-            $path = $signature && $signature->ttd ? public_path($signature->ttd) : null;
-            if ($path && is_file($path)) {
-                $templateProcessor->setImageValue('ttd_' . $signerType, [
-                    'path' => $path, 'width' => 110, 'height' => 45, 'ratio' => true,
-                ]);
-            } else {
-                $templateProcessor->setValue('ttd_' . $signerType, '');
-            }
-        }
 
         // Catatan noteA
         $itemsA = Penilaian::where('id_item_penilaian', 1)
