@@ -60,6 +60,10 @@
                                                 class="btn btn-sm rounded-pill btn-primary">
                                                 <i class='bx bxs-notepad'></i> Generate BA
                                             </a>
+                                            <a href="{{ route('ekspor.ba.ttd', $pengajuan->id) }}"
+                                                class="btn btn-sm rounded-pill btn-success">
+                                                <i class='bx bxs-pen'></i> Generate BA Hasil TTD
+                                            </a>
                                             @if ($pengajuan->berita_acara)
                                                 <x-tombol-file :path="$pengajuan->berita_acara" label="Berita Acara" />
                                                 <button type="button" class="btn btn-sm rounded-pill btn-warning"

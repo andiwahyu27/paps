@@ -1071,7 +1071,7 @@ class PenilaianController extends Controller
             $jenis_pengajuan = 'Statistik';
         }
 
-        $templatePath = public_path('template_berita_acara.docx');
+        $templatePath = public_path('template_berita_acara_master.docx');
         $templateProcessor = new TemplateProcessor($templatePath);
         $templateProcessor->setValue('nama_lemdik', $nama_lemdik);
         $templateProcessor->setValue('hari_penyebut', $hari_penyebut);
@@ -1088,6 +1088,17 @@ class PenilaianController extends Controller
         $templateProcessor->setValue('start_regrade', $start_regrade);
         $templateProcessor->setValue('jenis_pengajuan', $jenis_pengajuan);
 
+        $this->applyBaNotes($templateProcessor, $id);
+
+        $fileName = 'Berita Acara '.$nama_lemdik.'.docx';
+        $tempFile = tempnam(sys_get_temp_dir(), 'word');
+        $templateProcessor->saveAs($tempFile);
+
+        return response()->download($tempFile, $fileName)->deleteFileAfterSend(true);
+    }
+
+    private function applyBaNotes(TemplateProcessor $templateProcessor, $id)
+    {
         // Catatan noteA
         $itemsA = Penilaian::where('id_item_penilaian', 1)
             ->where('id_pengajuan', $id)
@@ -1291,12 +1302,98 @@ class PenilaianController extends Controller
         foreach ($itemsL as $index => $item) {
             $templateProcessor->setValue('item2L#'.($index + 1), $item->rekomendasi);
         }
+    }
 
-        $fileName = 'Berita Acara '.$nama_lemdik.'.docx';
+    public function eksporBAHasilTtd($id)
+    {
+        $pengajuan = Pengajuan::find($id);
+        if (!$pengajuan) {
+            return back()->with('error', 'Data tidak ditemukan');
+        }
+
+        $nama_lemdik = $pengajuan->profile->nama_lembaga;
+        if ($pengajuan->id_jenis == 1) {
+            $jenis_pengajuan = 'Sistem Teknologi Berbasis Komputer';
+        } else {
+            $jenis_pengajuan = 'Statistik';
+        }
+
+        $signatures = DigitalSignature::where('pengajuan_id', $pengajuan->id)
+            ->where('status_ttd', 'signed')
+            ->get()
+            ->keyBy('jenis_user');
+
+        // Data surat dari modal generate (tr_digital_signatures)
+        $sigData = $signatures->first();
+        $tglSurat = $sigData ? \Carbon\Carbon::parse($sigData->tgl_surat) : \Carbon\Carbon::now();
+        $hariSurat = $tglSurat->isoFormat('dddd');
+        $tanggalSurat = $tglSurat->isoFormat('D MMMM Y');
+        $waktuSurat = $sigData && $sigData->waktu_surat ? \Carbon\Carbon::parse($sigData->waktu_surat)->format('H.i') : $tglSurat->format('H.i');
+        $zonaSurat = $sigData->zona_surat ?? 'Waktu Indonesia Barat';
+        $tempatSurat = $sigData->tempat_surat ?? 'Jakarta';
+
+        // Perhitungan hari kerja (skip Sabtu-Minggu)
+        $startReupload = $this->addBusinessDays($tglSurat, 1)->isoFormat('dddd, D MMMM Y');
+        $endReupload = $this->addBusinessDays($tglSurat, 3)->isoFormat('dddd, D MMMM Y');
+        $startRegrade = $this->addBusinessDays($tglSurat, 4)->isoFormat('dddd, D MMMM Y');
+
+        $namaAsesor1 = optional($signatures->get('asesor1'))->nama_user ?? optional($pengajuan->asesor1)->name;
+        $namaAsesor2 = optional($signatures->get('asesor2'))->nama_user ?? optional($pengajuan->asesor2)->name;
+        $namaAsesor3 = optional($signatures->get('asesor3'))->nama_user ?? optional($pengajuan->asesor3)->name;
+        $jabatanKepala = optional($signatures->get('kepala'))->jabatan_user ?? optional($pengajuan->profile)->jabatan_pimpinan;
+        $namaKepala = optional($signatures->get('kepala'))->nama_user ?? optional($pengajuan->profile)->nama_pimpinan;
+
+        $templateProcessor = new TemplateProcessor(public_path('template_berita_acara.docx'));
+        $templateProcessor->setValue('nama_lemdik', $nama_lemdik);
+        $templateProcessor->setValue('jenis_pengajuan', $jenis_pengajuan);
+        $templateProcessor->setValue('hari_surat', $hariSurat);
+        $templateProcessor->setValue('tanggal_surat', $tanggalSurat);
+        $templateProcessor->setValue('waktu_surat', $waktuSurat);
+        $templateProcessor->setValue('zona_surat', $zonaSurat);
+        $templateProcessor->setValue('tempat_surat', $tempatSurat);
+        $templateProcessor->setValue('tanggal', $tanggalSurat);
+        $templateProcessor->setValue('nama_asesor1', $namaAsesor1);
+        $templateProcessor->setValue('nama_asesor2', $namaAsesor2);
+        $templateProcessor->setValue('nama_asesor3', $namaAsesor3);
+        $templateProcessor->setValue('jabatan_kepala', $jabatanKepala);
+        $templateProcessor->setValue('nama_kepala', $namaKepala);
+        $templateProcessor->setValue('start_reupload', $startReupload);
+        $templateProcessor->setValue('end_reupload', $endReupload);
+        $templateProcessor->setValue('start_regrade', $startRegrade);
+
+        // Tanda tangan dari tr_digital_signatures
+        foreach (['asesor1', 'asesor2', 'asesor3', 'kepala'] as $signerType) {
+            $signature = $signatures->get($signerType);
+            $path = $signature && $signature->ttd ? public_path($signature->ttd) : null;
+            if ($path && is_file($path)) {
+                $templateProcessor->setImageValue('ttd_' . $signerType, [
+                    'path' => $path, 'width' => 110, 'height' => 45, 'ratio' => true,
+                ]);
+            } else {
+                $templateProcessor->setValue('ttd_' . $signerType, '');
+            }
+        }
+
+        $this->applyBaNotes($templateProcessor, $id);
+
+        $fileName = 'Berita Acara TTD '.$nama_lemdik.'.docx';
         $tempFile = tempnam(sys_get_temp_dir(), 'word');
         $templateProcessor->saveAs($tempFile);
 
         return response()->download($tempFile, $fileName)->deleteFileAfterSend(true);
+    }
+
+    private function addBusinessDays(\Carbon\Carbon $date, int $days): \Carbon\Carbon
+    {
+        $result = $date->copy();
+        $added = 0;
+        while ($added < $days) {
+            $result->addDay();
+            if (!$result->isWeekend()) {
+                $added++;
+            }
+        }
+        return $result;
     }
 
     private function prepareBaTemplateWithSignaturePlaceholders()

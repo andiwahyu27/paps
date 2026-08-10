@@ -440,6 +440,13 @@ class TtdController extends Controller
             ['jenis_user' => 'kepala', 'nama_user' => $formData['leader_name'], 'jabatan_user' => $formData['leader_title']],
         ];
 
+        $timezoneLabels = [
+            'Asia/Jakarta' => 'Waktu Indonesia Barat',
+            'Asia/Makassar' => 'Waktu Indonesia Tengah',
+            'Asia/Jayapura' => 'Waktu Indonesia Timur',
+        ];
+        $zonaSurat = $timezoneLabels[$formData['timezone']] ?? 'Waktu Indonesia Barat';
+
         foreach ($userData as $user) {
             $signature = DigitalSignature::where('pengajuan_id', $pengajuanId)
                 ->where('jenis_user', $user['jenis_user'])
@@ -454,6 +461,8 @@ class TtdController extends Controller
                     'tgl_surat' => $formData['letter_date'],
                     'waktu_surat' => $formData['signature_time'] . ':00',
                     'tgl_waktu_surat' => $formData['datetime'],
+                    'tempat_surat' => $formData['signature_place'] ?? 'Jakarta',
+                    'zona_surat' => $zonaSurat,
                     'status_ttd' => $status,
                 ]
             );

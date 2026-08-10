@@ -106,6 +106,7 @@ Route::group(['prefix' => 'pengajuan', 'middleware' => 'is.asesor.or.sekretariat
     Route::get('/pravisit2/{id}', [PenilaianController::class, 'pravisit2'])->name('pravisit2');
     Route::get('/pravisit2/view/{id}', [PenilaianController::class, 'pravisitView2'])->name('view.pravisit2');
     Route::get('/pravisit2/ekspor-ba/{id}', [PenilaianController::class, 'eksporBA'])->name('ekspor.ba');
+    Route::get('/pravisit2/ekspor-ba-ttd/{id}', [PenilaianController::class, 'eksporBAHasilTtd'])->name('ekspor.ba.ttd');
     Route::get('/visitasi/ekspor-rekomendasi/{id}', [PenilaianController::class, 'eksporRekomendasi'])->name('ekspor.rekomendasi');
     Route::get('/ekspor-sertifikat/{id}', [PenilaianController::class, 'eksporSertifikat'])->name('ekspor.sertifikat');
     Route::get('/visitasi/{id}', [PenilaianController::class, 'visitasi'])->name('visitasi');
