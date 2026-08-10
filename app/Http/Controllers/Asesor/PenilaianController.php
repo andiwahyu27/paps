@@ -741,9 +741,13 @@ class PenilaianController extends Controller
     {
         $result = $this->calculatePravisit2Data($id);
         $predikat = $this->getPredikat($result['nilai_akhir']);
+        $hasDigitalSignature = DigitalSignature::where('pengajuan_id', $result['pengajuan']->id)
+            ->where('status_ttd', 'signed')
+            ->exists();
 
         return view('asesor.visitasi', array_merge($result, [
             'predikat' => $predikat,
+            'hasDigitalSignature' => $hasDigitalSignature,
         ]));
     }
 
