@@ -595,13 +595,13 @@
         }
 
         .btn-ettd-negative {
-            background: #9e9e9e;
+            background: #dc3545;
             color: #fff;
-            box-shadow: 0 2px 6px rgba(158, 158, 158, 0.35);
+            box-shadow: 0 2px 6px rgba(220, 53, 69, 0.35);
         }
 
         .btn-ettd-negative:hover {
-            background: #757575;
+            background: #b02a37;
             color: #fff;
         }
 
@@ -925,9 +925,9 @@
             <div class="controls" id="submitControls" style="display: none; text-align: center;">
                 @if($isSekretariat && !$baSubmitted)
                     <button class="btn-ettd" id="submitBaBtn" onclick="submitDocument()">SUBMIT BERITA ACARA</button>
-                    <button class="btn-ettd" id="resetAllSignaturesBtn" onclick="resetAllSignatures()" style="display:none;">RESET TANDA TANGAN</button>
+                    <button class="btn-ettd btn-ettd-negative" id="resetAllSignaturesBtn" onclick="resetAllSignatures()" style="display:none;">RESET TANDA TANGAN</button>
                 @endif
-                <button class="btn-ettd" id="resetBaBtn" onclick="resetBeritaAcara()" style="display:none;">RESET BERITA ACARA</button>
+                <button class="btn-ettd btn-ettd-negative" id="resetBaBtn" onclick="resetBeritaAcara()" style="display:none;">RESET BERITA ACARA</button>
             </div>
 
                 </div>
