@@ -80,7 +80,7 @@
             padding: 4px 14px;
             border: 1px solid rgba(255, 255, 255, 0.6);
             border-radius: 20px;
-            font-size: 0.75em;
+            font-size: 1.2em;
             letter-spacing: 1.5px;
             text-transform: uppercase;
             position: relative;
@@ -682,8 +682,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>PENANDATANGANAN DIGITAL</h1>
             <div class="header-tag">BERITA ACARA AKREDITASI PSTK {{ $tahunPengajuan }}</div>
+            <h1>PENANDATANGANAN DIGITAL</h1>
             <p>{{ strtoupper($namaLembaga ?? 'LEMBAGA BELUM DITENTUKAN') }}</p>
         </div>
 
