@@ -387,14 +387,24 @@ class TtdController extends Controller
             ->where('status_ttd', 'signed')
             ->latest('created_at')
             ->first();
+        $allSig = DigitalSignature::where('pengajuan_id', $pengajuan->id)->get()->keyBy('jenis_user');
         $asesorData = [
-            'asesor1' => ['name' => optional($pengajuan->asesor1)->name, 'title' => 'Ketua Tim Asesor'],
-            'asesor2' => ['name' => optional($pengajuan->asesor2)->name, 'title' => 'Anggota Tim Asesor'],
-            'asesor3' => ['name' => optional($pengajuan->asesor3)->name, 'title' => 'Anggota Tim Asesor'],
+            'asesor1' => [
+                'name' => optional($allSig->get('asesor1'))->nama_user ?? optional($pengajuan->asesor1)->name,
+                'title' => optional($allSig->get('asesor1'))->jabatan_user ?? 'Ketua Tim Asesor',
+            ],
+            'asesor2' => [
+                'name' => optional($allSig->get('asesor2'))->nama_user ?? optional($pengajuan->asesor2)->name,
+                'title' => optional($allSig->get('asesor2'))->jabatan_user ?? 'Anggota Tim Asesor',
+            ],
+            'asesor3' => [
+                'name' => optional($allSig->get('asesor3'))->nama_user ?? optional($pengajuan->asesor3)->name,
+                'title' => optional($allSig->get('asesor3'))->jabatan_user ?? 'Anggota Tim Asesor',
+            ],
         ];
         $leaderData = [
-            'name' => optional($pengajuan->profile)->nama_pimpinan,
-            'title' => optional($pengajuan->profile)->jabatan_pimpinan,
+            'name' => optional($allSig->get('kepala'))->nama_user ?? optional($pengajuan->profile)->nama_pimpinan,
+            'title' => optional($allSig->get('kepala'))->jabatan_user ?? optional($pengajuan->profile)->jabatan_pimpinan,
         ];
         $signatureDate = $formData['signature_date'] ?? null;
         $customDateTime = $pending->tgl_waktu_surat ?? DigitalSignature::generateIndonesianDateTime();
