@@ -78,16 +78,15 @@
                                         <td>
                                             @if($hasDigitalSignature)
                                                 <a href="{{ route('ttd.show', ['token' => $pengajuan->ttd_token]) }}"
-                                                    class="btn btn-sm rounded-pill btn-primary">
+                                                    class="btn btn-sm rounded-pill btn-info">
                                                     <i class="bx bx-show"></i> Lihat Tanda Tangan
                                                 </a>
-                                                <button type="button" class="btn btn-sm rounded-pill btn-danger"
-                                                    data-bs-toggle="modal" data-bs-target="#confirmSignatureModal"
-                                                    data-bs-placement="top" title="Generate tanda tangan">
-                                                    <i class="bx bx-pen"></i>
+                                                <button type="button" class="btn btn-sm rounded-pill btn-primary"
+                                                    data-bs-toggle="modal" data-bs-target="#confirmSignatureModal">
+                                                    <i class="bx bx-pen"></i> Generate Ulang Tanda Tangan
                                                 </button>
                                             @else
-                                                <button type="button" class="btn btn-sm rounded-pill btn-danger"
+                                                <button type="button" class="btn btn-sm rounded-pill btn-primary"
                                                     data-bs-toggle="modal" data-bs-target="#confirmSignatureModal">
                                                     <i class="bx bx-pen"></i> Generate Tanda Tangan
                                                 </button>

@@ -594,6 +594,25 @@
             color: #fff;
         }
 
+       .btn-ettd-reset {
+            background: #5b7d96;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(91, 125, 150, 0.35);
+        }
+
+        .btn-ettd-reset:hover {
+            background: #45647c;
+            transform: translateY(-1px);
+            color: #fff;
+        }
+
         .btn-ettd-negative {
             background: #9e9e9e;
             color: #fff;
@@ -605,8 +624,7 @@
             color: #fff;
         }
 
-        .btn-ettd:active { transform: translateY(0); }
-        .btn-ettd-negative:active { transform: translateY(0); }
+        .btn-ettd:active, .btn-ettd-reset:active, .btn-ettd-negative:active  { transform: translateY(0); }
 
         .signature-preview { max-width: 100%; max-height: 180px; margin: 16px auto; display: block; object-fit: contain; }
 
@@ -925,9 +943,9 @@
             <div class="controls" id="submitControls" style="display: none; text-align: center;">
                 @if($isSekretariat && !$baSubmitted)
                     <button class="btn-ettd" id="submitBaBtn" onclick="submitDocument()">SUBMIT BERITA ACARA</button>
-                    <button class="btn-ettd" id="resetAllSignaturesBtn" onclick="resetAllSignatures()" style="display:none;">RESET TANDA TANGAN</button>
+                    <button class="btn-ettd-reset" id="resetAllSignaturesBtn" onclick="resetAllSignatures()" style="display:none;">RESET TANDA TANGAN</button>
                 @endif
-                <button class="btn-ettd" id="resetBaBtn" onclick="resetBeritaAcara()" style="display:none;">RESET BERITA ACARA</button>
+                <button class="btn-ettd-reset" id="resetBaBtn" onclick="resetBeritaAcara()" style="display:none;">RESET BERITA ACARA</button>
             </div>
 
                 </div>
