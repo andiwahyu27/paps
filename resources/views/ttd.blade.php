@@ -1201,7 +1201,7 @@
             const waktuSurat = currentDateTime.toTimeString().split(' ')[0];
 
             // Show loading state
-            const saveBtn = document.querySelector('.modal-controls .btn-primary');
+            const saveBtn = document.querySelector('.signature-method-actions .btn-primary');
             const originalText = saveBtn.innerHTML;
             saveBtn.innerHTML = 'Menyimpan...';
             saveBtn.disabled = true;
