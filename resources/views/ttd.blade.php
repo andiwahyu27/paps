@@ -598,6 +598,7 @@
         .table { width: 100%; margin-bottom: 1rem; color: #4a3728; border-collapse: collapse; }
         .table th, .table td { padding: 12px; vertical-align: top; border: 1px solid #e8c9a8; }
         .form-control { display: block; width: 100%; padding: 8px 12px; font-size: 0.9em; color: #4a3728; background: #fff; border: 1px solid #d4c3a8; border-radius: 6px; }
+        .form-control-sm { padding: 6px 10px; font-size: 0.815rem; }
         .form-control:focus { border-color: #f7941d; box-shadow: 0 0 0 3px rgba(247,148,29,0.12); outline: 0; }
         .form-control:disabled { background: #f5f0e8; color: #8a5a2b; }
         .form-select { display: block; width: 100%; padding: 8px 12px; font-size: 0.9em; color: #4a3728; background: #fff; border: 1px solid #d4c3a8; border-radius: 6px; }
