@@ -151,6 +151,31 @@
             display: block;
         }
 
+        .ettd-notes-table {
+            width: 100%;
+            border-collapse: collapse;
+            color: #4a3728;
+        }
+
+        .ettd-notes-table th,
+        .ettd-notes-table td {
+            border: 1px solid #e8c9a8;
+            padding: 12px;
+            text-align: left;
+            vertical-align: top;
+            white-space: pre-line;
+        }
+
+        .ettd-notes-table th {
+            background: #fff0e0;
+            color: #8a5a2b;
+            font-weight: 600;
+        }
+
+        .ettd-notes-table tr:nth-child(even) td {
+            background: #fffaf5;
+        }
+
         .document-container {
             background: #fffaf5;
             border: 1px solid #ffe0b2;
@@ -745,18 +770,31 @@
                 <div class="ettd-panel" id="notesTab" role="tabpanel">
                     <div class="document-container">
                         <h3>Catatan Hasil Visitasi</h3>
-                        @forelse($catatanVisitasi as $catatan)
-                            @php($item = $items->get($catatan->id_item_penilaian))
-                            @php($unsur = $item ? $unsurs->get($item->id_unsur) : null)
-                            <div class="border-bottom py-3">
-                                <strong>{{ $item->kode_item ?? 'Item' }} — {{ $item->nama_item ?? '' }}</strong>
-                                @if($unsur)<div class="text-muted small">{{ $unsur->nama_unsur }}</div>@endif
-                                @if($catatan->catatan)<div class="mt-2"><strong>Catatan:</strong><br>{{ $catatan->catatan }}</div>@endif
-                                @if($catatan->rekomendasi)<div class="mt-2"><strong>Rekomendasi:</strong><br>{{ $catatan->rekomendasi }}</div>@endif
+                        @if($catatanVisitasi->isNotEmpty())
+                            <div class="table-responsive">
+                                <table class="ettd-notes-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Item Penilaian</th>
+                                            <th>Catatan</th>
+                                            <th>Rekomendasi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($catatanVisitasi as $catatan)
+                                            @php($item = $items->get($catatan->id_item_penilaian))
+                                            <tr>
+                                                <td>{{ $item->kode_item ?? 'Item' }} — {{ $item->nama_item ?? '' }}</td>
+                                                <td>{{ $catatan->catatan ?: '-' }}</td>
+                                                <td>{{ $catatan->rekomendasi ?: '-' }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
                             </div>
-                        @empty
+                        @else
                             <p class="text-muted">Belum ada catatan hasil visitasi.</p>
-                        @endforelse
+                        @endif
                     </div>
                 </div>
             </div>
