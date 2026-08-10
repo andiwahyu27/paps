@@ -736,6 +736,7 @@
             <div class="controls" id="submitControls" style="display: none; text-align: center;">
                 @if($isSekretariat && !$baSubmitted)
                     <button class="btn btn-success" id="submitBaBtn" onclick="submitDocument()">SUBMIT BERITA ACARA</button>
+                    <button class="btn btn-warning" id="resetAllSignaturesBtn" onclick="resetAllSignatures()">RESET TANDA TANGAN</button>
                 @endif
                 <button class="btn btn-danger" id="resetBaBtn" onclick="resetBeritaAcara()" style="display:none;">RESET BERITA ACARA</button>
             </div>
@@ -1166,6 +1167,26 @@
             });
 
             // No automatic redirect - user stays on current page after celebration
+        }
+
+        async function resetAllSignatures() {
+            if (document.getElementById('isSekretariat')?.value !== '1') return;
+            if (!confirm('Reset semua tanda tangan?\n\nSemua tanda tangan yang tersimpan akan dihapus dan harus dibuat ulang.')) return;
+
+            const response = await fetch('{{ route('ttd.reset.all') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({ token: ttdToken })
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                alert(result.message || 'Reset tanda tangan gagal.');
+                return;
+            }
+            window.location.reload();
         }
 
         async function resetBeritaAcara() {

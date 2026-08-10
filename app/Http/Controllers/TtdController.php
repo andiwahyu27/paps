@@ -248,6 +248,29 @@ class TtdController extends Controller
         return response()->json(['status' => 'success', 'message' => 'Tanda tangan berhasil direset.']);
     }
 
+    public function resetAllSignatures(Request $request)
+    {
+        $validated = $request->validate(['token' => ['required', 'regex:/\\A[a-f0-9]{40}\\z/']]);
+        $pengajuan = $this->findByToken($validated['token']);
+        if ($pengajuan->ba_submitted_at) {
+            return response()->json(['status' => 'error', 'message' => 'Reset Berita Acara terlebih dahulu.'], 409);
+        }
+
+        $signatures = DigitalSignature::where('pengajuan_id', $pengajuan->id)->get();
+        foreach ($signatures as $signature) {
+            $this->deleteSignatureFile($signature->ttd);
+        }
+        DigitalSignature::where('pengajuan_id', $pengajuan->id)->delete();
+
+        Log::info('E-TTD all signatures reset.', [
+            'pengajuan_id' => $pengajuan->id,
+            'user_id' => auth()->id(),
+            'count' => $signatures->count(),
+        ]);
+
+        return response()->json(['status' => 'success', 'message' => 'Semua tanda tangan berhasil direset.']);
+    }
+
     public function submitBeritaAcara(Request $request)
     {
         $validated = $request->validate(['token' => ['required', 'regex:/\A[a-f0-9]{40}\z/']]);

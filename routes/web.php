@@ -65,6 +65,9 @@ Route::get('/ttd/{token}', [TtdController::class, 'show'])
 Route::post('/ettd/reset-signature', [TtdController::class, 'resetTtd'])
     ->middleware(['auth', 'is.sekretariat'])
     ->name('ttd.reset');
+Route::post('/ettd/reset-all-signatures', [TtdController::class, 'resetAllSignatures'])
+    ->middleware(['auth', 'is.sekretariat'])
+    ->name('ttd.reset.all');
 Route::post('/pengajuan/{id}/ttd-token/rotate', [TtdController::class, 'rotateToken'])
     ->middleware(['auth', 'is.sekretariat'])
     ->name('ttd.token.rotate');
