@@ -682,13 +682,9 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="header-logo">
-                <img src="{{ $logoBps ?? 'https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg?utm_source=id.wikipedia.org&utm_campaign=index&utm_content=original' }}"
-                    alt="Logo BPS">
-            </div>
             <h1>PENANDATANGANAN DIGITAL</h1>
+            <div class="header-tag">BERITA ACARA AKREDITASI PSTK {{ $tahunPengajuan }}</div>
             <p>{{ strtoupper($namaLembaga ?? 'LEMBAGA BELUM DITENTUKAN') }}</p>
-            <div class="header-tag">Berita Acara Akreditasi PSTK {{ date('Y') }}</div>
         </div>
 
         <div class="main-content">
