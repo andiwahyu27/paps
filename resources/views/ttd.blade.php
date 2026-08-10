@@ -586,12 +586,22 @@
             border-radius: 8px;
         }
 
-        .modal-controls {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-        }
+        .signature-modal-controls { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+
+        /* Bootstrap utility equivalents (page does not load Bootstrap) */
+        .mb-0 { margin-bottom: 0 !important; }
+        .mb-3 { margin-bottom: 1rem !important; }
+        .mt-2 { margin-top: 0.5rem !important; }
+        .mt-3 { margin-top: 1rem !important; }
+        .text-muted { color: #8a5a2b !important; opacity: 0.75; }
+        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .table { width: 100%; margin-bottom: 1rem; color: #4a3728; border-collapse: collapse; }
+        .table th, .table td { padding: 12px; vertical-align: top; border: 1px solid #e8c9a8; }
+        .form-control { display: block; width: 100%; padding: 8px 12px; font-size: 0.9em; color: #4a3728; background: #fff; border: 1px solid #d4c3a8; border-radius: 6px; }
+        .form-control:focus { border-color: #f7941d; box-shadow: 0 0 0 3px rgba(247,148,29,0.12); outline: 0; }
+        .form-control:disabled { background: #f5f0e8; color: #8a5a2b; }
+        .form-select { display: block; width: 100%; padding: 8px 12px; font-size: 0.9em; color: #4a3728; background: #fff; border: 1px solid #d4c3a8; border-radius: 6px; }
+        .alert-info { background: #e8f4fd; border: 1px solid #b6d4fe; border-radius: 6px; padding: 12px 16px; color: #1a4972; margin-bottom: 16px; }
 
         .close {
             position: absolute;
