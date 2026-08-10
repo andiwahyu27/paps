@@ -796,7 +796,7 @@
             <div class="controls" id="submitControls" style="display: none; text-align: center;">
                 @if($isSekretariat && !$baSubmitted)
                     <button class="btn btn-success" id="submitBaBtn" onclick="submitDocument()">SUBMIT BERITA ACARA</button>
-                    <button class="btn btn-warning" id="resetAllSignaturesBtn" onclick="resetAllSignatures()">RESET TANDA TANGAN</button>
+                    <button class="btn btn-warning" id="resetAllSignaturesBtn" onclick="resetAllSignatures()" style="display:none;">RESET TANDA TANGAN</button>
                 @endif
                 <button class="btn btn-danger" id="resetBaBtn" onclick="resetBeritaAcara()" style="display:none;">RESET BERITA ACARA</button>
             </div>
@@ -1169,6 +1169,8 @@
 
             if (beritaAcaraStatus === 'submitted') {
                 if (submitBaBtn) submitBaBtn.remove();
+                const resetAllBtn = document.getElementById('resetAllSignaturesBtn');
+                if (resetAllBtn) resetAllBtn.remove();
                 if (resetBaBtn) resetBaBtn.style.display = document.getElementById('isSekretariat')?.value === '1' ? 'inline-block' : 'none';
                 statusElement.textContent = 'Berita Acara telah disubmit. Semua tanda tangan lengkap.';
                 statusContainer.className = 'status-info status-complete';
@@ -1187,8 +1189,12 @@
                     statusContainer.style.border = '1px solid #f7941d';
                     statusContainer.style.color = '#b34700';
 
-                    // Show submit button
+                    // Show submit and reset-signature actions only when all four are signed
                     submitControls.style.display = 'flex';
+                    const resetAllBtn = document.getElementById('resetAllSignaturesBtn');
+                    if (resetAllBtn && document.getElementById('isSekretariat')?.value === '1') {
+                        resetAllBtn.style.display = 'inline-block';
+                    }
                 }
             } else {
                 statusContainer.className = 'status-info status-incomplete';

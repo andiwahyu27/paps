@@ -63,7 +63,7 @@ class TtdController extends Controller
 
         $this->saveFormDataToDigitalSignature($pengajuan->id, $formData);
 
-        return $this->renderSignaturePage($pengajuan, $formData);
+        return redirect()->route('ttd.show', ['token' => $pengajuan->ttd_token]);
     }
 
     public function saveSignature(Request $request)
