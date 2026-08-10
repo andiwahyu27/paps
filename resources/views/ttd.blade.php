@@ -510,6 +510,15 @@
             gap: 15px;
         }
 
+        .signature-method-tabs { display: flex; gap: 8px; border-bottom: 1px solid #e8c9a8; margin: 16px 0; }
+        .signature-method-tab { border: 0; background: transparent; color: #8a5a2b; padding: 10px 16px; cursor: pointer; font: inherit; }
+        .signature-method-tab.active { color: #b34700; border-bottom: 3px solid #f7941d; font-weight: 600; }
+        .signature-method-panel { display: none; }
+        .signature-method-panel.active { display: block; }
+        .upload-help { color: #8a5a2b; background: #fff0e0; padding: 12px; border-radius: 6px; }
+        .upload-error { color: #b42318; margin-top: 8px; min-height: 20px; }
+        .signature-preview { max-width: 100%; max-height: 180px; margin: 16px auto; display: block; object-fit: contain; }
+
         .signature-form {
             background: #fff6ec;
             padding: 20px;
@@ -898,16 +907,27 @@
             </div>
 
             <!-- Canvas Tanda Tangan -->
-            <div class="modal-header">
-                <h3>Area Tanda Tangan</h3>
-                <p>Gambar tanda tangan Anda di area di bawah ini</p>
+            <div class="signature-method-tabs">
+                <button type="button" class="signature-method-tab active" data-method="draw">Gambar Langsung</button>
+                <button type="button" class="signature-method-tab" data-method="upload">Upload PNG</button>
             </div>
-            <div class="canvas-container">
-                <canvas id="signatureCanvas" class="signature-canvas-modal" width="540" height="200"></canvas>
+            <div id="drawMethodPanel" class="signature-method-panel active">
+                <div class="modal-header">
+                    <h3>Area Tanda Tangan</h3>
+                    <p>Gambar tanda tangan Anda di area di bawah ini</p>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="signatureCanvas" class="signature-canvas-modal" width="540" height="200"></canvas>
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="clearCanvas()">Hapus Gambar</button>
             </div>
-
+            <div id="uploadMethodPanel" class="signature-method-panel">
+                <p class="upload-help">Upload gambar tanda tangan dengan format <strong>.png</strong> dan ukuran maksimal <strong>2 MB</strong>.</p>
+                <input type="file" id="signatureFile" accept=".png,image/png" onchange="previewSignatureFile(event)">
+                <div id="signatureUploadError" class="upload-error"></div>
+                <img id="signaturePreview" class="signature-preview" alt="Preview tanda tangan" style="display:none;">
+            </div>
             <div class="modal-controls">
-                <button class="btn btn-secondary" onclick="clearCanvas()">Hapus</button>
                 <button class="btn btn-primary" onclick="saveSignature()">Simpan</button>
             </div>
         </div>
@@ -930,6 +950,39 @@
         let currentSignatureTarget = null;
         let signatures = {};
         let signatureCount = 0;
+        let signatureInputMethod = 'draw';
+
+        document.querySelectorAll('.signature-method-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                signatureInputMethod = tab.dataset.method;
+                document.querySelectorAll('.signature-method-tab').forEach(item => item.classList.remove('active'));
+                document.querySelectorAll('.signature-method-panel').forEach(panel => panel.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(signatureInputMethod + 'MethodPanel')?.classList.add('active');
+            });
+        });
+
+        function previewSignatureFile(event) {
+            const file = event.target.files[0];
+            const error = document.getElementById('signatureUploadError');
+            const preview = document.getElementById('signaturePreview');
+            error.textContent = '';
+            preview.style.display = 'none';
+            if (!file) return;
+            if (file.type !== 'image/png' || !/\\.png$/i.test(file.name)) {
+                error.textContent = 'Format bukan .png';
+                event.target.value = '';
+                return;
+            }
+            if (file.size > 2 * 1024 * 1024) {
+                error.textContent = 'Ukuran file maksimal 2 MB.';
+                event.target.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = e => { preview.src = e.target.result; preview.style.display = 'block'; };
+            reader.readAsDataURL(file);
+        }
 
         function initCanvas() {
             canvas = document.getElementById('signatureCanvas');
@@ -1060,6 +1113,12 @@
 
             // Reset form
             document.getElementById('signatureForm').reset();
+            document.getElementById('signatureFile').value = '';
+            document.getElementById('signatureUploadError').textContent = '';
+            document.getElementById('signaturePreview').style.display = 'none';
+            document.querySelectorAll('.signature-method-tab').forEach(item => item.classList.toggle('active', item.dataset.method === 'draw'));
+            document.querySelectorAll('.signature-method-panel').forEach(panel => panel.classList.toggle('active', panel.id === 'drawMethodPanel'));
+            signatureInputMethod = 'draw';
             clearCanvas();
         }
 
@@ -1075,16 +1134,32 @@
                 return;
             }
 
-            // Check if canvas has any content
-            const canvasData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const hasContent = canvasData.data.some(channel => channel !== 0);
-
-            if (!hasContent) {
-                alert('Silakan buat tanda tangan terlebih dahulu!');
-                return;
+            let signatureData;
+            if (signatureInputMethod === 'upload') {
+                const file = document.getElementById('signatureFile').files[0];
+                if (!file || file.type !== 'image/png' || !/\.png$/i.test(file.name)) {
+                    document.getElementById('signatureUploadError').textContent = 'Format bukan .png';
+                    return;
+                }
+                if (file.size > 2 * 1024 * 1024) {
+                    document.getElementById('signatureUploadError').textContent = 'Ukuran file maksimal 2 MB.';
+                    return;
+                }
+                signatureData = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            } else {
+                const canvasData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const hasContent = canvasData.data.some(channel => channel !== 0);
+                if (!hasContent) {
+                    alert('Silakan buat tanda tangan terlebih dahulu!');
+                    return;
+                }
+                signatureData = canvas.toDataURL('image/png');
             }
-
-            const signatureData = canvas.toDataURL();
             const currentDateTime = new Date();
             const tglSurat = currentDateTime.toISOString().split('T')[0];
             const waktuSurat = currentDateTime.toTimeString().split(' ')[0];
