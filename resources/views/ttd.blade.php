@@ -734,7 +734,7 @@
             </div>
 
             <div class="controls" id="submitControls" style="display: none; text-align: center;">
-                @if($isSekretariat)
+                @if($isSekretariat && !$baSubmitted)
                     <button class="btn btn-success" id="submitBaBtn" onclick="submitDocument()">SUBMIT BERITA ACARA</button>
                 @endif
                 <button class="btn btn-danger" id="resetBaBtn" onclick="resetBeritaAcara()" style="display:none;">RESET BERITA ACARA</button>
@@ -1083,7 +1083,7 @@
             const resetBaBtn = document.getElementById('resetBaBtn');
 
             if (beritaAcaraStatus === 'submitted') {
-                if (submitBaBtn) submitBaBtn.style.display = 'none';
+                if (submitBaBtn) submitBaBtn.remove();
                 if (resetBaBtn) resetBaBtn.style.display = document.getElementById('isSekretariat')?.value === '1' ? 'inline-block' : 'none';
                 statusElement.textContent = 'Berita Acara telah disubmit. Semua tanda tangan lengkap.';
                 statusContainer.className = 'status-info status-complete';
