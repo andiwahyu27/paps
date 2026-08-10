@@ -511,6 +511,7 @@
         }
 
         .signature-method-tabs { display: flex; gap: 8px; border-bottom: 1px solid #e8c9a8; margin: 16px 0; }
+        .signature-method-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
         .signature-method-tab { border: 0; background: transparent; color: #8a5a2b; padding: 10px 16px; cursor: pointer; font: inherit; }
         .signature-method-tab.active { color: #b34700; border-bottom: 3px solid #f7941d; font-weight: 600; }
         .signature-method-panel { display: none; }
@@ -919,16 +920,20 @@
                 <div class="canvas-container">
                     <canvas id="signatureCanvas" class="signature-canvas-modal" width="540" height="200"></canvas>
                 </div>
-                <button type="button" class="btn btn-secondary" onclick="clearCanvas()">Hapus Gambar</button>
+                <div class="signature-method-actions">
+                    <button type="button" class="btn btn-secondary" onclick="clearCanvas()">Hapus Gambar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSignature()">Simpan</button>
+                </div>
             </div>
             <div id="uploadMethodPanel" class="signature-method-panel">
                 <p class="upload-help">Upload gambar tanda tangan dengan format <strong>.png</strong> dan ukuran maksimal <strong>2 MB</strong>.</p>
                 <input type="file" id="signatureFile" accept=".png,image/png" onchange="previewSignatureFile(event)">
                 <div id="signatureUploadError" class="upload-error"></div>
                 <img id="signaturePreview" class="signature-preview" alt="Preview tanda tangan" style="display:none;">
-            </div>
-            <div class="modal-controls">
-                <button class="btn btn-primary" onclick="saveSignature()">Simpan</button>
+                <div class="signature-method-actions">
+                    <button type="button" class="btn btn-secondary" onclick="clearUploadedSignature()">Hapus Gambar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSignature()">Simpan</button>
+                </div>
             </div>
         </div>
     </div>
@@ -962,6 +967,13 @@
             });
         });
 
+        function clearUploadedSignature() {
+            document.getElementById('signatureFile').value = '';
+            document.getElementById('signatureUploadError').textContent = '';
+            document.getElementById('signaturePreview').removeAttribute('src');
+            document.getElementById('signaturePreview').style.display = 'none';
+        }
+
         function previewSignatureFile(event) {
             const file = event.target.files[0];
             const error = document.getElementById('signatureUploadError');
@@ -969,7 +981,8 @@
             error.textContent = '';
             preview.style.display = 'none';
             if (!file) return;
-            if (file.type !== 'image/png' || !/\\.png$/i.test(file.name)) {
+            const isPng = file.type === 'image/png' || /\\.png$/i.test(file.name);
+            if (!isPng) {
                 error.textContent = 'Format bukan .png';
                 event.target.value = '';
                 return;
@@ -1137,7 +1150,7 @@
             let signatureData;
             if (signatureInputMethod === 'upload') {
                 const file = document.getElementById('signatureFile').files[0];
-                if (!file || file.type !== 'image/png' || !/\.png$/i.test(file.name)) {
+                if (!file || (file.type !== 'image/png' && !/\.png$/i.test(file.name))) {
                     document.getElementById('signatureUploadError').textContent = 'Format bukan .png';
                     return;
                 }
