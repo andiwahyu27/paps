@@ -518,6 +518,11 @@
         .signature-method-panel.active { display: block; }
         .upload-help { color: #8a5a2b; background: #fff0e0; padding: 12px; border-radius: 6px; }
         .upload-error { color: #b42318; margin-top: 8px; min-height: 20px; }
+        .upload-loading { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 16px 0; color: #8a5a2b; font-weight: 600; }
+        .upload-loading-spinner { width: 24px; height: 24px; border: 3px solid #e8c9a8; border-top-color: #f7941d; border-radius: 50%; animation: ettd-spin 0.8s linear infinite; }
+
+        @keyframes ettd-spin { to { transform: rotate(360deg); } }
+
         .signature-preview { max-width: 100%; max-height: 180px; margin: 16px auto; display: block; object-fit: contain; }
 
         .signature-form {
@@ -929,6 +934,10 @@
                 <p class="upload-help">Upload gambar tanda tangan dengan format <strong>.png</strong> dan ukuran maksimal <strong>2 MB</strong>.</p>
                 <input type="file" id="signatureFile" accept=".png,image/png" onchange="previewSignatureFile(event)">
                 <div id="signatureUploadError" class="upload-error"></div>
+                <div id="signatureUploadLoading" class="upload-loading" style="display:none;">
+                    <span class="upload-loading-spinner"></span>
+                    <span>Memuat gambar...</span>
+                </div>
                 <img id="signaturePreview" class="signature-preview" alt="Preview tanda tangan" style="display:none;">
                 <div class="signature-method-actions">
                     <button type="button" class="btn btn-secondary" onclick="clearUploadedSignature()">Hapus Gambar</button>
@@ -970,6 +979,7 @@
         function clearUploadedSignature() {
             document.getElementById('signatureFile').value = '';
             document.getElementById('signatureUploadError').textContent = '';
+            document.getElementById('signatureUploadLoading').style.display = 'none';
             document.getElementById('signaturePreview').removeAttribute('src');
             document.getElementById('signaturePreview').style.display = 'none';
         }
@@ -977,9 +987,11 @@
         function previewSignatureFile(event) {
             const file = event.target.files[0];
             const error = document.getElementById('signatureUploadError');
+            const loading = document.getElementById('signatureUploadLoading');
             const preview = document.getElementById('signaturePreview');
             error.textContent = '';
             preview.style.display = 'none';
+            preview.removeAttribute('src');
             if (!file) return;
             const isPng = file.type === 'image/png' || /\\.png$/i.test(file.name);
             if (!isPng) {
@@ -992,8 +1004,17 @@
                 event.target.value = '';
                 return;
             }
+            loading.style.display = 'flex';
             const reader = new FileReader();
-            reader.onload = e => { preview.src = e.target.result; preview.style.display = 'block'; };
+            reader.onload = e => {
+                loading.style.display = 'none';
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.onerror = () => {
+                loading.style.display = 'none';
+                error.textContent = 'Gagal membaca file.';
+            };
             reader.readAsDataURL(file);
         }
 
@@ -1128,6 +1149,8 @@
             document.getElementById('signatureForm').reset();
             document.getElementById('signatureFile').value = '';
             document.getElementById('signatureUploadError').textContent = '';
+            document.getElementById('signatureUploadLoading').style.display = 'none';
+            document.getElementById('signaturePreview').removeAttribute('src');
             document.getElementById('signaturePreview').style.display = 'none';
             document.querySelectorAll('.signature-method-tab').forEach(item => item.classList.toggle('active', item.dataset.method === 'draw'));
             document.querySelectorAll('.signature-method-panel').forEach(panel => panel.classList.toggle('active', panel.id === 'drawMethodPanel'));
