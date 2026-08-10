@@ -594,7 +594,19 @@
             color: #fff;
         }
 
+        .btn-ettd-negative {
+            background: #9e9e9e;
+            color: #fff;
+            box-shadow: 0 2px 6px rgba(158, 158, 158, 0.35);
+        }
+
+        .btn-ettd-negative:hover {
+            background: #757575;
+            color: #fff;
+        }
+
         .btn-ettd:active { transform: translateY(0); }
+        .btn-ettd-negative:active { transform: translateY(0); }
 
         .signature-preview { max-width: 100%; max-height: 180px; margin: 16px auto; display: block; object-fit: contain; }
 
@@ -1477,7 +1489,7 @@
 
         function confirmResetAllSignatures() {
             return new Promise(resolve => {
-                showEttdModal('Reset Tanda Tangan', '<p class="mb-0">Reset semua tanda tangan?</p><p class="text-muted mt-2 mb-0">Semua tanda tangan yang tersimpan akan dihapus dan harus dibuat ulang.</p>', '<button type="button" class="btn-ettd" id="cancelResetBtn">Tidak</button><button type="button" class="btn-ettd" id="confirmResetBtn">Ya, Reset</button>');
+                showEttdModal('Reset Tanda Tangan', '<p class="mb-0">Reset semua tanda tangan?</p><p class="text-muted mt-2 mb-0">Semua tanda tangan yang tersimpan akan dihapus dan harus dibuat ulang.</p>', '<button type="button" class="btn-ettd btn-ettd-negative" id="cancelResetBtn">Tidak</button><button type="button" class="btn-ettd" id="confirmResetBtn">Ya, Reset</button>');
                 document.getElementById('cancelResetBtn').onclick = () => { closeEttdModal(); resolve(false); };
                 document.getElementById('confirmResetBtn').onclick = () => { closeEttdModal(); resolve(true); };
             });
@@ -1525,7 +1537,7 @@
 
         function confirmResetBeritaAcara() {
             return new Promise(resolve => {
-                showEttdModal('Reset Berita Acara', '<p class="mb-0">Reset Berita Acara?</p><p class="text-muted mt-2 mb-0">Berita acara akan dibuka kembali sehingga tanda tangan dapat diperbaiki. Tanda tangan yang sudah tersimpan tidak akan dihapus.</p>', '<button type="button" class="btn-ettd" id="cancelResetBaBtn">Tidak</button><button type="button" class="btn-ettd" id="confirmResetBaBtn">Ya, Reset</button>');
+                showEttdModal('Reset Berita Acara', '<p class="mb-0">Reset Berita Acara?</p><p class="text-muted mt-2 mb-0">Berita acara akan dibuka kembali sehingga tanda tangan dapat diperbaiki. Tanda tangan yang sudah tersimpan tidak akan dihapus.</p>', '<button type="button" class="btn-ettd btn-ettd-negative" id="cancelResetBaBtn">Tidak</button><button type="button" class="btn-ettd" id="confirmResetBaBtn">Ya, Reset</button>');
                 document.getElementById('cancelResetBaBtn').onclick = () => { closeEttdModal(); resolve(false); };
                 document.getElementById('confirmResetBaBtn').onclick = () => { closeEttdModal(); resolve(true); };
             });
