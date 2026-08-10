@@ -932,7 +932,10 @@
             </div>
             <div id="uploadMethodPanel" class="signature-method-panel">
                 <p class="upload-help">Upload gambar tanda tangan dengan format <strong>.png</strong> dan ukuran maksimal <strong>2 MB</strong>.</p>
-                <input type="file" id="signatureFile" accept=".png,image/png" onchange="previewSignatureFile(event)">
+                <div class="mb-3">
+                    <label for="signatureFile" class="form-label">Pilih file PNG</label>
+                    <input class="form-control form-control-sm" type="file" id="signatureFile" accept=".png,image/png" onchange="previewSignatureFile(event)">
+                </div>
                 <div id="signatureUploadError" class="upload-error"></div>
                 <div id="signatureUploadLoading" class="upload-loading" style="display:none;">
                     <span class="upload-loading-spinner"></span>
