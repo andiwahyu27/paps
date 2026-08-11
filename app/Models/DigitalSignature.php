@@ -31,6 +31,8 @@ class DigitalSignature extends Model
         'tgl_surat',
         'waktu_surat',
         'tgl_waktu_surat',
+        'tempat_surat',
+        'zona_surat',
         'status_ttd'
     ];
 
