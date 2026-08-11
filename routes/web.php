@@ -40,6 +40,10 @@ Route::get('/unregistered', [LoginController::class, 'unregistered'])->name('log
 Route::get('/', function () {
     return redirect()->route('home');
 });
+// Redirect aman untuk akses langsung /pengajuan tanpa sub-route
+Route::get('/pengajuan', function () {
+    return redirect()->route('home');
+})->middleware('auth');
 Route::get('/home', [HomeController::class, 'index'])->name('home');
 Route::get('/panduan', [PanduanController::class, 'index'])->name('panduan');
 Route::get('/pengaturan', [PengaturanController::class, 'index'])->name('pengaturan');
