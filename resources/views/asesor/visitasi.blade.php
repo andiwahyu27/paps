@@ -60,10 +60,12 @@
                                                 class="btn btn-sm rounded-pill btn-primary">
                                                 <i class='bx bxs-notepad'></i> Generate BA
                                             </a>
-                                            <a href="{{ route('ekspor.ba.ttd', $pengajuan->id) }}"
-                                                class="btn btn-sm rounded-pill btn-success">
-                                                <i class='bx bxs-pen'></i> Generate BA Hasil TTD
-                                            </a>
+                                            @if ($pengajuan->ba_submitted_at)
+                                                <a href="{{ route('ekspor.ba.ttd', $pengajuan->id) }}"
+                                                    class="btn btn-sm rounded-pill btn-success">
+                                                    <i class='bx bxs-pen'></i> Generate BA Hasil TTD
+                                                </a>
+                                            @endif
                                             @if ($pengajuan->berita_acara)
                                                 <x-tombol-file :path="$pengajuan->berita_acara" label="Berita Acara" />
                                                 <button type="button" class="btn btn-sm rounded-pill btn-warning"
@@ -80,7 +82,7 @@
                                         <td>Tanda Tangan</br>Online</td>
                                         <td>:</td>
                                         <td>
-                                            @if($hasDigitalSignature)
+                                            @if ($hasDigitalSignature)
                                                 <a href="{{ route('ttd.show', ['token' => $pengajuan->ttd_token]) }}"
                                                     class="btn btn-sm rounded-pill btn-info">
                                                     <i class="bx bx-show"></i> Lihat Tanda Tangan
@@ -407,7 +409,8 @@
                 // Indonesian day names
                 const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
                 const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-                                  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+                ];
 
                 const dayName = dayNames[date.getDay()];
                 const day = date.getDate();
@@ -416,7 +419,8 @@
                 const hours = date.getHours().toString().padStart(2, '0');
                 const minutes = date.getMinutes().toString().padStart(2, '0');
 
-                const formattedDateTime = `${dayName} Tanggal ${day} ${monthName} ${year}, Pukul ${hours}.${minutes} ${timezoneLabels[timezone]}`;
+                const formattedDateTime =
+                    `${dayName} Tanggal ${day} ${monthName} ${year}, Pukul ${hours}.${minutes} ${timezoneLabels[timezone]}`;
                 document.getElementById('signature_datetime').value = formattedDateTime;
 
                 const formattedDate = `${place}, ${day} ${monthName} ${year}`;
@@ -463,7 +467,8 @@
                 return;
             }
 
-            if (!asesor1Name.trim() || !asesor2Name.trim() || !asesor3Name.trim() || !leaderName.trim() || !leaderTitle.trim()) {
+            if (!asesor1Name.trim() || !asesor2Name.trim() || !asesor3Name.trim() || !leaderName.trim() || !
+                leaderTitle.trim()) {
                 alert('Silakan lengkapi semua data asesor dan pimpinan.');
                 e.preventDefault();
                 return;

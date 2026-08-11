@@ -214,7 +214,7 @@
         @endforeach
         <div class="row">
             <div class="col text-end">
-                <a class="btn btn-primary" role="button" href="{{ route('pravisit', $pengajuan->id) }}"><i
+                <a class="btn btn-primary" role="button" href="{{ redirect()->back()->getTargetUrl() }}"><i
                         class="bx bxs-chevron-left"></i>Kembali</a>
             </div>
         </div>
