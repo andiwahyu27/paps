@@ -158,8 +158,8 @@ Route::group(['prefix' => 'pengajuan', 'middleware' => 'is.asesor'], function ()
 // LEMBAGA
 // pengajuan
 Route::group(['prefix' => 'pengajuan', 'middleware' => 'is.lembaga'], function () {
-    Route::get('/{type?}', [PengajuanController::class, 'permohonan'])->name('pengajuan');
-    Route::get('/{type?}/edit', [PengajuanController::class, 'editPermohonan'])->name('edit.pengajuan');
+    Route::get('/{type?}', [PengajuanController::class, 'permohonan'])->where('type', '[12]')->name('pengajuan');
+    Route::get('/{type?}/edit', [PengajuanController::class, 'editPermohonan'])->where('type', '[12]')->name('edit.pengajuan');
     Route::get('/riwayat/{id?}', [PengajuanController::class, 'riwayatPermohonan'])->name('riwayat.pengajuan');
     Route::post('/store', [PengajuanController::class, 'storePermohonan'])->name('store.pengajuan');
     Route::post('/update', [PengajuanController::class, 'updatePermohonan'])->name('update.pengajuan');
@@ -232,3 +232,8 @@ Route::post('/sekrelogin', function () {
     }
     return redirect('/sekrelogin')->with('error', 'Email atau password salah.');
 })->name('sekrelogin');
+
+// Fallback: URL /pengajuan/* yang tidak dikenal diarahkan ke home
+Route::get('/pengajuan/{path}', function () {
+    return redirect()->route('home');
+})->where('path', '.*')->middleware('auth');
