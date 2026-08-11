@@ -1924,17 +1924,17 @@
             doc.setFont(undefined, 'normal');
 
             const content = [
-                'Pada hari ini, Selasa Tanggal 24 Juni 2025, Pukul 14.45 Waktu Indonesia Barat,',
+                '{{ $customDateTime ?? 'Pada hari ini' }},',
                 'telah diselenggarakan visitasi dalam rangka verifikasi data Akreditasi Lembaga',
                 'Penyelenggara Pelatihan di Bidang Sistem Teknologi Berbasis Komputer di',
-                'Balai Pelatihan Kesehatan Cikarang oleh:',
+                '{{ $namaLembaga }} oleh:',
                 '',
-                '1. Nama: Darusman',
-                '   Jabatan: Ketua Tim Asesor',
-                '2. Nama: Utama Andri Arjita',
-                '   Jabatan: Anggota Tim Asesor',
-                '3. Nama: Sari Novianti',
-                '   Jabatan: Anggota Tim Asesor',
+                '1. Nama: {{ $asesorData['asesor1']['name'] ?? 'Asesor 1' }}',
+                '   Jabatan: {{ $asesorData['asesor1']['title'] ?? 'Ketua Tim Asesor' }}',
+                '2. Nama: {{ $asesorData['asesor2']['name'] ?? 'Asesor 2' }}',
+                '   Jabatan: {{ $asesorData['asesor2']['title'] ?? 'Anggota Tim Asesor' }}',
+                '3. Nama: {{ $asesorData['asesor3']['name'] ?? 'Asesor 3' }}',
+                '   Jabatan: {{ $asesorData['asesor3']['title'] ?? 'Anggota Tim Asesor' }}',
                 '',
                 'Berdasarkan hasil visitasi dan verifikasi terhadap bahan/dokumen, Tim Asesor',
                 'memberikan hasil rekomendasi untuk memenuhi persyaratan Akreditasi',
@@ -1960,8 +1960,8 @@
                     doc.addImage(base64Data, 'PNG', 20, yPosition + 5, 60, 30);
                 }
             }
-            doc.text('Darusman', 40, yPosition + 40);
-            doc.text('Jakarta, 24 Juni 2026', 40, yPosition + 50);
+            doc.text('{{ $asesorData['asesor1']['name'] ?? 'Asesor 1' }}', 40, yPosition + 40);
+            doc.text('{{ $signatureDate ?? 'Tempat, 24 Juni ' . date('Y') }}', 40, yPosition + 50);
 
             // Right signature
             doc.text('{{ $namaLembaga }}', 120, yPosition);
@@ -1978,7 +1978,7 @@
             doc.text('Anggota:', 20, yPosition);
             yPosition += 10;
 
-            doc.text('1. Utama Andri Arjita', 20, yPosition);
+            doc.text('1. {{ $asesorData['asesor2']['name'] ?? 'Asesor 2' }}', 20, yPosition);
             if (signatures.asesor2 && signatures.asesor2.data) {
                 const base64Data = await urlToBase64(signatures.asesor2.data);
                 if (base64Data) {
@@ -1987,7 +1987,7 @@
             }
             yPosition += 25;
 
-            doc.text('2. Sari Novianti', 20, yPosition);
+            doc.text('2. {{ $asesorData['asesor3']['name'] ?? 'Asesor 3' }}', 20, yPosition);
             if (signatures.asesor3 && signatures.asesor3.data) {
                 const base64Data = await urlToBase64(signatures.asesor3.data);
                 if (base64Data) {
