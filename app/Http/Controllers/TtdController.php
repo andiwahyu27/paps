@@ -406,7 +406,12 @@ class TtdController extends Controller
             'name' => optional($allSig->get('kepala'))->nama_user ?? optional($pengajuan->profile)->nama_pimpinan,
             'title' => optional($allSig->get('kepala'))->jabatan_user ?? optional($pengajuan->profile)->jabatan_pimpinan,
         ];
-        $signatureDate = $formData['signature_date'] ?? null;
+        $sigFirst = $allSig->first();
+        if ($sigFirst && $sigFirst->tempat_surat && $sigFirst->tgl_surat) {
+            $signatureDate = $sigFirst->tempat_surat . ', ' . Carbon::parse($sigFirst->tgl_surat)->isoFormat('D MMMM Y');
+        } else {
+            $signatureDate = null;
+        }
         $customDateTime = $pending->tgl_waktu_surat ?? DigitalSignature::generateIndonesianDateTime();
         $baSubmitted = (bool) $pengajuan->ba_submitted_at;
         $isSekretariat = auth()->check() && (int) auth()->user()->role === 2;

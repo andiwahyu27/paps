@@ -919,7 +919,7 @@
                         </div>
 
                         <div style="margin-top: 14px; color: #8a5a2b; font-size: 0.9em;">
-                            {{ $signatureDate ?? 'Jakarta, 24 Juni ' . date('Y') }}
+                            {{ $signatureDate ?? 'Tempat, 24 Juni ' . date('Y') }}
                         </div>
                     </div>
 
