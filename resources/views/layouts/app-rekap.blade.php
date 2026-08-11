@@ -81,8 +81,7 @@
                         <!-- Search -->
                         <div class="navbar-nav align-items-center">
                             <div class="nav-item d-flex align-items-center">
-                                <a href="{{ redirect()->back()->getTargetUrl() }}"><i
-                                        class="menu-icon tf-icons bx bx-arrow-back"></i></a>
+                                <a href="{{ route('home') }}"><i class="menu-icon tf-icons bx bx-arrow-back"></i></a>
                                 @if (isset($item->nama_item))
                                     <h5 class="text-primary" style="margin: 0;">Bukti Dukung {{ $item->nama_item }}
                                     </h5>
