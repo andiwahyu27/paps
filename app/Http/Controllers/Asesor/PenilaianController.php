@@ -1670,8 +1670,6 @@ class PenilaianController extends Controller
         $request->validate([
             'id_pengajuan' => 'required|integer',
             'berita_acara' => 'nullable|file|mimes:pdf',
-            'tgl_dibuka' => 'required|date',
-            'tgl_ditutup' => 'required|date|after_or_equal:tgl_dibuka',
         ]);
 
         $idpengajuan = $request->id_pengajuan;
@@ -1688,38 +1686,32 @@ class PenilaianController extends Controller
         ];
         Pengajuan::updateOrCreate(['id' => $idpengajuan], $UpdateData);
 
-        // Update tanggal dibuka dan ditutup di profile lembaga
+        // Set is_lock sesuai periode reupload otomatis (Opsi C):
+        // tgl_surat dari tr_digital_signatures -> start = H+1, end = H+3 hari kerja
         $pengajuan = Pengajuan::find($idpengajuan);
         if ($pengajuan && $pengajuan->id_profile) {
-            $profileData = [
-                'tgl_dibuka' => $request->tgl_dibuka,
-                'tgl_ditutup' => $request->tgl_ditutup,
-            ];
-            
-            // Auto-unlock profile selama periode visitasi
-            $today = now()->format('Y-m-d');
-            $tglDibuka = $request->tgl_dibuka;
-            $tglDitutup = $request->tgl_ditutup;
-            
-            // Set is_lock = 0 jika hari ini berada dalam rentang tgl_dibuka sampai tgl_ditutup
-            if ($today >= $tglDibuka && $today <= $tglDitutup) {
-                $profileData['is_lock'] = 0;
-            } else {
-                // Jika di luar rentang tanggal, profile tetap terkunci
-                $profileData['is_lock'] = 1;
+            $profile = \App\Models\Profile::find($pengajuan->id_profile);
+
+            $signature = \App\Models\DigitalSignature::where('pengajuan_id', $idpengajuan)
+                ->whereNotNull('tgl_surat')
+                ->orderByDesc('tgl_surat')
+                ->first();
+
+            if ($signature) {
+                $tglSurat = \Carbon\Carbon::parse($signature->tgl_surat);
+                $startReupload = $profile->getStartReuploadAttribute(); // H+1 hari kerja
+                $endReupload = $profile->getEndReuploadAttribute();     // H+3 hari kerja
+                $today = \Carbon\Carbon::today();
+
+                $isLock = 1;
+                if ($today->gte($startReupload) && $today->lte($endReupload)) {
+                    $isLock = 0; // dalam rentang → terbuka
+                }
+
+                $profile->forceFill(['is_lock' => $isLock])->saveQuietly();
+
+                session()->flash('success', "Pengisian dibuka kembali mulai {$startReupload->isoFormat('D MMMM Y')} sampai dengan {$endReupload->isoFormat('D MMMM Y')}");
             }
-            
-            \App\Models\Profile::updateOrCreate(
-                ['id' => $pengajuan->id_profile],
-                $profileData
-            );
-            
-            // Format tanggal untuk notifikasi
-            $tglDibukaFormatted = \Carbon\Carbon::parse($request->tgl_dibuka)->format('d/m/Y');
-            $tglDitutupFormatted = \Carbon\Carbon::parse($request->tgl_ditutup)->format('d/m/Y');
-            
-            // Tambahkan notifikasi toast
-            session()->flash('success', "Pengisian dibuka kembali mulai {$tglDibukaFormatted} sampai dengan {$tglDitutupFormatted}");
         }
 
         return redirect()->back();

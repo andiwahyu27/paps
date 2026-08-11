@@ -17,13 +17,14 @@
                     </div>
                     @if($modalId === 'uploadBAModal')
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="tgl_dibuka" class="form-label">Tanggal Pengajuan Dibuka Kembali</label>
-                            <input type="date" class="form-control" id="tgl_dibuka" name="tgl_dibuka" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="tgl_ditutup" class="form-label">Tanggal Pengajuan Ditutup</label>
-                            <input type="date" class="form-control" id="tgl_ditutup" name="tgl_ditutup" required>
+                        <div class="col mb-3">
+                            <div class="alert alert-info mb-0">
+                                <i class="bx bx-info-circle"></i>
+                                Periode pengisian dibuka otomatis:
+                                <strong>{{ optional($pengajuan->profile->start_reupload)->isoFormat('D MMMM Y') ?? '-' }}</strong>
+                                s/d
+                                <strong>{{ optional($pengajuan->profile->end_reupload)->isoFormat('D MMMM Y') ?? '-' }}</strong>
+                            </div>
                         </div>
                     </div>
                     @endif

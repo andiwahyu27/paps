@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Profile extends Model
 {
@@ -54,6 +55,76 @@ class Profile extends Model
     public function pic()
     {
         return $this->hasMany(User::class, 'id_profile');
+    }
+
+    public function pengajuans()
+    {
+        return $this->hasMany(Pengajuan::class, 'id_profile');
+    }
+
+    /**
+     * is_lock dinamis (Opsi C - tanpa kolom tgl_dibuka/tgl_ditutup):
+     * dihitung ulang setiap kali dibaca berdasarkan tgl_surat dari
+     * tr_digital_signatures (hasil generate tanda tangan).
+     *
+     * start_reupload = H+1 hari kerja, end_reupload = H+3 hari kerja.
+     */
+    public function getIsLockAttribute($value)
+    {
+        $today = Carbon::today();
+        $startReupload = $this->getStartReuploadAttribute();
+        $endReupload = $this->getEndReuploadAttribute();
+
+        if (!$startReupload || !$endReupload) {
+            return $value;
+        }
+
+        if ($today->gt($endReupload)) {
+            return 1; // lewat end_reupload → terkunci otomatis
+        }
+        if ($today->gte($startReupload)) {
+            return 0; // dalam rentang start..end → terbuka
+        }
+
+        return $value; // sebelum start_reupload → ikuti nilai DB
+    }
+
+    private function addBusinessDays(Carbon $date, int $days): Carbon
+    {
+        $result = $date->copy();
+        $added = 0;
+        while ($added < $days) {
+            $result->addDay();
+            if (!$result->isWeekend()) {
+                $added++;
+            }
+        }
+        return $result;
+    }
+
+    private function latestSignatureDate()
+    {
+        return \App\Models\DigitalSignature::whereIn('pengajuan_id', function ($q) {
+            $q->select('id')->from('tb_pengajuans')->where('id_profile', $this->id);
+        })->whereNotNull('tgl_surat')->orderByDesc('tgl_surat')->value('tgl_surat');
+    }
+
+    public function getStartReuploadAttribute()
+    {
+        $tglSurat = $this->latestSignatureDate();
+        if (!$tglSurat) {
+            return null;
+        }
+        return $this->addBusinessDays(Carbon::parse($tglSurat), 1);
+    }
+
+    public function getEndReuploadAttribute()
+    {
+        $tglSurat = $this->latestSignatureDate();
+        if (!$tglSurat) {
+            return null;
+        }
+        return $this->addBusinessDays(Carbon::parse($tglSurat), 3);
     }
 
     public function provinsiWilayah()
