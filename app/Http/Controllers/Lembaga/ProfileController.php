@@ -535,7 +535,7 @@ class ProfileController extends Controller
         $userRole = auth()->user()->role;
         if ($userRole === 4) {
             return view('lembaga.profile.tenaga-dokumen', $viewData);
-        } elseif ($userRole === 3) {
+        } elseif ($userRole === 3 || $userRole === 2) {
             return view('asesor.tenaga-dokumen-asesor', $viewData);
         } else {
             abort(403, 'Unauthorized');
