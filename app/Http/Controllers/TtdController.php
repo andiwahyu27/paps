@@ -125,9 +125,11 @@ class TtdController extends Controller
                     'nama_user' => $signer['name'],
                     'jabatan_user' => $signer['title'],
                     'ttd' => $signaturePath,
-                    'tgl_surat' => now()->format('Y-m-d'),
-                    'waktu_surat' => now()->format('H:i:s'),
-                    'tgl_waktu_surat' => DigitalSignature::generateIndonesianDateTime(),
+                    // Pertahankan tanggal/waktu dari modal generate (createPost),
+                    // jangan timpa dengan now() — hanya isi jika belum ada.
+                    'tgl_surat' => $existing->tgl_surat ?? now()->format('Y-m-d'),
+                    'waktu_surat' => $existing->waktu_surat ?? now()->format('H:i:s'),
+                    'tgl_waktu_surat' => $existing->tgl_waktu_surat ?? DigitalSignature::generateIndonesianDateTime(),
                     'status_ttd' => 'signed',
                 ]
             );
