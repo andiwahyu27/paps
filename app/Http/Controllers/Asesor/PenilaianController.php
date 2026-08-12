@@ -1389,9 +1389,11 @@ class PenilaianController extends Controller
         $added = 0;
         while ($added < $days) {
             $result->addDay();
-            if (!$result->isWeekend()) {
-                $added++;
+            // Skip Sabtu/Minggu dan hari libur nasional/cuti bersama (konsisten dengan Profile::LIBUR_NASIONAL_2026)
+            if ($result->isWeekend() || in_array($result->format('Y-m-d'), \App\Models\Profile::LIBUR_NASIONAL_2026)) {
+                continue;
             }
+            $added++;
         }
         return $result;
     }

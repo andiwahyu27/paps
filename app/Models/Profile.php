@@ -10,6 +10,38 @@ class Profile extends Model
 {
     use HasFactory;
 
+    /**
+     * Hari libur nasional + cuti bersama Indonesia (SKB 3 Menteri 2026).
+     * Format: 'Y-m-d'. Tambahkan tanggal libur tahun berikutnya di sini.
+     */
+    public const LIBUR_NASIONAL_2026 = [
+        '2026-01-01', // Tahun Baru Masehi
+        '2026-01-16', // Isra Mikraj
+        '2026-02-16', // Cuti Bersama Imlek
+        '2026-02-17', // Tahun Baru Imlek
+        '2026-03-18', // Cuti Bersama Nyepi
+        '2026-03-19', // Hari Suci Nyepi
+        '2026-03-20', // Cuti Bersama Idul Fitri
+        '2026-03-21', // Idul Fitri
+        '2026-03-22', // Idul Fitri
+        '2026-03-23', // Cuti Bersama Idul Fitri
+        '2026-03-24', // Cuti Bersama Idul Fitri
+        '2026-04-03', // Wafat Yesus Kristus
+        '2026-04-05', // Paskah
+        '2026-05-01', // Hari Buruh
+        '2026-05-14', // Kenaikan Yesus Kristus
+        '2026-05-15', // Cuti Bersama Kenaikan
+        '2026-05-27', // Idul Adha
+        '2026-05-28', // Cuti Bersama Idul Adha
+        '2026-05-31', // Waisak
+        '2026-06-01', // Hari Lahir Pancasila
+        '2026-06-16', // Tahun Baru Islam
+        '2026-08-17', // Hari Kemerdekaan RI
+        '2026-08-25', // Maulid Nabi Muhammad SAW
+        '2026-12-24', // Cuti Bersama Natal
+        '2026-12-25', // Hari Raya Natal
+    ];
+
     protected $table = "tb_profile_lembagas";
     protected $guarded = ['id', 'created_at', 'updated_at'];
 
@@ -95,9 +127,11 @@ class Profile extends Model
         $added = 0;
         while ($added < $days) {
             $result->addDay();
-            if (!$result->isWeekend()) {
-                $added++;
+            // Skip Sabtu/Minggu dan hari libur nasional/cuti bersama
+            if ($result->isWeekend() || in_array($result->format('Y-m-d'), self::LIBUR_NASIONAL_2026)) {
+                continue;
             }
+            $added++;
         }
         return $result;
     }
