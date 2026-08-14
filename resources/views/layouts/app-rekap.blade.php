@@ -11,7 +11,7 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>{{ config('app.name') ?? 'Laravel' }}</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
@@ -173,7 +173,8 @@
     <script>
         $(".btn-panduan").click(function() {
             var iditem = $(this).attr("data-id-item");
-            var urlimg = "{{ asset('sneat/assets/img/illustrations/building.png') }}".replace('building.png', iditem + '.jpg');
+            var urlimg = "{{ asset('sneat/assets/img/illustrations/building.png') }}".replace('building.png',
+                iditem + '.jpg');
             $('#img-panduan').attr("src", urlimg);
         });
     </script>
