@@ -24,37 +24,37 @@ class Tenaga extends Model
 
     public static $createRules = [
         'nama' => 'required|max:255|min:3',
-        'nik' => 'required|digits:16',
+        'nik' => 'nullable',
         'nip' => 'required|min:5',
         'tempat_lahir' => 'required|min:3',
         'tanggal_lahir' => 'required|date',
         'id_pangkat' => 'required',
         'jabatan' => 'required|min:3',
         'alamat_kantor' => 'required',
-        'telp_kantor' => 'required',
-        'alamat_rumah' => 'required|min:3',
+        'telp_kantor' => 'nullable',
+        'alamat_rumah' => 'nullable',
         'telp_rumah' => 'nullable',
         'hp' => 'required|digits_between:9,14',
-        'email' => 'required',
-        'npwp' => 'required|digits:16',
+        'email' => 'nullable',
+        'npwp' => 'nullable',
         'jenis_tenaga' => 'required'
     ];
 
     public static $updateRules = [
         'nama' => 'required|max:255|min:3',
-        'nik' => 'required|digits:16',
+        'nik' => 'nullable',
         'nip' => 'required|min:5',
         'tempat_lahir' => 'required|min:3',
         'tanggal_lahir' => 'required|date',
         'id_pangkat' => 'required',
         'jabatan' => 'required|min:3',
         'alamat_kantor' => 'required',
-        'telp_kantor' => 'required',
-        'alamat_rumah' => 'required|min:3',
+        'telp_kantor' => 'nullable',
+        'alamat_rumah' => 'nullable',
         'telp_rumah' => 'nullable',
         'hp' => 'required|digits_between:9,14',
-        'email' => 'required',
-        'npwp' => 'required|digits:16'
+        'email' => 'nullable',
+        'npwp' => 'nullable'
     ];
 
     public function r_jabatans()
