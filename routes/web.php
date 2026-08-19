@@ -122,6 +122,7 @@ Route::group(['prefix' => 'pengajuan', 'middleware' => 'is.asesor.or.sekretariat
     Route::get('/paskavisit/view/{id}', [PenilaianController::class, 'paskavisitView'])->name('view.paskavisit');
     Route::get('/final/{id}', [PenilaianController::class, 'final'])->name('final');
     Route::get('/final/view/{id}', [PenilaianController::class, 'finalView'])->name('view.final');
+    Route::post('/final/edit/{id}', [PenilaianController::class, 'editFinal'])->name('edit.final');
     Route::get('/identitas-lembaga/{step?}', [PenilaianController::class, 'identitasLembaga'])->name('identitas.lembaga');
 
     Route::group(['prefix' => 'nilai'], function () {

@@ -1026,6 +1026,13 @@ class PenilaianController extends Controller
         ]));
     }
 
+    public function editFinal($id)
+    {
+        Pengajuan::where('id', $id)->update(['final' => 0]);
+
+        return redirect()->route('final', $id);
+    }
+
     public function finalView($id)
     {
         $result = $this->calculateFinalData($id, true);
