@@ -613,6 +613,21 @@ class PenilaianController extends Controller
         ]));
     }
 
+    public function editPravisit($id)
+    {
+        $asesor = Pengajuan::getasesor($id);
+
+        if (!$asesor) {
+            abort(403);
+        }
+
+        Pengajuan::where('id', $id)->update([
+            "pra_visit_asesor{$asesor}" => 0,
+        ]);
+
+        return redirect()->route('pravisit', $id);
+    }
+
     // Penilaian Pra Visitasi 2
     private function calculatePravisit2Data($id, $checkValidation = false)
     {
@@ -734,6 +749,15 @@ class PenilaianController extends Controller
             'predikat' => $predikat,
             'isHistory' => true,
         ]));
+    }
+
+    public function editPravisit2($id)
+    {
+        Pengajuan::where('id', $id)->update([
+            'pra_visit2_asesor' => 0,
+        ]);
+
+        return redirect()->route('pravisit2', $id);
     }
 
     // Penilaian Visitasi
@@ -885,6 +909,16 @@ class PenilaianController extends Controller
             'predikat_paskavisit' => $predikat_paskavisit,
             'isHistory' => true,
         ]));
+    }
+
+    public function editPaskavisit($id)
+    {
+        Pengajuan::where('id', $id)->update([
+            'paska_visit' => 0,
+            'final' => 0,
+        ]);
+
+        return redirect()->route('paskavisit', $id);
     }
 
     // Penilaian Final

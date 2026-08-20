@@ -13,9 +13,12 @@
                     @endphp
                     @if($role == 3 && $isHistory)
                         <div class="card-header d-flex justify-content-end">
-                            <a href="{{route('pravisit', $pengajuan->id)}}" target="_blank" class="btn btn-warning btn-sm rounded-pill">
-                                <i class="bx bx-edit"></i> Edit Penilaian
-                            </a>
+                            <form action="{{ route('edit.pravisit', $pengajuan->id) }}" method="POST" target="_blank">
+                                @csrf
+                                <button type="submit" class="btn btn-warning btn-sm rounded-pill">
+                                    <i class="bx bx-edit"></i> Edit Penilaian
+                                </button>
+                            </form>
                         </div>
                     @endif
                     <div class="d-flex align-items-end row">

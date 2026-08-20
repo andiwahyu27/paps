@@ -110,6 +110,7 @@ Route::group(['prefix' => 'pengajuan', 'middleware' => 'is.asesor.or.sekretariat
     Route::post('/bukti-dukung/tenaga-item', [ProfileController::class, 'getModal'])->name('bd.tenaga.modal');
     Route::get('/pravisit2/{id}', [PenilaianController::class, 'pravisit2'])->name('pravisit2');
     Route::get('/pravisit2/view/{id}', [PenilaianController::class, 'pravisitView2'])->name('view.pravisit2');
+    Route::post('/pravisit2/edit/{id}', [PenilaianController::class, 'editPravisit2'])->name('edit.pravisit2');
     Route::get('/pravisit2/ekspor-ba/{id}', [PenilaianController::class, 'eksporBA'])->name('ekspor.ba');
     Route::get('/pravisit2/ekspor-ba-ttd/{id}', [PenilaianController::class, 'eksporBAHasilTtd'])->name('ekspor.ba.ttd');
     Route::get('/visitasi/ekspor-rekomendasi/{id}', [PenilaianController::class, 'eksporRekomendasi'])->name('ekspor.rekomendasi');
@@ -120,6 +121,7 @@ Route::group(['prefix' => 'pengajuan', 'middleware' => 'is.asesor.or.sekretariat
     Route::post('/store-sertifikat', [PenilaianController::class, 'storeSertifikatAkreditasi'])->name('upload.sertifikat');
     Route::get('/paskavisit/{id}', [PenilaianController::class, 'paskavisit'])->name('paskavisit');
     Route::get('/paskavisit/view/{id}', [PenilaianController::class, 'paskavisitView'])->name('view.paskavisit');
+    Route::post('/paskavisit/edit/{id}', [PenilaianController::class, 'editPaskavisit'])->name('edit.paskavisit');
     Route::get('/final/{id}', [PenilaianController::class, 'final'])->name('final');
     Route::get('/final/view/{id}', [PenilaianController::class, 'finalView'])->name('view.final');
     Route::post('/final/edit/{id}', [PenilaianController::class, 'editFinal'])->name('edit.final');
@@ -142,6 +144,7 @@ Route::post('/pengajuan/ekspor-penilaian', [PenilaianController::class, 'eksporP
 Route::group(['prefix' => 'pengajuan', 'middleware' => 'is.asesor'], function () {
     Route::get('/pravisit/{id}', [PenilaianController::class, 'pravisit'])->name('pravisit');
     Route::get('/pravisit/view/{id}', [PenilaianController::class, 'pravisitView'])->name('view.pravisit');
+    Route::post('/pravisit/edit/{id}', [PenilaianController::class, 'editPravisit'])->name('edit.pravisit');
     // asesor nilai
     Route::group(['prefix' => 'nilai'], function () {
         Route::post('/pra/item', [PenilaianController::class, 'nilaiItemPra'])->name('nilai.pra.item');
