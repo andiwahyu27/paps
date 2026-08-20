@@ -10,7 +10,7 @@
                         // $role : 2 == sekretariat
                         // $role : 3 == asesor
                     @endphp
-                    @if($role == 3 && $isHistory)
+                    @if ($role == 3 && $isHistory)
                         <div class="card-header d-flex justify-content-end" style="padding-bottom: 0">
                             <form action="{{ route('edit.paskavisit', $pengajuan->id) }}" method="POST" target="_blank">
                                 @csrf
@@ -66,28 +66,6 @@
                                             <x-tombol-file :path="$pengajuan->surat_permohonan" label="Surat Permohonan" />
                                             <x-tombol-file :path="$pengajuan->surat_akreditasi_lembaga" label="Akreditasi LAN" />
                                             <x-tombol-file :path="$pengajuan->surat_tanggapan_permohonan" label="Surat Tanggapan Permohonan" />
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Rekomendasi</br>Hasil Akreditasi</td>
-                                        <td>:</td>
-                                        <td>
-                                            <a href="{{ route('ekspor.rekomendasi', $pengajuan->id) }}"
-                                                class="btn btn-sm rounded-pill btn-primary">
-                                                <i class='bx bxs-notepad'></i> Generate Template
-                                            </a>
-                                            @if ($pengajuan->rekomendasi_visitasi)
-                                                <x-tombol-file :path="$pengajuan->rekomendasi_visitasi" label="Rekomendasi Hasil Akreditasi" />
-                                                <button type="button" class="btn btn-sm rounded-pill btn-warning"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#uploadRekomendasiAkreditasiModal"><i
-                                                        class="bx bxs-cloud-upload"></i> Update Rekomendasi</button>
-                                            @else
-                                                <button type="button" class="btn btn-sm rounded-pill btn-warning"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#uploadRekomendasiAkreditasiModal"><i
-                                                        class="bx bxs-cloud-upload"></i> Update Rekomendasi</button>
-                                            @endif
                                         </td>
                                     </tr>
                                     <tr>
@@ -258,7 +236,7 @@
             </div>
         </div>
 
-        @if ($pengajuan->ispaskavisit()==0)
+        @if ($pengajuan->ispaskavisit() == 0)
             <div class="row">
                 <div class="col-12">
                     <button class="btn btn-primary float-sm-right" data-bs-toggle="modal"

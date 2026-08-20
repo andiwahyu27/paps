@@ -1473,15 +1473,15 @@ class PenilaianController extends Controller
         } else {
             $jenis_pengajuan = 'Statistik';
         }
-        $nilai_pravisit2 = $pengajuan->nilai_pravisit2;
-        $predikat_pravisit2 = $pengajuan->predikat_pravisit2;
+        $nilai_final = $pengajuan->nilai_final;
+        $predikat_final = $pengajuan->predikat_final;
 
         $templateProcessor = new TemplateProcessor('template_hasil_visitasi.docx');
         $templateProcessor->setValue('tahun_pengajuan', $tahun_pengajuan);
         $templateProcessor->setValue('nama_lemdik', $nama_lemdik);
         $templateProcessor->setValue('jenis_pengajuan', $jenis_pengajuan);
-        $templateProcessor->setValue('nilai_pravisit2', $nilai_pravisit2);
-        $templateProcessor->setValue('predikat_pravisit2', $predikat_pravisit2);
+        $templateProcessor->setValue('nilai_final', $nilai_final);
+        $templateProcessor->setValue('predikat_final', $predikat_final);
 
         $fileName = 'Rekomendasi Hasil Visitasi '.$nama_lemdik.'.docx';
         $tempFile = tempnam(sys_get_temp_dir(), 'word');
