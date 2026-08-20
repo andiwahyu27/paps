@@ -72,6 +72,74 @@ Placeholder yang teridentifikasi:
 | `${ttd_sekretaris_majelis}` | File tanda tangan sidang | Gambar tanda tangan Sekretaris |
 | `${ttd_anggota_majelis}` | File tanda tangan sidang | Gambar tanda tangan Anggota |
 
+### Contoh Dummy Pengisian Metadata
+
+Contoh berikut hanya untuk memahami bentuk data yang akan diisi. Nama, token, dan path tanda tangan di bawah ini bukan data production.
+
+#### Contoh data metadata sidang
+
+```json
+{
+  "pengajuan_id": 12,
+  "nama_lemdik": "Pusat Pendidikan dan Pelatihan Statistik",
+  "hari_tanggal_surat": "Kamis, 20 Agustus 2026",
+  "waktu_surat": "09.00",
+  "zona_surat": "Waktu Indonesia Barat",
+  "jenis_pengajuan": "Statistik",
+  "tempat_surat": "Jakarta",
+  "tanggal": "20 Agustus 2026",
+  "ttd_sidang_token": "a1b2c3d4e5f60123456789abcdef0123456789abcd"
+}
+```
+
+#### Contoh data tiga aktor
+
+```json
+[
+  {
+    "jenis_user": "ketua_majelis",
+    "nama_user": "Dr. Budi Santoso, M.Stat.",
+    "jabatan_user": "Ketua Majelis Akreditasi",
+    "ttd": "uploads/ttd-sidang/12/ketua_majelis.png",
+    "status_ttd": "signed"
+  },
+  {
+    "jenis_user": "sekretaris_majelis",
+    "nama_user": "Siti Rahmawati, S.ST., M.Si.",
+    "jabatan_user": "Sekretaris Majelis Akreditasi",
+    "ttd": "uploads/ttd-sidang/12/sekretaris_majelis.png",
+    "status_ttd": "signed"
+  },
+  {
+    "jenis_user": "anggota_majelis",
+    "nama_user": "Andi Pratama, S.E., M.M.",
+    "jabatan_user": "Anggota Majelis Akreditasi",
+    "ttd": "uploads/ttd-sidang/12/anggota_majelis.png",
+    "status_ttd": "signed"
+  }
+]
+```
+
+#### Contoh hasil mapping ke template DOCX
+
+```text
+${nama_lemdik}               = Pusat Pendidikan dan Pelatihan Statistik
+${hari_tanggal_surat}        = Kamis, 20 Agustus 2026
+${waktu_surat}               = 09.00
+${zona_surat}                = Waktu Indonesia Barat
+${jenis_pengajuan}           = Statistik
+${ketua_majelis}             = Dr. Budi Santoso, M.Stat.
+${sekretaris_majelis}        = Siti Rahmawati, S.ST., M.Si.
+${anggota_majelis}           = Andi Pratama, S.E., M.M.
+${tempat_surat}              = Jakarta
+${tanggal}                   = 20 Agustus 2026
+${ttd_ketua_majelis}         = uploads/ttd-sidang/12/ketua_majelis.png
+${ttd_sekretaris_majelis}    = uploads/ttd-sidang/12/sekretaris_majelis.png
+${ttd_anggota_majelis}       = uploads/ttd-sidang/12/anggota_majelis.png
+```
+
+Pada hasil akhir DOCX, tiga nilai `ttd_*` tidak ditulis sebagai teks path. Path tersebut digunakan oleh `TemplateProcessor` untuk menyisipkan gambar tanda tangan pada lokasi placeholder masing-masing.
+
 Template memuat susunan:
 
 ```text
