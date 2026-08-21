@@ -59,7 +59,7 @@ Placeholder yang teridentifikasi:
 | Placeholder | Sumber data | Keterangan |
 |---|---|---|
 | `${nama_lemdik}` | Profile lembaga | Nama lembaga penyelenggara |
-| `${hari_tanggal_surat}` | Form metadata sidang | Hari dan tanggal surat |
+| `${hari_tanggal_surat}` | Form metadata sidang | Hari dan tanggal surat dalam format terbilang lengkap |
 | `${waktu_surat}` | Form metadata sidang | Waktu sidang |
 | `${zona_surat}` | Form metadata sidang | Zona waktu |
 | `${jenis_pengajuan}` | Pengajuan | Jenis program akreditasi |
@@ -82,7 +82,7 @@ Contoh berikut hanya untuk memahami bentuk data yang akan diisi. Nama, token, da
 {
   "pengajuan_id": 12,
   "nama_lemdik": "Pusat Pendidikan dan Pelatihan Statistik",
-  "hari_tanggal_surat": "Kamis, 20 Agustus 2026",
+  "hari_tanggal_surat": "Hari Kamis Tanggal Dua Puluh Bulan Agustus Tahun Dua Ribu Dua Puluh Enam",
   "waktu_surat": "09.00",
   "zona_surat": "Waktu Indonesia Barat",
   "jenis_pengajuan": "Statistik",
@@ -124,7 +124,7 @@ Contoh berikut hanya untuk memahami bentuk data yang akan diisi. Nama, token, da
 
 ```text
 ${nama_lemdik}               = Pusat Pendidikan dan Pelatihan Statistik
-${hari_tanggal_surat}        = Kamis, 20 Agustus 2026
+${hari_tanggal_surat}        = Hari Kamis Tanggal Dua Puluh Bulan Agustus Tahun Dua Ribu Dua Puluh Enam
 ${waktu_surat}               = 09.00
 ${zona_surat}                = Waktu Indonesia Barat
 ${jenis_pengajuan}           = Statistik
