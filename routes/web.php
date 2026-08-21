@@ -10,6 +10,7 @@ use App\Http\Controllers\PanduanController;
 use App\Http\Controllers\PengaturanController;
 use App\Http\Controllers\SekretariatController;
 use App\Http\Controllers\TtdController;
+use App\Http\Controllers\TtdSidangController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -80,6 +81,28 @@ Route::get('/tandatangan', function () {
     return view('ttd');
 });
 
+// e-TTD Berita Acara Sidang
+Route::get('/ttd-sidang/{token}', [TtdSidangController::class, 'show'])
+    ->where('token', '[a-f0-9]{40,64}')
+    ->name('ttd.sidang.show');
+Route::post('/ttd-sidang', [TtdSidangController::class, 'createPost'])
+    ->middleware('is.asesor.or.sekretariat')->name('ttd.sidang.create.post');
+Route::post('/ettd-sidang/save-signature', [TtdSidangController::class, 'saveSignature'])
+    ->middleware('throttle:20,1')->name('ttd.sidang.save');
+Route::get('/api/ttd-sidang/{token}/signatures', [TtdSidangController::class, 'getSignatures'])
+    ->where('token', '[a-f0-9]{40,64}')->name('ttd.sidang.signatures');
+Route::get('/api/ttd-sidang/{token}/signatures/{signerType}/image', [TtdSidangController::class, 'signatureImage'])
+    ->where(['token' => '[a-f0-9]{40,64}', 'signerType' => 'ketua_majelis|sekretaris_majelis|anggota_majelis'])
+    ->name('ttd.sidang.signature.image');
+Route::post('/ettd-sidang/submit-ba', [TtdSidangController::class, 'submitBeritaAcara'])
+    ->middleware(['auth', 'is.sekretariat'])->name('ttd.sidang.submit.ba');
+Route::post('/ettd-sidang/reset-signature', [TtdSidangController::class, 'resetSignature'])
+    ->middleware(['auth', 'is.sekretariat'])->name('ttd.sidang.reset');
+Route::post('/ettd-sidang/reset-all-signatures', [TtdSidangController::class, 'resetAllSignatures'])
+    ->middleware(['auth', 'is.sekretariat'])->name('ttd.sidang.reset.all');
+Route::post('/ettd-sidang/reset-ba', [TtdSidangController::class, 'resetBeritaAcara'])
+    ->middleware(['auth', 'is.sekretariat'])->name('ttd.sidang.reset.ba');
+
 // sekretariat
 Route::group(['middleware' => 'is.sekretariat'], function () {
     Route::get('/pengguna/{role?}', [SekretariatController::class, 'pengguna'])->name('pengguna');
@@ -125,6 +148,8 @@ Route::group(['prefix' => 'pengajuan', 'middleware' => 'is.asesor.or.sekretariat
     Route::get('/final/{id}', [PenilaianController::class, 'final'])->name('final');
     Route::get('/final/view/{id}', [PenilaianController::class, 'finalView'])->name('view.final');
     Route::post('/final/edit/{id}', [PenilaianController::class, 'editFinal'])->name('edit.final');
+    Route::get('/ekspor-ba-sidang/{id}', [TtdSidangController::class, 'eksporBaSidang'])->name('ekspor.ba.sidang');
+    Route::get('/ekspor-ba-sidang-ttd/{id}', [TtdSidangController::class, 'eksporBaSidangTtd'])->name('ekspor.ba.sidang.ttd');
     Route::get('/identitas-lembaga/{step?}', [PenilaianController::class, 'identitasLembaga'])->name('identitas.lembaga');
 
     Route::group(['prefix' => 'nilai'], function () {

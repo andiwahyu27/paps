@@ -65,6 +65,34 @@
                                     </td>
                                 </tr>
                                 <tr>
+                                    <td>Berita Acara</br>Sidang</td>
+                                    <td>:</td>
+                                    <td>
+                                        <a href="{{ route('ekspor.ba.sidang', $pengajuan->id) }}" class="btn btn-sm rounded-pill btn-primary">
+                                            <i class="bx bxs-notepad"></i> Generate BA Sidang
+                                        </a>
+                                        @if($sidangSubmitted)
+                                            <a href="{{ route('ekspor.ba.sidang.ttd', $pengajuan->id) }}" class="btn btn-sm rounded-pill btn-success">
+                                                <i class="bx bxs-pen"></i> Generate BA Sidang Hasil TTD
+                                            </a>
+                                        @endif
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Tanda Tangan</br>BA Sidang</td>
+                                    <td>:</td>
+                                    <td>
+                                        @if($pengajuan->ttd_sidang_token)
+                                            <a href="{{ route('ttd.sidang.show', ['token' => $pengajuan->ttd_sidang_token]) }}" class="btn btn-sm rounded-pill btn-info">
+                                                <i class="bx bx-show"></i> Lihat TTD Sidang
+                                            </a>
+                                        @endif
+                                        <button type="button" class="btn btn-sm rounded-pill btn-primary" data-bs-toggle="modal" data-bs-target="#confirmSidangSignatureModal">
+                                            <i class="bx bx-pen"></i> {{ $pengajuan->ttd_sidang_token ? 'Generate Ulang TTD Sidang' : 'Generate TTD Sidang' }}
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
                                     <td>Rekomendasi</br>Hasil Akreditasi</td>
                                     <td>:</td>
                                     <td>
@@ -406,6 +434,68 @@
 
 <!-- Modal Lihat Pelatihan -->
 <x-modal-lihatPelatihan :pengajuans="collect([$pengajuan])" />
+
+<!-- Modal Metadata Tanda Tangan BA Sidang -->
+<div class="modal fade" id="confirmSidangSignatureModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Konfirmasi Data Tanda Tangan Berita Acara Sidang</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('ttd.sidang.create.post') }}" method="POST">
+                @csrf
+                <input type="hidden" name="pengajuan_id" value="{{ $pengajuan->id }}">
+                <div class="modal-body">
+                    <div class="alert alert-info">Isi nama dan jabatan tiga aktor Majelis sebelum masuk ke halaman tanda tangan.</div>
+                    @foreach([
+                        ['ketua_majelis', 'Ketua Majelis', 'Ketua Majelis Akreditasi'],
+                        ['sekretaris_majelis', 'Sekretaris Majelis', 'Sekretaris Majelis Akreditasi'],
+                        ['anggota_majelis', 'Anggota Majelis', 'Anggota Majelis Akreditasi'],
+                    ] as [$key, $label, $defaultTitle])
+                        @php $sidangActor = $sidangSignatures->get($key); @endphp
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label"><strong>{{ $label }}</strong></label>
+                                <input type="text" class="form-control" name="{{ $key }}_name" value="{{ $sidangActor->nama_user ?? '' }}" placeholder="Masukkan nama {{ strtolower($label) }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label"><strong>Jabatan</strong></label>
+                                <input type="text" class="form-control" name="{{ $key }}_title" value="{{ $sidangActor->jabatan_user ?? $defaultTitle }}" required>
+                            </div>
+                        </div>
+                    @endforeach
+                    @php $sidangMeta = $sidangSignatures->first(); @endphp
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Tempat Surat *</strong></label>
+                            <input type="text" class="form-control" name="signature_place" value="{{ $sidangMeta->tempat_surat ?? '' }}" maxlength="100" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Tanggal Surat *</strong></label>
+                            <input type="date" class="form-control" id="sidang_letter_date" name="letter_date" value="{{ $sidangMeta?->tgl_surat?->format('Y-m-d') ?? now()->format('Y-m-d') }}" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Zona Waktu *</strong></label>
+                            <select class="form-select" id="sidang_timezone" name="timezone" required>
+                                <option value="Asia/Jakarta">WIB (UTC+7)</option><option value="Asia/Makassar">WITA (UTC+8)</option><option value="Asia/Jayapura">WIT (UTC+9)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Waktu Surat *</strong></label>
+                            <input type="time" class="form-control" id="sidang_signature_time" name="signature_time" value="{{ $sidangMeta?->waktu_surat ? substr((string) $sidangMeta->waktu_surat, 0, 5) : now()->format('H:i') }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3"><label class="form-label"><strong>Hari dan Tanggal Surat Terbilang</strong></label><input type="text" class="form-control" id="sidang_hari_tanggal_surat_preview" readonly><input type="hidden" id="sidang_hari_tanggal_surat" name="hari_tanggal_surat"></div>
+                    <div class="mb-3"><label class="form-label"><strong>Tanggal dan Waktu Tanda Tangan</strong></label><input type="text" class="form-control" id="sidang_signature_datetime" readonly></div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary">Lanjutkan ke Tanda Tangan</button></div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -442,6 +532,37 @@
                 }
             });
         });
+    </script>
+    <script>
+        const sidangWords = ['Nol','Satu','Dua','Tiga','Empat','Lima','Enam','Tujuh','Delapan','Sembilan','Sepuluh','Sebelas'];
+        function sidangTerbilang(n) {
+            n = Number(n);
+            if (n < 12) return sidangWords[n];
+            if (n < 20) return sidangTerbilang(n - 10) + ' Belas';
+            if (n < 100) return sidangTerbilang(Math.floor(n / 10)) + ' Puluh' + (n % 10 ? ' ' + sidangTerbilang(n % 10) : '');
+            if (n < 200) return 'Seratus' + (n % 100 ? ' ' + sidangTerbilang(n % 100) : '');
+            if (n < 1000) return sidangTerbilang(Math.floor(n / 100)) + ' Ratus' + (n % 100 ? ' ' + sidangTerbilang(n % 100) : '');
+            if (n < 2000) return 'Seribu' + (n % 1000 ? ' ' + sidangTerbilang(n % 1000) : '');
+            if (n < 1000000) return sidangTerbilang(Math.floor(n / 1000)) + ' Ribu' + (n % 1000 ? ' ' + sidangTerbilang(n % 1000) : '');
+            return String(n);
+        }
+        function updateSidangMetadataPreview() {
+            const value = document.getElementById('sidang_letter_date')?.value;
+            if (!value) return;
+            const [year, month, day] = value.split('-').map(Number);
+            const date = new Date(year, month - 1, day);
+            const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+            const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+            const hariTanggal = `Hari ${days[date.getDay()]} Tanggal ${sidangTerbilang(day)} Bulan ${months[month - 1]} Tahun ${sidangTerbilang(year)}`;
+            document.getElementById('sidang_hari_tanggal_surat_preview').value = hariTanggal;
+            document.getElementById('sidang_hari_tanggal_surat').value = hariTanggal;
+            const time = document.getElementById('sidang_signature_time')?.value || '';
+            const timezone = document.getElementById('sidang_timezone')?.value || 'Asia/Jakarta';
+            const labels = {'Asia/Jakarta':'Waktu Indonesia Barat','Asia/Makassar':'Waktu Indonesia Tengah','Asia/Jayapura':'Waktu Indonesia Timur'};
+            document.getElementById('sidang_signature_datetime').value = `${hariTanggal}, Pukul ${time} ${labels[timezone]}`;
+        }
+        ['sidang_letter_date','sidang_signature_time','sidang_timezone'].forEach(id => document.getElementById(id)?.addEventListener('change', updateSidangMetadataPreview));
+        document.getElementById('confirmSidangSignatureModal')?.addEventListener('shown.bs.modal', updateSidangMetadataPreview);
     </script>
 
     @unless($isHistory)

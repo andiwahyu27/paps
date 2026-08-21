@@ -16,6 +16,7 @@ use App\Models\RiwayatJabatan;
 use App\Models\RiwayatKerja;
 use App\Models\RiwayatPelatihan;
 use App\Models\RiwayatPendidikan;
+use App\Models\SidangSignature;
 use App\Models\Subunsur;
 use App\Models\Tenaga;
 use App\Models\TenagaPelatihan;
@@ -1051,6 +1052,8 @@ class PenilaianController extends Controller
         $predikat_final = $this->getPredikat($result['nilai_final']);
         $jenis = 'final';
         $this->updatePengajuan($id, $result['nilai_final'], $jenis);
+        $result['sidangSignatures'] = SidangSignature::forPengajuan($id);
+        $result['sidangSubmitted'] = (bool) $result['pengajuan']->ba_sidang_submitted_at;
 
         return view('asesor.final', array_merge($result, [
             'predikat_pra2' => $predikat_pra2,
@@ -1075,6 +1078,8 @@ class PenilaianController extends Controller
         $predikat_final = $this->getPredikat($result['nilai_final']);
         $jenis = 'final';
         $this->updatePengajuan($id, $result['nilai_final'], $jenis);
+        $result['sidangSignatures'] = SidangSignature::forPengajuan($id);
+        $result['sidangSubmitted'] = (bool) $result['pengajuan']->ba_sidang_submitted_at;
 
         return view('asesor.final', array_merge($result, [
             'predikat_pra2' => $predikat_pra2,
