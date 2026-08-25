@@ -1065,7 +1065,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($catatanVisitasi as $catatan)
+                                    @foreach ($catatanPaskaVisitasi as $catatan)
                                         @php($item = $items->get($catatan->id_item_penilaian))
                                         <tr>
                                             <td>{{ $item->kode_item ?? 'Item' }} — {{ $item->nama_item ?? '' }}</td>

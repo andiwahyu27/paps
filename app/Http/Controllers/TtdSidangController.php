@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pengajuan;
+use App\Models\Item;
+use App\Models\Penilaian;
 use App\Models\SidangSignature;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -21,11 +23,29 @@ class TtdSidangController extends Controller
     {
         $pengajuan = $this->findByToken($token);
         $signatures = SidangSignature::forPengajuan($pengajuan->id);
+        $catatanPaskaVisitasi = Penilaian::where('id_pengajuan', $pengajuan->id)
+            ->where('pra_paska', 'paska')
+            ->where(function ($query) {
+                $query->where(function ($q) {
+                    $q->whereNotNull('catatan')->where('catatan', '<>', '');
+                })->orWhere(function ($q) {
+                    $q->whereNotNull('rekomendasi')->where('rekomendasi', '<>', '');
+                });
+            })
+            ->orderBy('id_item_penilaian')
+            ->get();
+        $items = Item::whereIn('id', $catatanPaskaVisitasi->pluck('id_item_penilaian'))
+            ->get()
+            ->keyBy('id');
 
         return view('ttd-sidang', [
             'pengajuan' => $pengajuan,
             'signatures' => $signatures,
             'submitted' => (bool) $pengajuan->ba_sidang_submitted_at,
+            'baSubmitted' => (bool) $pengajuan->ba_sidang_submitted_at,
+            'catatanPaskaVisitasi' => $catatanPaskaVisitasi,
+            'items' => $items,
+            'isSekretariat' => auth()->check() && (int) auth()->user()->role === 2,
         ]);
     }
 
