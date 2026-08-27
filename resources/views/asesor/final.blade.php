@@ -68,13 +68,17 @@
                                     <td>Berita Acara</br>Sidang</td>
                                     <td>:</td>
                                     <td>
-                                        <a href="{{ route('ekspor.ba.sidang', $pengajuan->id) }}" class="btn btn-sm rounded-pill btn-primary">
-                                            <i class="bx bxs-notepad"></i> Generate BA Sidang
-                                        </a>
-                                        @if($sidangSubmitted)
-                                            <a href="{{ route('ekspor.ba.sidang.ttd', $pengajuan->id) }}" class="btn btn-sm rounded-pill btn-success">
-                                                <i class="bx bxs-pen"></i> Generate BA Sidang Hasil TTD
+                                        @if((int) $pengajuan->final === 1)
+                                            <a href="{{ route('ekspor.ba.sidang', $pengajuan->id) }}" class="btn btn-sm rounded-pill btn-primary">
+                                                <i class="bx bxs-notepad"></i> Generate BA Sidang
                                             </a>
+                                            @if($sidangSubmitted)
+                                                <a href="{{ route('ekspor.ba.sidang.ttd', $pengajuan->id) }}" class="btn btn-sm rounded-pill btn-success">
+                                                    <i class="bx bxs-pen"></i> Generate BA Sidang Hasil TTD
+                                                </a>
+                                            @endif
+                                        @else
+                                            <span class="badge rounded-pill bg-warning text-dark">Submit penilaian Sidang Majelis terlebih dahulu</span>
                                         @endif
                                     </td>
                                 </tr>
@@ -82,14 +86,18 @@
                                     <td>Tanda Tangan</br>BA Sidang</td>
                                     <td>:</td>
                                     <td>
-                                        @if($pengajuan->ttd_sidang_token)
+                                        @if((int) $pengajuan->final === 1 && $pengajuan->ttd_sidang_token)
                                             <a href="{{ route('ttd.sidang.show', ['token' => $pengajuan->ttd_sidang_token]) }}" class="btn btn-sm rounded-pill btn-info">
                                                 <i class="bx bx-show"></i> Lihat TTD Sidang
                                             </a>
                                         @endif
-                                        <button type="button" class="btn btn-sm rounded-pill btn-primary" data-bs-toggle="modal" data-bs-target="#confirmSidangSignatureModal">
-                                            <i class="bx bx-pen"></i> {{ $pengajuan->ttd_sidang_token ? 'Generate Ulang TTD Sidang' : 'Generate TTD Sidang' }}
-                                        </button>
+                                        @if((int) $pengajuan->final === 1)
+                                            <button type="button" class="btn btn-sm rounded-pill btn-primary" data-bs-toggle="modal" data-bs-target="#confirmSidangSignatureModal">
+                                                <i class="bx bx-pen"></i> {{ $pengajuan->ttd_sidang_token ? 'Generate Ulang TTD Sidang' : 'Generate TTD Sidang' }}
+                                            </button>
+                                        @else
+                                            <span class="badge rounded-pill bg-warning text-dark">Penilaian Sidang Majelis belum disubmit</span>
+                                        @endif
                                     </td>
                                 </tr>
                                 <tr>
@@ -248,7 +256,7 @@
                                             <td style="text-align:center">{{ $item['nilai_final'] }}</td>
                                             <td>
                                                 <span type="button"
-                                                    class="badge rounded-pill @if (empty($item['pengecekan_visitasi'])) bg-info @else bg-warning @endif btn-nilai"
+                                                    class="badge rounded-pill @if (empty($item['catatan_sidang'])) bg-info @else bg-warning @endif btn-nilai"
                                                     data-bs-toggle="modal" data-bs-target="#nilaiModal"
                                                     data-id-item="{{ $item['id'] }}"
                                                     data-id-title="{{ $item['kode_item'] . ' - ' . $item['nama_item'] }}">
@@ -276,11 +284,9 @@
     @if ($pengajuan->isfinal()==0)
         <div class="row">
             <div class="col-12">
-                @if ($isValid)
-                    <button class="btn btn-primary float-sm-right" data-bs-toggle="modal" data-bs-target="#modalSubmit">Submit Nilai</button>
-                @else
-                    <button class="btn btn-primary float-sm-right" disabled>Submit Nilai</button>
-                @endif
+                <button type="button" class="btn btn-primary float-sm-right" data-bs-toggle="modal" data-bs-target="#modalSubmit">
+                    Submit Nilai
+                </button>
             </div>
         </div>
     @endif
@@ -298,20 +304,26 @@
                 <div class="modal-body">
                     <div class="row">
                         <div class="col mb-3">
-                            <label for="catatan" class="form-label">catatan</label>
+                            <label for="catatan" class="form-label">Catatan Paska Visitasi</label>
                             <textarea class="form-control" id="catatan" name="catatan" rows="3" disabled></textarea>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col mb-3">
-                            <label for="rekomendasi" class="form-label">rekomendasi</label>
+                            <label for="rekomendasi" class="form-label">Rekomendasi Paska Visitasi</label>
                             <textarea class="form-control" id="rekomendasi" name="rekomendasi" rows="3" disabled></textarea>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col mb-3">
-                            <label for="pengecekan_visitasi" class="form-label">pengecekan hasil visitasi</label>
+                            <label for="pengecekan_visitasi" class="form-label">Pengecekan Hasil Visitasi</label>
                             <textarea class="form-control" id="pengecekan_visitasi" name="pengecekan_visitasi" rows="3" disabled></textarea>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col mb-3">
+                            <label for="catatan_sidang" class="form-label">Catatan Sidang Majelis</label>
+                            <textarea class="form-control" id="catatan_sidang" name="catatan_sidang" rows="3" disabled></textarea>
                         </div>
                     </div>
                 </div>
@@ -327,7 +339,7 @@
                     <div class="modal-body">
                         <div class="row">
                             <div class="col mb-3">
-                                <small class="d-block form-label">Beri Nilai Pravisit 2</small>
+                                <small class="d-block form-label">Beri Nilai Sidang Majelis</small>
                                 <div class="form-check form-check-inline mt-3">
                                     <input class="form-check-input" type="radio" name="nilai" id="nilai4"
                                         value="4" required />
@@ -352,13 +364,13 @@
                         </div>
                         <div class="row">
                             <div class="col mb-3">
-                                <label for="catatan" class="form-label">Catatan Asesor</label>
+                                <label for="catatan" class="form-label">Catatan Paska Visitasi</label>
                                 <textarea class="form-control" id="catatan" name="catatan" rows="3"></textarea>
                             </div>
                         </div>
                         <div class="row">
                             <div class="col mb-3">
-                                <label for="rekomendasi" class="form-label">Rekomendasi Asesor</label>
+                                <label for="rekomendasi" class="form-label">Rekomendasi Paska Visitasi</label>
                                 <textarea class="form-control" id="rekomendasi" name="rekomendasi" rows="3"></textarea>
                             </div>
                         </div>
@@ -368,6 +380,11 @@
                                 <textarea class="form-control" id="pengecekan_visitasi" name="pengecekan_visitasi" rows="3"></textarea>
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col mb-3">
+                                <label for="catatan_sidang" class="form-label">Catatan Sidang Majelis</label>
+                                <textarea class="form-control" id="catatan_sidang" name="catatan_sidang" rows="3"></textarea>
+                            </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
@@ -391,6 +408,11 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                @unless($isValid)
+                    <div class="alert alert-warning" role="alert">
+                        Lengkapi seluruh penilaian item terlebih dahulu sebelum melakukan submit.
+                    </div>
+                @endunless
                 <div class="row">
                     <div class="col mb-3">
                         <label for="textSubmit" class="form-label">Konfirmasi Penilaian akhir</label>
@@ -404,7 +426,7 @@
                 <input type="text" name="id" value="{{ $pengajuan->id }}" hidden>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
-                    <button type="submit" class="btn btn-primary" id="btn-submit" disabled>Submit</button>
+                    <button type="submit" class="btn btn-primary" id="btn-submit" @unless($isValid) disabled @endunless>Submit</button>
                 </div>
             </form>
         </div>
@@ -523,11 +545,13 @@
                         $("[name=catatan]").html('');
                         $("[name=rekomendasi]").html('');
                         $("[name=pengecekan_visitasi]").html('');
+                        $("[name=catatan_sidang]").val('');
                     } else {
                         $("[name=nilai]").val([result.nilai]);
                         $("[name=catatan]").html([result.catatan]);
                         $("[name=rekomendasi]").html([result.rekomendasi]);
                         $("[name=pengecekan_visitasi]").html([result.pengecekan_visitasi]);
+                        $("[name=catatan_sidang]").val(result.catatan_sidang || '');
                     }
                 }
             });
@@ -566,16 +590,14 @@
     </script>
 
     @unless($isHistory)
+    @if($isValid)
     <script>
-        $('#textSubmit').keyup(function() {
+        $('#textSubmit').on('input', function() {
             var val = $.trim(this.value);
-            if (val == 'NILAI') {
-                $('#btn-submit').removeAttr("disabled");
-            } else {
-                $('#btn-submit').attr("disabled", true);
-            }
-        })
+            $('#btn-submit').prop('disabled', val !== 'NILAI');
+        });
     </script>
+    @endif
     @endunless
 
     <script>

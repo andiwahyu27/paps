@@ -991,6 +991,7 @@ class PenilaianController extends Controller
                         'nilaipra2' => $nilaipra2,
                         'nilaipaska' => $nilaipaska,
                         'nilai_final' => $nilaifinal,
+                        'catatan_sidang' => $penilaianfinal ? $penilaianfinal->catatan_sidang : null,
                     ];
                 }
                 $nilai_bobot_subunsur_pra2 = round(($totalNilaiItemSubunsurPra2 * $subunsur->bobot_subunsur) / 100, 2);
@@ -1893,8 +1894,15 @@ class PenilaianController extends Controller
         $pengajuan = $request->idpengajuan;
         $item = $request->iditem;
         $penilaian = Penilaian::where('id_pengajuan', $pengajuan)->where('id_item_penilaian', $item)->where('pra_paska', 'final')->first();
+        $paska = Penilaian::where('id_pengajuan', $pengajuan)->where('id_item_penilaian', $item)->where('pra_paska', 'paska')->first();
 
-        return response()->json($penilaian);
+        return response()->json([
+            'nilai' => $penilaian?->nilai,
+            'catatan' => $paska?->catatan,
+            'rekomendasi' => $paska?->rekomendasi,
+            'pengecekan_visitasi' => $paska?->pengecekan_visitasi,
+            'catatan_sidang' => $penilaian?->catatan_sidang,
+        ]);
     }
 
     public function catatanItemPra(Request $request)
@@ -2020,13 +2028,13 @@ class PenilaianController extends Controller
             'catatan' => 'nullable|string',
             'rekomendasi' => 'nullable|string',
             'pengecekan_visitasi' => 'nullable|string',
+            'catatan_sidang' => 'nullable|string',
         ]);
 
         $asesorId = auth()->id();
         $pengajuanId = $validatedData['id_pengajuan'];
         $itemId = $validatedData['id_item'];
 
-        // Data untuk create/update
         $data = [
             'id_asesor' => $asesorId,
             'id_pengajuan' => $pengajuanId,
@@ -2035,12 +2043,12 @@ class PenilaianController extends Controller
             'catatan' => $validatedData['catatan'],
             'rekomendasi' => $validatedData['rekomendasi'],
             'pengecekan_visitasi' => $validatedData['pengecekan_visitasi'],
+            'catatan_sidang' => $validatedData['catatan_sidang'],
         ];
 
-        // Handle paska penilaian
         $this->handlePenilaian($pengajuanId, $asesorId, $itemId, 'final', $data);
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Nilai, catatan, dan rekomendasi tersimpan.');
     }
 
     private function handlePenilaian($pengajuanId, $asesorId, $itemId, $type, $data)

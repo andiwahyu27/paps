@@ -12,5 +12,5 @@ class Penilaian extends Model
     use SoftDeletes;
 
     protected $table = 'tb_penilaians';
-    protected $fillable = ['id_asesor', 'id_pengajuan', 'id_item_penilaian', 'pra_paska', 'catatan', 'rekomendasi', 'pengecekan_visitasi', 'nilai'];
+    protected $fillable = ['id_asesor', 'id_pengajuan', 'id_item_penilaian', 'pra_paska', 'catatan', 'rekomendasi', 'pengecekan_visitasi', 'catatan_sidang', 'nilai'];
 }

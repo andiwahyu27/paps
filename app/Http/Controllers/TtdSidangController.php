@@ -23,8 +23,8 @@ class TtdSidangController extends Controller
     {
         $pengajuan = $this->findByToken($token);
         $signatures = SidangSignature::forPengajuan($pengajuan->id);
-        $catatanPaskaVisitasi = Penilaian::where('id_pengajuan', $pengajuan->id)
-            ->where('pra_paska', 'paska')
+        $catatanSidang = Penilaian::where('id_pengajuan', $pengajuan->id)
+            ->where('pra_paska', 'final')
             ->where(function ($query) {
                 $query->where(function ($q) {
                     $q->whereNotNull('catatan')->where('catatan', '<>', '');
@@ -34,18 +34,22 @@ class TtdSidangController extends Controller
             })
             ->orderBy('id_item_penilaian')
             ->get();
-        $items = Item::whereIn('id', $catatanPaskaVisitasi->pluck('id_item_penilaian'))
+        $items = Item::whereIn('id', $catatanSidang->pluck('id_item_penilaian'))
             ->get()
             ->keyBy('id');
+        $sidangAssessmentSubmitted = (int) $pengajuan->final === 1;
+        $backUrl = auth()->check() ? route('final', $pengajuan->id) : url('/');
 
         return view('ttd-sidang', [
             'pengajuan' => $pengajuan,
             'signatures' => $signatures,
             'submitted' => (bool) $pengajuan->ba_sidang_submitted_at,
             'baSubmitted' => (bool) $pengajuan->ba_sidang_submitted_at,
-            'catatanPaskaVisitasi' => $catatanPaskaVisitasi,
+            'catatanSidang' => $catatanSidang,
             'items' => $items,
             'isSekretariat' => auth()->check() && (int) auth()->user()->role === 2,
+            'sidangAssessmentSubmitted' => $sidangAssessmentSubmitted,
+            'backUrl' => $backUrl,
         ]);
     }
 
@@ -66,6 +70,9 @@ class TtdSidangController extends Controller
         ]);
 
         $pengajuan = Pengajuan::findOrFail($data['pengajuan_id']);
+        if ((int) $pengajuan->final !== 1) {
+            return back()->with('error', 'Penilaian Sidang Majelis harus disubmit oleh asesor terlebih dahulu sebelum membuat TTD Berita Acara Sidang.');
+        }
         if ($pengajuan->ba_sidang_submitted_at) {
             return back()->with('error', 'Berita Acara Sidang sudah disubmit. Reset terlebih dahulu.');
         }
@@ -115,6 +122,9 @@ class TtdSidangController extends Controller
             'signature_data' => 'required|string|max:2800000',
         ]);
         $pengajuan = $this->findByToken($data['token']);
+        if ((int) $pengajuan->final !== 1) {
+            return response()->json(['status' => 'error', 'message' => 'Penilaian Sidang Majelis belum disubmit oleh asesor.'], 422);
+        }
         if ($pengajuan->ba_sidang_submitted_at) {
             return response()->json(['status' => 'error', 'message' => 'Berita Acara Sidang sudah disubmit.'], 409);
         }
@@ -172,6 +182,9 @@ class TtdSidangController extends Controller
     {
         $data = $request->validate(['token' => ['required', 'regex:/\A[a-f0-9]{40,64}\z/']]);
         $pengajuan = $this->findByToken($data['token']);
+        if ((int) $pengajuan->final !== 1) {
+            return response()->json(['status' => 'error', 'message' => 'Penilaian Sidang Majelis belum disubmit oleh asesor.'], 422);
+        }
         if (!SidangSignature::isFullySigned($pengajuan->id)) {
             return response()->json(['status' => 'error', 'message' => 'Semua tanda tangan Majelis harus lengkap.'], 422);
         }
@@ -211,7 +224,9 @@ class TtdSidangController extends Controller
 
     public function eksporBaSidang(int $id)
     {
-        return $this->downloadDocument(Pengajuan::findOrFail($id), false);
+        $pengajuan = Pengajuan::findOrFail($id);
+        abort_unless((int) $pengajuan->final === 1, 422, 'Penilaian Sidang Majelis harus disubmit oleh asesor terlebih dahulu.');
+        return $this->downloadDocument($pengajuan, false);
     }
 
     public function eksporBaSidangTtd(int $id)

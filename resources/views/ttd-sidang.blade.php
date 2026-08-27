@@ -945,10 +945,14 @@
                     Tangan</button>
                 <button class="ettd-tab" type="button" role="tab" data-tab="notesTab">Catatan Asesor</button>
             </div>
+            @unless ($sidangAssessmentSubmitted)
+                <div class="status-info status-incomplete" role="alert">
+                    Penilaian Sidang Majelis belum disubmit oleh asesor. Penilaian tersebut wajib disubmit terlebih dahulu sebelum melakukan tanda tangan Berita Acara Sidang.
+                </div>
+            @endunless
             <div class="ettd-panel active" id="signatureTab" role="tabpanel">
                 <div class="document-container">
-                    <a class="back-button" href="{{ $backUrl ?? url()->previous() }}"><span
-                            aria-hidden="true">&#8592;</span> Kembali</a>
+                    <a class="back-button" href="{{ $backUrl }}"><span aria-hidden="true">&#8592;</span> Kembali ke Penilaian Final</a>
                     <button class="share-button" onclick="shareDocument()">Share Link</button>
 
                     <div class="document-title">
@@ -1013,7 +1017,7 @@
                                 <div class="signer-name">{{ $signature->nama_user ?? 'Belum diisi' }}</div>
                                 <div class="signature-box {{ $signed ? 'signed' : '' }}"
                                     data-signer="{{ $type }}" data-signed="{{ $signed ? '1' : '0' }}"
-                                    onclick="openSignature('{{ $type }}')">
+                                    @if ($sidangAssessmentSubmitted) onclick="openSignature('{{ $type }}')" @else aria-disabled="true" @endif>
                                     @if ($signed)
                                         <img src="{{ asset($signature->ttd) }}"
                                             alt="Tanda tangan {{ $label }}">
@@ -1034,27 +1038,22 @@
                     <input type="hidden" id="beritaAcaraStatus" value="{{ $submitted ? 'submitted' : '' }}">
                     <input type="hidden" id="canManage"
                         value="{{ auth()->check() && auth()->user()->role == 2 ? '1' : '0' }}">
+                    <input type="hidden" id="sidangAssessmentStatus" value="{{ $sidangAssessmentSubmitted ? 'submitted' : '' }}">
 
                     <div class="controls" id="submitControls" style="display: none; text-align: center;">
-                        @if ($isSekretariat && !$baSubmitted)
+                        @if ($sidangAssessmentSubmitted && $isSekretariat && !$baSubmitted)
                             <button class="btn-ettd" id="submitBaBtn" onclick="submitDocument()">SUBMIT BERITA ACARA
                                 SIDANG</button>
                             <button class="btn-ettd-reset" id="resetAllSignaturesBtn" onclick="resetAllSignatures()"
                                 style="display:none;">RESET TANDA TANGAN</button>
-                        @endif
-                        <button class="btn-ettd-reset" id="resetBaBtn" onclick="resetBeritaAcara()"
-                            style="display:none;">RESET BERITA ACARA SIDANG</button>
-                        @if ($submitted)
-                            <a class="btn-ettd" href="{{ route('ekspor.ba.sidang.ttd', $pengajuan->id) }}">GENERATE BA
-                                HASIL TTD</a>
                         @endif
                     </div>
                 </div>
             </div>
             <div class="ettd-panel" id="notesTab" role="tabpanel">
                 <div class="document-container">
-                    <h3 style="color:#b34700; margin-bottom: 16px;">Catatan Hasil Paska Visitasi</h3>
-                    @if ($catatanPaskaVisitasi->isNotEmpty())
+                    <h3 style="color:#b34700; margin-bottom: 16px;">Catatan Sidang Majelis</h3>
+                    @if ($catatanSidang->isNotEmpty())
                         <div class="table-responsive">
                             <table class="ettd-notes-table">
                                 <thead>
@@ -1065,7 +1064,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($catatanPaskaVisitasi as $catatan)
+                                    @foreach ($catatanSidang as $catatan)
                                         @php($item = $items->get($catatan->id_item_penilaian))
                                         <tr>
                                             <td>{{ $item->kode_item ?? 'Item' }} — {{ $item->nama_item ?? '' }}</td>
@@ -1142,10 +1141,7 @@
                 </div>
             </div>
 
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeSignature()">Batal</button>
             </div>
-        </div>
     </div>
 
     <script>
@@ -1211,6 +1207,10 @@
 
         function openSignature(type) {
             if (document.getElementById('beritaAcaraStatus')?.value === 'submitted') return;
+            if (document.getElementById('sidangAssessmentStatus')?.value !== 'submitted') {
+                showEttdModal('Penilaian Belum Disubmit', '<p class="mb-0">Penilaian Sidang Majelis perlu disubmit oleh asesor terlebih dahulu sebelum melakukan tanda tangan Berita Acara Sidang.</p>', '<button type="button" class="btn-ettd" onclick="closeEttdModal()">Tutup</button>');
+                return;
+            }
             activeSigner = type;
             document.getElementById('modalTitle').textContent = 'Tanda Tangan ' + type.replaceAll('_', ' ');
             resetSignatureModalState();
@@ -1388,6 +1388,14 @@
             const submitBaBtn = document.getElementById('submitBaBtn');
             const resetBaBtn = document.getElementById('resetBaBtn');
             const canManage = document.getElementById('canManage')?.value === '1';
+            const assessmentSubmitted = document.getElementById('sidangAssessmentStatus')?.value === 'submitted';
+
+            if (!assessmentSubmitted) {
+                statusElement.textContent = 'Penilaian Sidang Majelis belum disubmit oleh asesor.';
+                statusContainer.className = 'status-info status-incomplete';
+                submitControls.style.display = 'none';
+                return;
+            }
 
             if (beritaAcaraStatus === 'submitted') {
                 if (submitBaBtn) submitBaBtn.remove();
@@ -1454,6 +1462,7 @@
             statusContainer.className = 'status-info status-complete';
 
             if (document.getElementById('submitBaBtn')) document.getElementById('submitBaBtn').style.display = 'none';
+            if (document.getElementById('resetAllSignaturesBtn')) document.getElementById('resetAllSignaturesBtn').remove();
             if (document.getElementById('resetBaBtn')) {
                 document.getElementById('resetBaBtn').style.display = document.getElementById('canManage')?.value ===
                     '1' ? 'inline-block' : 'none';
