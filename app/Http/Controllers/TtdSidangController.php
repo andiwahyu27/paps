@@ -23,6 +23,12 @@ class TtdSidangController extends Controller
     {
         $pengajuan = $this->findByToken($token);
         $signatures = SidangSignature::forPengajuan($pengajuan->id);
+        $sidangMeta = $signatures->first();
+        $nomorSurat = optional($sidangMeta)->nomor_surat;
+        $waktuSurat = optional($sidangMeta)->waktu_surat
+            ? substr((string) $sidangMeta->waktu_surat, 0, 5)
+            : null;
+        $tempatSurat = optional($sidangMeta)->tempat_surat;
         $catatanSidang = Penilaian::where('id_pengajuan', $pengajuan->id)
             ->where('pra_paska', 'final')
             ->where(function ($query) {
@@ -43,6 +49,9 @@ class TtdSidangController extends Controller
         return view('ttd-sidang', [
             'pengajuan' => $pengajuan,
             'signatures' => $signatures,
+            'nomorSurat' => $nomorSurat,
+            'waktuSurat' => $waktuSurat,
+            'tempatSurat' => $tempatSurat,
             'submitted' => (bool) $pengajuan->ba_sidang_submitted_at,
             'baSubmitted' => (bool) $pengajuan->ba_sidang_submitted_at,
             'catatanSidang' => $catatanSidang,
@@ -64,6 +73,7 @@ class TtdSidangController extends Controller
             'anggota_majelis_name' => 'required|string|max:255',
             'anggota_majelis_title' => 'required|string|max:255',
             'signature_place' => 'required|string|max:100',
+            'nomor_surat' => 'required|string|max:100',
             'letter_date' => 'required|date',
             'signature_time' => 'required|date_format:H:i',
             'timezone' => 'required|in:Asia/Jakarta,Asia/Makassar,Asia/Jayapura',
@@ -87,6 +97,7 @@ class TtdSidangController extends Controller
         $hariTanggal = $this->formatHariTanggalTerbilang($dateTime);
         $metadata = [
             'tgl_surat' => $dateTime->format('Y-m-d'),
+            'nomor_surat' => $data['nomor_surat'],
             'waktu_surat' => $dateTime->format('H:i:s'),
             'tgl_waktu_surat' => $this->formatDateTime($dateTime),
             'tempat_surat' => $data['signature_place'],
@@ -246,6 +257,7 @@ class TtdSidangController extends Controller
         $profile = $pengajuan->profile;
         $jenis = $pengajuan->id_jenis == 1 ? 'Sistem Teknologi Berbasis Komputer' : 'Statistik';
         $processor->setValue('nama_lemdik', $profile->nama_lembaga ?? '-');
+        $processor->setValue('nomor_surat', $first->nomor_surat ?? '-');
         $processor->setValue('hari_tanggal_surat', $first->hari_tanggal_surat ?? '-');
         $processor->setValue('waktu_surat', substr((string) $first->waktu_surat, 0, 5));
         $processor->setValue('zona_surat', $first->zona_surat ?? '-');

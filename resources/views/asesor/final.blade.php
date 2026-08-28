@@ -93,19 +93,20 @@
                                         <td>Tanda Tangan</br>BA Sidang</td>
                                         <td>:</td>
                                         <td>
-                                            @if ((int) $pengajuan->final === 1 && $pengajuan->ttd_sidang_token)
-                                                <a href="{{ route('ttd.sidang.show', ['token' => $pengajuan->ttd_sidang_token]) }}"
-                                                    class="btn btn-sm rounded-pill btn-info">
-                                                    <i class="bx bx-show"></i> Lihat TTD Sidang
-                                                </a>
-                                            @endif
                                             @if ((int) $pengajuan->final === 1)
                                                 <button type="button" class="btn btn-sm rounded-pill btn-primary"
                                                     data-bs-toggle="modal" data-bs-target="#confirmSidangSignatureModal">
                                                     <i class="bx bx-pen"></i>
                                                     {{ $pengajuan->ttd_sidang_token ? 'Generate Ulang TTD Sidang' : 'Generate TTD Sidang' }}
                                                 </button>
-                                            @else
+                                            @endif
+                                            @if ((int) $pengajuan->final === 1 && $pengajuan->ttd_sidang_token)
+                                                <a href="{{ route('ttd.sidang.show', ['token' => $pengajuan->ttd_sidang_token]) }}"
+                                                    class="btn btn-sm rounded-pill btn-info">
+                                                    <i class="bx bx-show"></i> Lihat TTD Sidang
+                                                </a>
+                                            @endif
+                                            @if ((int) $pengajuan->final !== 1)
                                                 <span class="badge rounded-pill bg-warning text-dark">Penilaian Sidang
                                                     Majelis belum disubmit</span>
                                             @endif
@@ -519,6 +520,14 @@
                             </div>
                         @endforeach
                         @php $sidangMeta = $sidangSignatures->first(); @endphp
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label class="form-label"><strong>Nomor Surat *</strong></label>
+                                <input type="text" class="form-control" name="nomor_surat"
+                                    value="{{ $sidangMeta->nomor_surat ?? '' }}" maxlength="100"
+                                    placeholder="Masukkan nomor surat" required>
+                            </div>
+                        </div>
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label"><strong>Tempat Surat *</strong></label>

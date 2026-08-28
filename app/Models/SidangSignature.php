@@ -16,7 +16,7 @@ class SidangSignature extends Model
     ];
 
     protected $fillable = [
-        'pengajuan_id', 'jenis_user', 'nama_user', 'jabatan_user', 'ttd',
+        'pengajuan_id', 'jenis_user', 'nomor_surat', 'nama_user', 'jabatan_user', 'ttd',
         'tgl_surat', 'waktu_surat', 'tgl_waktu_surat', 'tempat_surat',
         'zona_surat', 'hari_tanggal_surat', 'status_ttd',
     ];

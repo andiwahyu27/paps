@@ -959,7 +959,7 @@
                         BERITA ACARA<br>
                         SIDANG MAJELIS AKREDITASI
                     </div>
-                    <div class="document-number">Nomor {{ $nomorSurat ?? ($nomorSurat ?? '-') }}</div>
+                    <div class="document-number">Nomor {{ $nomorSurat ?? '-' }}</div>
                     <div class="document-title-underline"></div>
 
                     <div class="document-content">
