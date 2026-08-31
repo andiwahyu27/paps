@@ -13,14 +13,12 @@
 
 Menambahkan tab baru di halaman `ttd-sidang.blade.php` di sebelah tab **Catatan Asesor** dengan label **Rekomendasi Hasil Akreditasi**.
 
-Tab tersebut digunakan oleh role **asesor** dan **sekretariat** untuk memasukkan, meninjau, mengubah, menghapus, dan mengirim rekomendasi hasil akreditasi dalam dua kelompok:
-
 1. **Hal-hal yang harus dipertahankan** — dapat memiliki banyak baris.
 2. **Hal-hal yang harus diperbaiki** — dapat memiliki banyak baris.
 
 Tab menyediakan tombol:
 
-- **Simpan/Submit Rekomendasi**.
+- **Simpan/Submit Rekomendasi**. hanya tampil dan bisa diklik oleh role sekretariat
 - **Export to PDF** dengan format berdasarkan template `template_hasil_visitasi.docx`.
 
 Variabel berikut diisi otomatis oleh sistem dan tidak dientri manual:
@@ -105,7 +103,7 @@ Template menyediakan area untuk dua kategori rekomendasi, tetapi tidak menyediak
 |---|---:|---:|---:|---:|
 | Asesor | Ya | Ya | Ya | Ya |
 | Sekretariat | Ya | Ya | Ya | Ya |
-| Lembaga/pengguna umum | Tidak melalui endpoint pengelolaan | Tidak | Tidak | Tidak, kecuali nanti dibuat endpoint publik khusus |
+| Lembaga/pengguna umum | Ya | Tidak | Tidak | Tidak, kecuali nanti dibuat endpoint publik khusus |
 
 ### Aturan authorization
 
