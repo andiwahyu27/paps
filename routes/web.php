@@ -83,6 +83,9 @@ Route::get('/tandatangan', function () {
 });
 
 // e-TTD Berita Acara Sidang
+Route::get('/ttd-sidang/{token}/rincian-penilaian/export-docx', [TtdSidangController::class, 'exportRincianPenilaian'])
+    ->where('token', '[a-f0-9]{40,64}')
+    ->name('ttd.sidang.rincian.export');
 Route::get('/ttd-sidang/{token}/rekomendasi/export-docx', [TtdSidangController::class, 'exportRekomendasi'])
     ->where('token', '[a-f0-9]{40,64}')
     ->name('ttd.sidang.rekomendasi.export');

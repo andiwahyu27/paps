@@ -922,6 +922,11 @@ class PenilaianController extends Controller
         return redirect()->route('paskavisit', $id);
     }
 
+    public function rincianPenilaian($id)
+    {
+        return $this->calculateFinalData($id, false);
+    }
+
     // Penilaian Final
     private function calculateFinalData($id, $checkValidation = false)
     {

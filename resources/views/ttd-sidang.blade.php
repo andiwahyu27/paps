@@ -944,7 +944,7 @@
             <div class="ettd-tabs" role="tablist">
                 <button class="ettd-tab active" type="button" role="tab" data-tab="signatureTab">Tanda
                     Tangan</button>
-                <button class="ettd-tab" type="button" role="tab" data-tab="notesTab">Catatan Asesor</button>
+                <button class="ettd-tab" type="button" role="tab" data-tab="notesTab">Rincian Penilaian</button>
                 <button class="ettd-tab" type="button" role="tab" data-tab="recommendationTab">Rekomendasi Hasil
                     Akreditasi</button>
             </div>
@@ -1064,33 +1064,46 @@
             </div>
             <div class="ettd-panel" id="notesTab" role="tabpanel">
                 <div class="document-container">
-                    <h3 style="color:#b34700; margin-bottom: 16px;">Catatan Sidang Majelis</h3>
-                    @if ($catatanSidang->isNotEmpty())
+                    <h3 style="color:#b34700; margin-bottom: 5px;">RINCIAN UNSUR PENILAIAN AKREDITASI</h3>
+                    <p>{{ strtoupper(optional($pengajuan->profile)->nama_lembaga ?: '-') }}</p>
+                    <p style="margin-bottom:16px">PROGRAM PELATIHAN TEKNIS DI BIDANG {{ strtoupper($jenisPengajuan) }}</p>
+                    <p><a href="{{ route('ttd.sidang.rincian.export', $token) }}" class="btn-ettd">EXPORT TO DOCX</a></p>
+                    @if ($rincianPenilaian['nilai_final'] === '-')
+                        <p class="status-info status-incomplete" role="alert">Data penilaian final belum lengkap.</p>
+                    @endif
+                    @if (empty($rincianPenilaian['rows']))
+                        <p class="text-muted">Data penilaian final belum tersedia.</p>
+                    @else
                         <div class="table-responsive">
                             <table class="ettd-notes-table">
                                 <thead>
                                     <tr>
-                                        <th>Item Penilaian</th>
-                                        <th>Catatan</th>
-                                        <th>Rekomendasi</th>
+                                        <th>INDIKATOR</th>
+                                        <th>NILAI SUB UNSUR</th>
+                                        <th>NILAI UNSUR</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($catatanSidang as $catatan)
-                                        @php
-                                            $item = $items->get($catatan->id_item_penilaian);
-                                        @endphp
+                                    @foreach ($rincianPenilaian['rows'] as $row)
                                         <tr>
-                                            <td>{{ $item->kode_item ?? 'Item' }} — {{ $item->nama_item ?? '' }}</td>
-                                            <td>{{ $catatan->catatan ?: '-' }}</td>
-                                            <td>{{ $catatan->rekomendasi ?: '-' }}</td>
+                                            <td style="padding-left: {{ $row['level'] === 'unsur' ? 8 : ($row['level'] === 'subunsur' ? 28 : 48) }}px;">{{ $row['label'] }}</td>
+                                            <td class="text-center" style="text-align: center;">{{ $row['nilai_subunsur'] ?? '-' }}</td>
+                                            @if ($row['show_nilai_unsur'] ?? false)
+                                                <td rowspan="{{ $row['unsur_rowspan'] ?? 1 }}" class="text-center" style="text-align: center; vertical-align: middle;">{{ $row['nilai_unsur'] ?? '-' }}</td>
+                                            @endif
                                         </tr>
                                     @endforeach
+                                    <tr>
+                                        <th colspan="2">NILAI AKREDITASI</th>
+                                        <th class="text-center" style="text-align: center;">{{ $rincianPenilaian['nilai_final'] }}</th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="2">PREDIKAT AKREDITASI</th>
+                                        <th class="text-center" style="text-align: center;">({{ $rincianPenilaian['predikat_final'] }})</th>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
-                    @else
-                        <p class="text-muted">Belum ada catatan hasil visitasi.</p>
                     @endif
                 </div>
             </div>

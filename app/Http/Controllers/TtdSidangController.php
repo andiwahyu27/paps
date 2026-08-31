@@ -7,6 +7,7 @@ use App\Models\Item;
 use App\Models\Penilaian;
 use App\Models\RekomendasiHasilAkreditasi;
 use App\Models\SidangSignature;
+use App\Services\RincianPenilaianService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -49,6 +50,7 @@ class TtdSidangController extends Controller
         $rekomendasiHasilAkreditasi = RekomendasiHasilAkreditasi::where('pengajuan_id', $pengajuan->id)
             ->orderBy('kategori')->orderBy('urutan')->orderBy('id')->get()
             ->groupBy('kategori');
+        $rincianPenilaian = app(RincianPenilaianService::class)->build($pengajuan);
         $sidangAssessmentSubmitted = (int) $pengajuan->final === 1;
         $tahunPengajuan = optional($pengajuan->created_at)->format('Y');
         $jenisPengajuan = optional($pengajuan->jenis)->nama ?: '-';
@@ -68,6 +70,7 @@ class TtdSidangController extends Controller
             'catatanSidang' => $catatanSidang,
             'items' => $items,
             'rekomendasiHasilAkreditasi' => $rekomendasiHasilAkreditasi,
+            'rincianPenilaian' => $rincianPenilaian,
             'tahunPengajuan' => $tahunPengajuan,
             'jenisPengajuan' => $jenisPengajuan,
             'nilaiFinal' => $pengajuan->nilai_final,
@@ -76,6 +79,12 @@ class TtdSidangController extends Controller
             'sidangAssessmentSubmitted' => $sidangAssessmentSubmitted,
             'backUrl' => $backUrl,
         ]);
+    }
+
+    public function exportRincianPenilaian(string $token)
+    {
+        $pengajuan = $this->findByToken($token);
+        return app(RincianPenilaianService::class)->exportDocx($pengajuan);
     }
 
     public function exportRekomendasi(string $token)
