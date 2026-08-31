@@ -452,7 +452,8 @@
             color: #fff;
             border: none;
             border-radius: 20px;
-            padding: 10px 22px;
+            padding: 8px 16px;
+            margin-bottom: 20px;
             font-size: 0.9em;
             font-weight: 600;
             cursor: pointer;
@@ -943,17 +944,20 @@
             <div class="ettd-tabs" role="tablist">
                 <button class="ettd-tab active" type="button" role="tab" data-tab="signatureTab">Tanda
                     Tangan</button>
-                <button class="ettd-tab" type="button" role="tab" data-tab="notesTab">Catatan Asesor</button>
-                <button class="ettd-tab" type="button" role="tab" data-tab="recommendationTab">Rekomendasi Hasil Akreditasi</button>
+                <button class="ettd-tab" type="button" role="tab" data-tab="recommendationTab">Rekomendasi Hasil
+                    <button class="ettd-tab" type="button" role="tab" data-tab="notesTab">Catatan Asesor</button>
+                    Akreditasi</button>
             </div>
             @unless ($sidangAssessmentSubmitted)
                 <div class="status-info status-incomplete" role="alert">
-                    Penilaian Sidang Majelis belum disubmit oleh asesor. Penilaian tersebut wajib disubmit terlebih dahulu sebelum melakukan tanda tangan Berita Acara Sidang.
+                    Penilaian Sidang Majelis belum disubmit oleh asesor. Penilaian tersebut wajib disubmit terlebih dahulu
+                    sebelum melakukan tanda tangan Berita Acara Sidang.
                 </div>
             @endunless
             <div class="ettd-panel active" id="signatureTab" role="tabpanel">
                 <div class="document-container">
-                    <a class="back-button" href="{{ $backUrl }}"><span aria-hidden="true">&#8592;</span> Kembali ke Penilaian Final</a>
+                    <a class="back-button" href="{{ $backUrl }}"><span aria-hidden="true">&#8592;</span> Kembali ke
+                        Penilaian Final</a>
                     <button class="share-button" onclick="shareDocument()">Share Link</button>
 
                     <div class="document-title">
@@ -1039,7 +1043,8 @@
                     <input type="hidden" id="beritaAcaraStatus" value="{{ $submitted ? 'submitted' : '' }}">
                     <input type="hidden" id="canManage"
                         value="{{ auth()->check() && auth()->user()->role == 2 ? '1' : '0' }}">
-                    <input type="hidden" id="sidangAssessmentStatus" value="{{ $sidangAssessmentSubmitted ? 'submitted' : '' }}">
+                    <input type="hidden" id="sidangAssessmentStatus"
+                        value="{{ $sidangAssessmentSubmitted ? 'submitted' : '' }}">
 
                     <div class="controls" id="submitControls" style="display: none; text-align: center;">
                         @if ($sidangAssessmentSubmitted && $isSekretariat)
@@ -1092,13 +1097,30 @@
             <div class="ettd-panel" id="recommendationTab" role="tabpanel">
                 <div class="document-container">
                     <h3 style="color:#b34700; margin-bottom: 16px;">Rekomendasi Hasil Akreditasi</h3>
-                    <p><a href="{{ route('ttd.sidang.rekomendasi.export', $token) }}" class="btn-ettd">Export DOCX</a></p>
+                    <p><a href="{{ route('ttd.sidang.rekomendasi.export', $token) }}" class="btn-ettd">Export DOCX</a>
+                    </p>
                     <div class="meta">
                         <table>
-                            <tr><td>Tahun Pengajuan</td><td>:</td><td>{{ $tahunPengajuan ?: '-' }}</td></tr>
-                            <tr><td>Jenis Pengajuan</td><td>:</td><td>{{ $jenisPengajuan }}</td></tr>
-                            <tr><td>Nilai Final</td><td>:</td><td>{{ $nilaiFinal ?? '-' }}</td></tr>
-                            <tr><td>Predikat Final</td><td>:</td><td>{{ $predikatFinal ?? '-' }}</td></tr>
+                            <tr>
+                                <td>Tahun Pengajuan</td>
+                                <td>:</td>
+                                <td>{{ $tahunPengajuan ?: '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td>Jenis Pengajuan</td>
+                                <td>:</td>
+                                <td>{{ $jenisPengajuan }}</td>
+                            </tr>
+                            <tr>
+                                <td>Nilai Final</td>
+                                <td>:</td>
+                                <td>{{ $nilaiFinal ?? '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td>Predikat Final</td>
+                                <td>:</td>
+                                <td>{{ $predikatFinal ?? '-' }}</td>
+                            </tr>
                         </table>
                     </div>
                     @php
@@ -1188,7 +1210,7 @@
                 </div>
             </div>
 
-            </div>
+        </div>
     </div>
 
     <script>
@@ -1255,7 +1277,9 @@
         function openSignature(type) {
             if (document.getElementById('beritaAcaraStatus')?.value === 'submitted') return;
             if (document.getElementById('sidangAssessmentStatus')?.value !== 'submitted') {
-                showEttdModal('Penilaian Belum Disubmit', '<p class="mb-0">Penilaian Sidang Majelis perlu disubmit oleh asesor terlebih dahulu sebelum melakukan tanda tangan Berita Acara Sidang.</p>', '<button type="button" class="btn-ettd" onclick="closeEttdModal()">Tutup</button>');
+                showEttdModal('Penilaian Belum Disubmit',
+                    '<p class="mb-0">Penilaian Sidang Majelis perlu disubmit oleh asesor terlebih dahulu sebelum melakukan tanda tangan Berita Acara Sidang.</p>',
+                    '<button type="button" class="btn-ettd" onclick="closeEttdModal()">Tutup</button>');
                 return;
             }
             activeSigner = type;
@@ -1511,7 +1535,8 @@
             statusContainer.className = 'status-info status-complete';
 
             if (document.getElementById('submitBaBtn')) document.getElementById('submitBaBtn').style.display = 'none';
-            if (document.getElementById('resetAllSignaturesBtn')) document.getElementById('resetAllSignaturesBtn').remove();
+            if (document.getElementById('resetAllSignaturesBtn')) document.getElementById('resetAllSignaturesBtn')
+                .remove();
             if (document.getElementById('resetBaBtn')) {
                 document.getElementById('resetBaBtn').style.display = document.getElementById('canManage')?.value ===
                     '1' ? 'inline-block' : 'none';
