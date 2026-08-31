@@ -4,6 +4,14 @@
 
 Dokumen ini menjelaskan langkah-langkah deploy aplikasi PAPS ke server production.
 
+Dokumen khusus VM lama Apache + `htdocs` tersedia di:
+
+```text
+dokumen_md/PANDUAN_DEPLOY_VM_LAMA_AKREDITASI_ETC_NSO.md
+```
+
+Dokumen tersebut mencakup backup, pemeriksaan path, preservasi `.env`/`APP_KEY`, migration aman, permission PHP-FPM, konfigurasi Apache, smoke test TTD/DOCX, dan rollback.
+
 ---
 
 ## 1. Persiapan Server
