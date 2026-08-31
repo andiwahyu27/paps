@@ -944,8 +944,8 @@
             <div class="ettd-tabs" role="tablist">
                 <button class="ettd-tab active" type="button" role="tab" data-tab="signatureTab">Tanda
                     Tangan</button>
+                <button class="ettd-tab" type="button" role="tab" data-tab="notesTab">Catatan Asesor</button>
                 <button class="ettd-tab" type="button" role="tab" data-tab="recommendationTab">Rekomendasi Hasil
-                    <button class="ettd-tab" type="button" role="tab" data-tab="notesTab">Catatan Asesor</button>
                     Akreditasi</button>
             </div>
             @unless ($sidangAssessmentSubmitted)
