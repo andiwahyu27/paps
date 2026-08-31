@@ -1047,6 +1047,11 @@
                             <button class="btn-ettd-reset" id="resetAllSignaturesBtn" onclick="resetAllSignatures()"
                                 style="display:none;">RESET TANDA TANGAN</button>
                         @endif
+                        @if ($sidangAssessmentSubmitted && $isSekretariat && $baSubmitted)
+                            <button class="btn-ettd-reset" id="resetBaBtn" onclick="resetBeritaAcara()">
+                                RESET BERITA ACARA SIDANG
+                            </button>
+                        @endif
                     </div>
                 </div>
             </div>

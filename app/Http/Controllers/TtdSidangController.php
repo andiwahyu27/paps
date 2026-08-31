@@ -25,10 +25,12 @@ class TtdSidangController extends Controller
         $signatures = SidangSignature::forPengajuan($pengajuan->id);
         $sidangMeta = $signatures->first();
         $nomorSurat = optional($sidangMeta)->nomor_surat;
+        $hariTanggalSurat = optional($sidangMeta)->hari_tanggal_surat;
         $waktuSurat = optional($sidangMeta)->waktu_surat
-            ? substr((string) $sidangMeta->waktu_surat, 0, 5)
+            ? $sidangMeta->waktu_surat->format('H:i')
             : null;
         $tempatSurat = optional($sidangMeta)->tempat_surat;
+        $zonaSurat = optional($sidangMeta)->zona_surat;
         $catatanSidang = Penilaian::where('id_pengajuan', $pengajuan->id)
             ->where('pra_paska', 'final')
             ->where(function ($query) {
@@ -50,7 +52,9 @@ class TtdSidangController extends Controller
             'pengajuan' => $pengajuan,
             'signatures' => $signatures,
             'nomorSurat' => $nomorSurat,
+            'hariTanggalSurat' => $hariTanggalSurat,
             'waktuSurat' => $waktuSurat,
+            'zonaSurat' => $zonaSurat,
             'tempatSurat' => $tempatSurat,
             'submitted' => (bool) $pengajuan->ba_sidang_submitted_at,
             'baSubmitted' => (bool) $pengajuan->ba_sidang_submitted_at,
@@ -259,7 +263,7 @@ class TtdSidangController extends Controller
         $processor->setValue('nama_lemdik', $profile->nama_lembaga ?? '-');
         $processor->setValue('nomor_surat', $first->nomor_surat ?? '-');
         $processor->setValue('hari_tanggal_surat', $first->hari_tanggal_surat ?? '-');
-        $processor->setValue('waktu_surat', substr((string) $first->waktu_surat, 0, 5));
+        $processor->setValue('waktu_surat', $first->waktu_surat?->format('H:i'));
         $processor->setValue('zona_surat', $first->zona_surat ?? '-');
         $processor->setValue('jenis_pengajuan', $jenis);
         $processor->setValue('ketua_majelis', $signatures['ketua_majelis']->nama_user ?? '-');
