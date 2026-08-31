@@ -503,6 +503,14 @@
                     <div class="modal-body">
                         <div class="alert alert-info">Isi nama dan jabatan tiga aktor Majelis sebelum masuk ke halaman
                             tanda tangan.</div>
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label class="form-label"><strong>Nomor Surat *</strong></label>
+                                <input type="text" class="form-control" name="nomor_surat"
+                                    value="{{ $sidangMeta->nomor_surat ?? '' }}" maxlength="100"
+                                    placeholder="Masukkan nomor surat" required>
+                            </div>
+                        </div>
                         @foreach ([['ketua_majelis', 'Ketua Majelis', 'Ketua Majelis Akreditasi'], ['sekretaris_majelis', 'Sekretaris Majelis', 'Sekretaris Majelis Akreditasi'], ['anggota_majelis', 'Anggota Majelis', 'Anggota Majelis Akreditasi']] as [$key, $label, $defaultTitle])
                             @php $sidangActor = $sidangSignatures->get($key); @endphp
                             <div class="row mb-3">
@@ -520,14 +528,6 @@
                             </div>
                         @endforeach
                         @php $sidangMeta = $sidangSignatures->first(); @endphp
-                        <div class="row mb-3">
-                            <div class="col-12">
-                                <label class="form-label"><strong>Nomor Surat *</strong></label>
-                                <input type="text" class="form-control" name="nomor_surat"
-                                    value="{{ $sidangMeta->nomor_surat ?? '' }}" maxlength="100"
-                                    placeholder="Masukkan nomor surat" required>
-                            </div>
-                        </div>
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label"><strong>Tempat Surat *</strong></label>
