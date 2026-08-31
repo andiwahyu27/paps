@@ -8,6 +8,7 @@ use App\Http\Controllers\Lembaga\ProfileController;
 use App\Http\Controllers\Lembaga\ProgramController;
 use App\Http\Controllers\PanduanController;
 use App\Http\Controllers\PengaturanController;
+use App\Http\Controllers\RekomendasiHasilAkreditasiController;
 use App\Http\Controllers\SekretariatController;
 use App\Http\Controllers\TtdController;
 use App\Http\Controllers\TtdSidangController;
@@ -82,6 +83,9 @@ Route::get('/tandatangan', function () {
 });
 
 // e-TTD Berita Acara Sidang
+Route::get('/ttd-sidang/{token}/rekomendasi/export-docx', [TtdSidangController::class, 'exportRekomendasi'])
+    ->where('token', '[a-f0-9]{40,64}')
+    ->name('ttd.sidang.rekomendasi.export');
 Route::get('/ttd-sidang/{token}', [TtdSidangController::class, 'show'])
     ->where('token', '[a-f0-9]{40,64}')
     ->name('ttd.sidang.show');
@@ -146,6 +150,11 @@ Route::group(['prefix' => 'pengajuan', 'middleware' => 'is.asesor.or.sekretariat
     Route::get('/paskavisit/view/{id}', [PenilaianController::class, 'paskavisitView'])->name('view.paskavisit');
     Route::post('/paskavisit/edit/{id}', [PenilaianController::class, 'editPaskavisit'])->name('edit.paskavisit');
     Route::get('/final/{id}', [PenilaianController::class, 'final'])->name('final');
+    Route::get('/rekomendasi-hasil-sidang/{id}', [RekomendasiHasilAkreditasiController::class, 'show'])->name('rekomendasi.hasil.sidang.show');
+    Route::post('/rekomendasi-hasil-sidang/{id}', [RekomendasiHasilAkreditasiController::class, 'store'])->name('rekomendasi.hasil.sidang.store');
+    Route::post('/rekomendasi-hasil-sidang/{id}/submit', [RekomendasiHasilAkreditasiController::class, 'submit'])->name('rekomendasi.hasil.sidang.submit');
+    Route::post('/rekomendasi-hasil-sidang/{id}/reopen', [RekomendasiHasilAkreditasiController::class, 'reopen'])->name('rekomendasi.hasil.sidang.reopen');
+    Route::get('/rekomendasi-hasil-sidang/{id}/export-docx', [RekomendasiHasilAkreditasiController::class, 'exportDocx'])->name('rekomendasi.hasil.sidang.export.docx');
     Route::get('/final/view/{id}', [PenilaianController::class, 'finalView'])->name('view.final');
     Route::post('/final/edit/{id}', [PenilaianController::class, 'editFinal'])->name('edit.final');
     Route::get('/ekspor-ba-sidang/{id}', [TtdSidangController::class, 'eksporBaSidang'])->name('ekspor.ba.sidang');

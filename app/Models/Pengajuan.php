@@ -60,6 +60,11 @@ class Pengajuan extends Model
         return $this->belongsTo(Profile::class, 'id_profile');
     }
 
+    public function rekomendasiHasilAkreditasi()
+    {
+        return $this->hasMany(RekomendasiHasilAkreditasi::class, 'pengajuan_id');
+    }
+
     public function jenis()
     {
         return $this->belongsTo(JenisPengajuan::class, 'id_jenis');

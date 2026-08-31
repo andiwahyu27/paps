@@ -944,6 +944,7 @@
                 <button class="ettd-tab active" type="button" role="tab" data-tab="signatureTab">Tanda
                     Tangan</button>
                 <button class="ettd-tab" type="button" role="tab" data-tab="notesTab">Catatan Asesor</button>
+                <button class="ettd-tab" type="button" role="tab" data-tab="recommendationTab">Rekomendasi Hasil Akreditasi</button>
             </div>
             @unless ($sidangAssessmentSubmitted)
                 <div class="status-info status-incomplete" role="alert">
@@ -1071,7 +1072,9 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($catatanSidang as $catatan)
-                                        @php($item = $items->get($catatan->id_item_penilaian))
+                                        @php
+                                            $item = $items->get($catatan->id_item_penilaian);
+                                        @endphp
                                         <tr>
                                             <td>{{ $item->kode_item ?? 'Item' }} — {{ $item->nama_item ?? '' }}</td>
                                             <td>{{ $catatan->catatan ?: '-' }}</td>
@@ -1083,6 +1086,44 @@
                         </div>
                     @else
                         <p class="text-muted">Belum ada catatan hasil visitasi.</p>
+                    @endif
+                </div>
+            </div>
+            <div class="ettd-panel" id="recommendationTab" role="tabpanel">
+                <div class="document-container">
+                    <h3 style="color:#b34700; margin-bottom: 16px;">Rekomendasi Hasil Akreditasi</h3>
+                    <p><a href="{{ route('ttd.sidang.rekomendasi.export', $token) }}" class="btn-ettd">Export DOCX</a></p>
+                    <div class="meta">
+                        <table>
+                            <tr><td>Tahun Pengajuan</td><td>:</td><td>{{ $tahunPengajuan ?: '-' }}</td></tr>
+                            <tr><td>Jenis Pengajuan</td><td>:</td><td>{{ $jenisPengajuan }}</td></tr>
+                            <tr><td>Nilai Final</td><td>:</td><td>{{ $nilaiFinal ?? '-' }}</td></tr>
+                            <tr><td>Predikat Final</td><td>:</td><td>{{ $predikatFinal ?? '-' }}</td></tr>
+                        </table>
+                    </div>
+                    @php
+                        $rekomendasiDipertahankan = $rekomendasiHasilAkreditasi->get('dipertahankan', collect());
+                        $rekomendasiDiperbaiki = $rekomendasiHasilAkreditasi->get('diperbaiki', collect());
+                    @endphp
+                    <h4>Hal-hal yang harus dipertahankan</h4>
+                    @if ($rekomendasiDipertahankan->isNotEmpty())
+                        <ol>
+                            @foreach ($rekomendasiDipertahankan as $rekomendasi)
+                                <li>{{ $rekomendasi->isi }}</li>
+                            @endforeach
+                        </ol>
+                    @else
+                        <p class="text-muted">Belum ada rekomendasi hasil akreditasi.</p>
+                    @endif
+                    <h4>Hal-hal yang harus diperbaiki</h4>
+                    @if ($rekomendasiDiperbaiki->isNotEmpty())
+                        <ol>
+                            @foreach ($rekomendasiDiperbaiki as $rekomendasi)
+                                <li>{{ $rekomendasi->isi }}</li>
+                            @endforeach
+                        </ol>
+                    @else
+                        <p class="text-muted">Belum ada rekomendasi hasil akreditasi.</p>
                     @endif
                 </div>
             </div>

@@ -116,22 +116,11 @@
                                         <td>Rekomendasi</br>Hasil Akreditasi</td>
                                         <td>:</td>
                                         <td>
-                                            <a href="{{ route('ekspor.rekomendasi', $pengajuan->id) }}"
+                                            <a href="{{ route('rekomendasi.hasil.sidang.show', $pengajuan->id) }}"
                                                 class="btn btn-sm rounded-pill btn-primary">
-                                                <i class='bx bxs-notepad'></i> Generate Template
+                                                <i class="bx bxs-notepad"></i>
+                                                {{ $pengajuan->rekomendasi_akreditasi_submitted_at ? 'Lihat Rekomendasi' : 'Generate Template' }}
                                             </a>
-                                            @if ($pengajuan->rekomendasi_visitasi)
-                                                <x-tombol-file :path="$pengajuan->rekomendasi_visitasi" label="Rekomendasi Hasil Akreditasi" />
-                                                <button type="button" class="btn btn-sm rounded-pill btn-warning"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#uploadRekomendasiAkreditasiModal"><i
-                                                        class="bx bxs-cloud-upload"></i> Update Rekomendasi</button>
-                                            @else
-                                                <button type="button" class="btn btn-sm rounded-pill btn-warning"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#uploadRekomendasiAkreditasiModal"><i
-                                                        class="bx bxs-cloud-upload"></i> Update Rekomendasi</button>
-                                            @endif
                                         </td>
                                     </tr>
                                     <tr>
@@ -475,10 +464,6 @@
             </div>
         </div>
     @endunless
-
-    <!-- Modal Rekomendasi Hasil Akreditrasi -->
-    <x-upload-modal modalId="uploadRekomendasiAkreditasiModal" title="Unggah Rekomendasi Hasil Akreditasi"
-        action="{{ route('upload.rekomendasi') }}" inputName="rekomendasi_visitasi" :pengajuan="$pengajuan" />
 
     @unless (!$isHistory)
         <!-- Modal Sertifikat -->

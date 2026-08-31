@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Pengajuan;
 use App\Models\Item;
 use App\Models\Penilaian;
+use App\Models\RekomendasiHasilAkreditasi;
 use App\Models\SidangSignature;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -45,11 +46,17 @@ class TtdSidangController extends Controller
         $items = Item::whereIn('id', $catatanSidang->pluck('id_item_penilaian'))
             ->get()
             ->keyBy('id');
+        $rekomendasiHasilAkreditasi = RekomendasiHasilAkreditasi::where('pengajuan_id', $pengajuan->id)
+            ->orderBy('kategori')->orderBy('urutan')->orderBy('id')->get()
+            ->groupBy('kategori');
         $sidangAssessmentSubmitted = (int) $pengajuan->final === 1;
+        $tahunPengajuan = optional($pengajuan->created_at)->format('Y');
+        $jenisPengajuan = optional($pengajuan->jenis)->nama ?: '-';
         $backUrl = auth()->check() ? route('final', $pengajuan->id) : url('/');
 
         return view('ttd-sidang', [
             'pengajuan' => $pengajuan,
+            'token' => $token,
             'signatures' => $signatures,
             'nomorSurat' => $nomorSurat,
             'hariTanggalSurat' => $hariTanggalSurat,
@@ -60,10 +67,22 @@ class TtdSidangController extends Controller
             'baSubmitted' => (bool) $pengajuan->ba_sidang_submitted_at,
             'catatanSidang' => $catatanSidang,
             'items' => $items,
+            'rekomendasiHasilAkreditasi' => $rekomendasiHasilAkreditasi,
+            'tahunPengajuan' => $tahunPengajuan,
+            'jenisPengajuan' => $jenisPengajuan,
+            'nilaiFinal' => $pengajuan->nilai_final,
+            'predikatFinal' => $pengajuan->predikat_final,
             'isSekretariat' => auth()->check() && (int) auth()->user()->role === 2,
             'sidangAssessmentSubmitted' => $sidangAssessmentSubmitted,
             'backUrl' => $backUrl,
         ]);
+    }
+
+    public function exportRekomendasi(string $token)
+    {
+        $pengajuan = $this->findByToken($token);
+        return app(\App\Http\Controllers\RekomendasiHasilAkreditasiController::class)
+            ->exportDocxForPengajuan($pengajuan);
     }
 
     public function createPost(Request $request)
