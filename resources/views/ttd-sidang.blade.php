@@ -1041,14 +1041,15 @@
                     <input type="hidden" id="sidangAssessmentStatus" value="{{ $sidangAssessmentSubmitted ? 'submitted' : '' }}">
 
                     <div class="controls" id="submitControls" style="display: none; text-align: center;">
-                        @if ($sidangAssessmentSubmitted && $isSekretariat && !$baSubmitted)
-                            <button class="btn-ettd" id="submitBaBtn" onclick="submitDocument()">SUBMIT BERITA ACARA
-                                SIDANG</button>
-                            <button class="btn-ettd-reset" id="resetAllSignaturesBtn" onclick="resetAllSignatures()"
-                                style="display:none;">RESET TANDA TANGAN</button>
-                        @endif
-                        @if ($sidangAssessmentSubmitted && $isSekretariat && $baSubmitted)
-                            <button class="btn-ettd-reset" id="resetBaBtn" onclick="resetBeritaAcara()">
+                        @if ($sidangAssessmentSubmitted && $isSekretariat)
+                            @if (!$baSubmitted)
+                                <button class="btn-ettd" id="submitBaBtn" onclick="submitDocument()">SUBMIT BERITA ACARA
+                                    SIDANG</button>
+                                <button class="btn-ettd-reset" id="resetAllSignaturesBtn" onclick="resetAllSignatures()"
+                                    style="display:none;">RESET TANDA TANGAN</button>
+                            @endif
+                            <button class="btn-ettd-reset" id="resetBaBtn" onclick="resetBeritaAcara()"
+                                style="display:{{ $baSubmitted ? 'inline-block' : 'none' }};">
                                 RESET BERITA ACARA SIDANG
                             </button>
                         @endif
@@ -1357,6 +1358,8 @@
                             `<img src="${savedSignatureUrl}" style="max-width:90%; max-height:100px; object-fit:contain;">`;
                         signatureBox.classList.add('signed');
                         signatureBox.dataset.signed = '1';
+                        const hint = signatureBox.closest('.signer')?.querySelector('.hint');
+                        if (hint) hint.textContent = 'Sudah ditandatangani';
                         signatureBox.style.transform = 'scale(1)';
                     }, 150);
                 }
