@@ -269,10 +269,11 @@
         .ettd-notes-table th,
         .ettd-notes-table td {
             border: 1px solid #e8c9a8;
-            padding: 12px;
+            padding: 3px 5px;
             text-align: left;
-            vertical-align: top;
+            vertical-align: middle;
             white-space: pre-line;
+            line-height: 1.3;
         }
 
         .ettd-notes-table th {
@@ -452,8 +453,8 @@
             color: #fff;
             border: none;
             border-radius: 20px;
-            padding: 8px 16px;
-            margin-bottom: 20px;
+            padding: 10px 22px;
+            margin-bottom: 10px;
             font-size: 0.9em;
             font-weight: 600;
             cursor: pointer;
@@ -475,6 +476,7 @@
             border: none;
             border-radius: 20px;
             padding: 10px 22px;
+            margin-bottom: 10px;
             font-size: 0.9em;
             font-weight: 600;
             cursor: pointer;
@@ -915,6 +917,33 @@
             }
         }
 
+        .section-header {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            margin-bottom: 16px;
+        }
+
+        .section-header h3 {
+            margin: 0;
+            color: #b34700;
+            text-align: center;
+        }
+
+        .section-header .btn-ettd {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-bottom: 0;
+        }
+
+        .section-header .btn-ettd:hover {
+            transform: translateY(-50%) translateY(-1px);
+        }
+
         @media (max-width: 768px) {
             .signatures {
                 grid-template-columns: 1fr;
@@ -927,6 +956,25 @@
 
             .meta td:first-child {
                 width: 130px;
+            }
+
+            .section-header {
+                flex-direction: column;
+                gap: 12px;
+                min-height: auto;
+            }
+
+            .section-header h3 {
+                text-align: center;
+            }
+
+            .section-header .btn-ettd {
+                position: static;
+                transform: none;
+            }
+
+            .section-header .btn-ettd:hover {
+                transform: translateY(-1px);
             }
         }
     </style>
@@ -1064,10 +1112,27 @@
             </div>
             <div class="ettd-panel" id="notesTab" role="tabpanel">
                 <div class="document-container">
-                    <h3 style="color:#b34700; margin-bottom: 5px;">RINCIAN UNSUR PENILAIAN AKREDITASI</h3>
-                    <p>{{ strtoupper(optional($pengajuan->profile)->nama_lembaga ?: '-') }}</p>
-                    <p style="margin-bottom:16px">PROGRAM PELATIHAN TEKNIS DI BIDANG {{ strtoupper($jenisPengajuan) }}</p>
-                    <p><a href="{{ route('ttd.sidang.rincian.export', $token) }}" class="btn-ettd">EXPORT TO DOCX</a></p>
+                    <div class="section-header">
+                        <h3>RINCIAN UNSUR PENILAIAN AKREDITASI</h3> <a
+                            href="{{ route('ttd.sidang.rincian.export', $token) }}" class="btn-ettd"> Export DOCX </a>
+                    </div>
+                    <div class="meta">
+                        <table>
+                            <tbody>
+                                <tr>
+                                    <td>NAMA LEMBAGA</td>
+                                    <td>:</td>
+                                    <td>{{ strtoupper(optional($pengajuan->profile)->nama_lembaga ?: '-') }}</td>
+                                </tr>
+                                <tr>
+                                    <td>JENIS PENGAJUAN</td>
+                                    <td>:</td>
+                                    <td>PROGRAM PELATIHAN TEKNIS DI BIDANG {{ strtoupper($jenisPengajuan) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
                     @if ($rincianPenilaian['nilai_final'] === '-')
                         <p class="status-info status-incomplete" role="alert">Data penilaian final belum lengkap.</p>
                     @endif
@@ -1078,28 +1143,42 @@
                             <table class="ettd-notes-table">
                                 <thead>
                                     <tr>
-                                        <th>INDIKATOR</th>
-                                        <th>NILAI SUB UNSUR</th>
-                                        <th>NILAI UNSUR</th>
+                                        <th class="text-center" style="text-align: center;">INDIKATOR</th>
+                                        <th class="text-center" style="text-align: center;">NILAI SUB UNSUR</th>
+                                        <th class="text-center" style="text-align: center;">NILAI UNSUR</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($rincianPenilaian['rows'] as $row)
                                         <tr>
-                                            <td style="padding-left: {{ $row['level'] === 'unsur' ? 8 : ($row['level'] === 'subunsur' ? 28 : 48) }}px;">{{ $row['label'] }}</td>
-                                            <td class="text-center" style="text-align: center;">{{ $row['nilai_subunsur'] ?? '-' }}</td>
+                                            <td
+                                                style="padding-left: {{ $row['level'] === 'unsur' ? 8 : ($row['level'] === 'subunsur' ? 28 : 48) }}px;">
+                                                {{ $row['label'] }}</td>
+                                            <td class="text-center" style="text-align: center;">
+                                                {{ $row['nilai_subunsur'] ?? '-' }}</td>
                                             @if ($row['show_nilai_unsur'] ?? false)
-                                                <td rowspan="{{ $row['unsur_rowspan'] ?? 1 }}" class="text-center" style="text-align: center; vertical-align: middle;">{{ $row['nilai_unsur'] ?? '-' }}</td>
+                                                <td rowspan="{{ $row['unsur_rowspan'] ?? 1 }}" class="text-center"
+                                                    style="text-align: center; vertical-align: middle;">
+                                                    {{ $row['nilai_unsur'] ?? '-' }}</td>
                                             @endif
                                         </tr>
                                     @endforeach
                                     <tr>
-                                        <th colspan="2">NILAI AKREDITASI</th>
-                                        <th class="text-center" style="text-align: center;">{{ $rincianPenilaian['nilai_final'] }}</th>
+                                        <th colspan="2" style="text-align: center; vertical-align: middle;">
+                                            NILAI AKREDITASI
+                                        </th>
+                                        <th style="text-align: center; vertical-align: middle;">
+                                            {{ $rincianPenilaian['nilai_final'] }}
+                                        </th>
                                     </tr>
+
                                     <tr>
-                                        <th colspan="2">PREDIKAT AKREDITASI</th>
-                                        <th class="text-center" style="text-align: center;">({{ $rincianPenilaian['predikat_final'] }})</th>
+                                        <th colspan="2" style="text-align: center; vertical-align: middle;">
+                                            PREDIKAT AKREDITASI
+                                        </th>
+                                        <th style="text-align: center; vertical-align: middle;">
+                                            ({{ $rincianPenilaian['predikat_final'] }})
+                                        </th>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1109,9 +1188,11 @@
             </div>
             <div class="ettd-panel" id="recommendationTab" role="tabpanel">
                 <div class="document-container">
-                    <h3 style="color:#b34700; margin-bottom: 16px;">Rekomendasi Hasil Akreditasi</h3>
-                    <p><a href="{{ route('ttd.sidang.rekomendasi.export', $token) }}" class="btn-ettd">Export DOCX</a>
-                    </p>
+                    <div class="section-header">
+                        <h3>REKOMENDASI HASIL AKREDITASI</h3> <a
+                            href="{{ route('ttd.sidang.rekomendasi.export', $token) }}" class="btn-ettd">Export
+                            DOCX</a>
+                    </div>
                     <div class="meta">
                         <table>
                             <tr>

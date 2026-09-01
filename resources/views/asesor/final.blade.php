@@ -119,7 +119,7 @@
                                             <a href="{{ route('rekomendasi.hasil.sidang.show', $pengajuan->id) }}"
                                                 class="btn btn-sm rounded-pill btn-primary">
                                                 <i class="bx bxs-notepad"></i>
-                                                {{ $pengajuan->rekomendasi_akreditasi_submitted_at ? 'Lihat Rekomendasi' : 'Generate Template' }}
+                                                {{ $pengajuan->rekomendasi_akreditasi_submitted_at ? 'Lihat Rekomendasi' : 'Generate Rekomendasi' }}
                                             </a>
                                         </td>
                                     </tr>
