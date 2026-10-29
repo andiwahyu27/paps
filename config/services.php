@@ -44,4 +44,12 @@ return [
         'audience' => env('GOJAGS_JWT_AUDIENCE', 'paps'),
     ],
 
+    // API integrasi pelatihan PAPS -> GoJAGS (lihat dokumen_md/API_PAPS.md)
+    'paps' => [
+        'base_url' => env('PAPS_BASE_URL', 'https://gojags.web.bps.go.id/server/api/v1/paps'),
+        'client_id' => env('PAPS_CLIENT_ID'),
+        'client_secret' => env('PAPS_CLIENT_SECRET'),
+        'timeout' => env('PAPS_TIMEOUT', 30),
+    ],
+
 ];
