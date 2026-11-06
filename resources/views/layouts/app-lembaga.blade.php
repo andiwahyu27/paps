@@ -201,6 +201,12 @@
                             </ul>
                         </li>
                     @endif
+                    <li class="menu-item {{ request()->routeIs('monitoring-akreditasi.*') ? 'active' : '' }}">
+                        <a href="{{ route('monitoring-akreditasi.index') }}" class="menu-link">
+                            <i class="menu-icon tf-icons bx bx-bar-chart-alt-2"></i>
+                            <div>Monitoring Akreditasi PSTK</div>
+                        </a>
+                    </li>
                     <li class="menu-item {{ request()->routeIs('panduan') ? 'active' : '' }}">
                         <a href="{{ route('panduan') }}" class="menu-link">
                             <i class="menu-icon tf-icons bx bxs-help-circle"></i>

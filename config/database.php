@@ -63,6 +63,22 @@ return [
             ]) : [],
         ],
 
+        'mysql_gen1' => [
+            'driver' => 'mysql',
+            'host' => env('DB_GEN1_HOST', '127.0.0.1'),
+            'port' => env('DB_GEN1_PORT', '3306'),
+            'database' => env('DB_GEN1_DATABASE'),
+            'username' => env('DB_GEN1_USERNAME'),
+            'password' => env('DB_GEN1_PASSWORD'),
+            'unix_socket' => env('DB_GEN1_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_general_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+        ],
+
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),

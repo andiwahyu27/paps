@@ -12,6 +12,8 @@ use App\Http\Controllers\RekomendasiHasilAkreditasiController;
 use App\Http\Controllers\SekretariatController;
 use App\Http\Controllers\TtdController;
 use App\Http\Controllers\TtdSidangController;
+use App\Http\Controllers\MonitoringAkreditasiController;
+use App\Http\Controllers\MonitoringSekretariatController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -50,6 +52,18 @@ Route::get('/home', [HomeController::class, 'index'])->name('home');
 Route::get('/panduan', [PanduanController::class, 'index'])->name('panduan');
 Route::get('/pengaturan', [PengaturanController::class, 'index'])->name('pengaturan');
 Route::get('/error', [HomeController::class, 'error'])->name('error');
+
+Route::prefix('monitoring-akreditasi-pstk')->name('monitoring-akreditasi.')->group(function () {
+    Route::get('/', [MonitoringAkreditasiController::class, 'index'])->name('index');
+    Route::get('/create', [MonitoringAkreditasiController::class, 'create'])->name('create');
+    Route::post('/', [MonitoringAkreditasiController::class, 'store'])->name('store');
+    Route::get('/{report}/edit', [MonitoringAkreditasiController::class, 'edit'])->name('edit');
+    Route::put('/{report}', [MonitoringAkreditasiController::class, 'update'])->name('update');
+    Route::post('/{report}/submit', [MonitoringAkreditasiController::class, 'submit'])->name('submit');
+});
+
+Route::get('/monitoring-evaluasi', [MonitoringSekretariatController::class, 'index'])->name('monitoring-evaluasi');
+Route::get('/monitoring-evaluasi/{report}', [MonitoringSekretariatController::class, 'show'])->name('monitoring-evaluasi.detail');
 Route::post('/back-to-reality', [SekretariatController::class, 'backToReality'])->name('back.to.reality');
 
 // Public routes - dapat diakses tanpa login
@@ -129,8 +143,6 @@ Route::group(['middleware' => 'is.sekretariat'], function () {
     Route::put('/lembaga/pic/delete', [SekretariatController::class, 'hapusPic'])->name('pic.hapus');
     Route::put('/assign-asesor', [SekretariatController::class, 'assignAsesor'])->name('assign.asesor');
     Route::get('/generate-ba/{id}', [SekretariatController::class, 'generateBA'])->name('generate.ba');
-    Route::get('/monitoring-evaluasi', [SekretariatController::class, 'monitoringEvaluasi'])->name('monitoring-evaluasi');
-    Route::get('/monitoring-penyelenggaraan/{id}', [SekretariatController::class, 'monitoringPenyelenggaraan'])->name('monitoring-penyelenggaraan');
 });
 
 // asesor or sekretariat
