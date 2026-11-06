@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('monitoring_profile_maps', function (Blueprint $table) {
+        if (!Schema::hasTable('monitoring_profile_maps')) Schema::create('monitoring_profile_maps', function (Blueprint $table) {
             $table->id();
             $table->string('source', 20);
             $table->unsignedBigInteger('source_profile_id');
@@ -18,7 +18,7 @@ return new class extends Migration
             $table->index('profile_id');
         });
 
-        Schema::create('monitoring_accreditations', function (Blueprint $table) {
+        if (!Schema::hasTable('monitoring_accreditations')) Schema::create('monitoring_accreditations', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('profile_id');
             $table->unsignedBigInteger('jenis_pengajuan_id');
@@ -32,7 +32,7 @@ return new class extends Migration
             $table->index(['profile_id', 'jenis_pengajuan_id']);
         });
 
-        Schema::create('monitoring_reports', function (Blueprint $table) {
+        if (!Schema::hasTable('monitoring_reports')) Schema::create('monitoring_reports', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->unsignedBigInteger('profile_id');
@@ -47,7 +47,7 @@ return new class extends Migration
             $table->index(['report_year', 'status']);
         });
 
-        Schema::create('monitoring_report_versions', function (Blueprint $table) {
+        if (!Schema::hasTable('monitoring_report_versions')) Schema::create('monitoring_report_versions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('monitoring_report_id')->constrained('monitoring_reports')->cascadeOnDelete();
             $table->unsignedInteger('version');
