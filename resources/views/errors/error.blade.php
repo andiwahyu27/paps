@@ -5,6 +5,7 @@
     $titles = [
         403 => 'Forbidden',
         404 => 'Page Not Found',
+        410 => 'Link Kedaluwarsa',
         419 => 'Session Expired',
         500 => 'Internal Server Error',
         503 => 'Service Unavailable',
@@ -13,6 +14,7 @@
     $messages = [
         403 => 'Anda tidak memiliki hak akses untuk membuka halaman ini.',
         404 => 'Halaman yang Anda cari tidak ditemukan atau telah dipindahkan.',
+        410 => 'Link monitoring sudah kedaluwarsa. Silakan hubungi sekretariat atau akses melalui akun lembaga.',
         419 => 'Sesi Anda telah berakhir. Silakan login kembali untuk melanjutkan.',
         500 => 'Terjadi kesalahan pada server. Silakan coba beberapa saat lagi.',
         503 => 'Layanan sedang tidak tersedia. Silakan coba beberapa saat lagi.',

@@ -9,7 +9,8 @@ Status berikut mencerminkan kondisi kode saat ini; “parsial” berarti masih a
 | Task | Hasil kerja | Status |
 |---|---|---|
 | 1. Fondasi data dan laporan | Migration tambahan, akses dua database, satu laporan per lembaga–program–tahun, validasi, draf, snapshot versi, dan konflik revisi | Kode selesai; dry run importer sekarang memeriksa konflik yang sama dengan mode tulis. Migration perlu dipastikan `Ran` pada database lokal sebelum aktivasi |
-| 2. Form lembaga | Menu mandiri, panduan dan blok A–D, data awal, simpan draf, kirim, perbaikan | Parsial: kerangka form dan navigasi blok dibuat; validasi lengkap dan alur submit belum lulus uji |
+| 1.5. Histori monitoring 2025 | Import jawaban historis ke versi laporan terkirim dengan provenance terbatas; data master Gen2 hanya untuk pencocokan dan snapshot | Kode importer dan migration provenance tersedia; menunggu migration manual, dry run terhadap CSV sumber, lalu import terkontrol |
+| 2. Form lembaga | Menu mandiri, panduan dan blok A–D, data awal, simpan draf, kirim, perbaikan | Implementasi form dan validasi selesai; uji interaksi dan staging belum dilakukan |
 | 3. Link sekretariat | Generate default/kustom, salin, edit kedaluwarsa, Hapus Link, generate ulang, audit, dan akses publik | Parsial: migration, token, route dan sebagian UI tersedia; pengelolaan tanggal kustom/ulang dan keamanan belum diuji menyeluruh |
 | 4. Rekap dan dry test | Daftar semua pasangan wajib, filter/statistik, akses, staging, dry run, ekspor/cetak | Belum selesai: rekap baru merangkai laporan dan akreditasi untuk tahun terpilih; dry test staging belum dijalankan |
 

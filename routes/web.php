@@ -55,8 +55,8 @@ Route::get('/error', [HomeController::class, 'error'])->name('error');
 
 Route::prefix('monitoring-akreditasi-pstk')->name('monitoring-akreditasi.')->group(function () {
     Route::get('/form/{token}', [MonitoringAkreditasiController::class, 'publicForm'])->middleware('throttle:30,1')->name('public.form');
-    Route::post('/form/{token}/draft', [MonitoringAkreditasiController::class, 'publicDraft'])->middleware('throttle:10,1')->name('public.draft');
-    Route::post('/form/{token}/submit', [MonitoringAkreditasiController::class, 'publicSubmit'])->middleware('throttle:5,1')->name('public.submit');
+    Route::post('/form/{token}/draft', [MonitoringAkreditasiController::class, 'publicDraft'])->middleware('throttle:30,1')->name('public.draft');
+    Route::post('/form/{token}/submit', [MonitoringAkreditasiController::class, 'publicSubmit'])->middleware('throttle:10,1')->name('public.submit');
     Route::get('/', [MonitoringAkreditasiController::class, 'index'])->name('index');
     Route::get('/create', [MonitoringAkreditasiController::class, 'create'])->name('create');
     Route::post('/', [MonitoringAkreditasiController::class, 'store'])->name('store');
