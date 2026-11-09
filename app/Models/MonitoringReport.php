@@ -18,5 +18,6 @@ class MonitoringReport extends Model
     public function profile() { return $this->belongsTo(Profile::class); }
     public function jenisPengajuan() { return $this->belongsTo(JenisPengajuan::class, 'jenis_pengajuan_id'); }
     public function versions() { return $this->hasMany(MonitoringReportVersion::class); }
+    public function links() { return $this->hasMany(MonitoringReportLink::class, 'monitoring_report_id'); }
     public function submittedVersion() { return $this->hasOne(MonitoringReportVersion::class)->whereColumn('version', 'monitoring_reports.submitted_version'); }
 }

@@ -19,7 +19,7 @@ class IsSekretariatMiddleware
         if (Auth::user()->role == 2) {
             return $next($request);
         } else {
-            return abort(503, 'Anda tidak memiliki hak akses');
+            return abort(403, 'Anda tidak memiliki hak akses');
         }
     }
 }

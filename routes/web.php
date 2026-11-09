@@ -54,6 +54,9 @@ Route::get('/pengaturan', [PengaturanController::class, 'index'])->name('pengatu
 Route::get('/error', [HomeController::class, 'error'])->name('error');
 
 Route::prefix('monitoring-akreditasi-pstk')->name('monitoring-akreditasi.')->group(function () {
+    Route::get('/form/{token}', [MonitoringAkreditasiController::class, 'publicForm'])->middleware('throttle:30,1')->name('public.form');
+    Route::post('/form/{token}/draft', [MonitoringAkreditasiController::class, 'publicDraft'])->middleware('throttle:10,1')->name('public.draft');
+    Route::post('/form/{token}/submit', [MonitoringAkreditasiController::class, 'publicSubmit'])->middleware('throttle:5,1')->name('public.submit');
     Route::get('/', [MonitoringAkreditasiController::class, 'index'])->name('index');
     Route::get('/create', [MonitoringAkreditasiController::class, 'create'])->name('create');
     Route::post('/', [MonitoringAkreditasiController::class, 'store'])->name('store');
@@ -64,6 +67,10 @@ Route::prefix('monitoring-akreditasi-pstk')->name('monitoring-akreditasi.')->gro
 
 Route::get('/monitoring-evaluasi', [MonitoringSekretariatController::class, 'index'])->name('monitoring-evaluasi');
 Route::get('/monitoring-evaluasi/{report}', [MonitoringSekretariatController::class, 'show'])->name('monitoring-evaluasi.detail');
+Route::post('/monitoring-evaluasi/{profile}/{program}/{year}/link', [MonitoringSekretariatController::class, 'generateLink'])->middleware(['auth','is.sekretariat'])->name('monitoring-evaluasi.link.generate');
+Route::put('/monitoring-evaluasi/link/{link}/expiry', [MonitoringSekretariatController::class, 'updateLinkExpiry'])->middleware(['auth','is.sekretariat'])->name('monitoring-evaluasi.link.expiry');
+Route::delete('/monitoring-evaluasi/link/{link}', [MonitoringSekretariatController::class, 'deleteLink'])->middleware(['auth','is.sekretariat'])->name('monitoring-evaluasi.link.delete');
+Route::post('/monitoring-evaluasi/{report}/link/regenerate', [MonitoringSekretariatController::class, 'regenerateLink'])->middleware(['auth','is.sekretariat'])->name('monitoring-evaluasi.link.regenerate');
 Route::post('/back-to-reality', [SekretariatController::class, 'backToReality'])->name('back.to.reality');
 
 // Public routes - dapat diakses tanpa login
