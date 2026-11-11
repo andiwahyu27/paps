@@ -105,6 +105,25 @@ class MonevExportTest extends TestCase
         $this->actingAs($user)->get(route('monitoring-evaluasi.export', $report))->assertForbidden();
     }
 
+    public function test_filtered_export_contains_only_matching_reports(): void
+    {
+        $report = $this->fixture();
+        DB::table('tb_profile_lembagas')->insert(['id' => 2, 'nama_lembaga' => 'Lembaga Lain']);
+        MonitoringReport::create(['profile_id' => 2, 'jenis_pengajuan_id' => 1, 'report_year' => 2025, 'status' => 'submitted']);
+
+        $response = $this->actingAs($this->secretariat())->get(route('monitoring-evaluasi.export-filtered', [
+            'year' => 2026,
+            'status' => 'draft',
+            'search' => 'Lembaga Uji',
+        ]));
+
+        $response->assertOk();
+        $csv = $response->streamedContent();
+        $this->assertStringContainsString('Lembaga Uji', $csv);
+        $this->assertStringNotContainsString('Lembaga Lain', $csv);
+        $this->assertSame(6, count($this->csvRows($csv)));
+    }
+
     private function fixture(): MonitoringReport
     {
         DB::table('tb_profile_lembagas')->insert(['id' => 1, 'nama_lembaga' => 'Lembaga Uji']);

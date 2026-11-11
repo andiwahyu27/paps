@@ -25,12 +25,7 @@ class MonitoringSekretariatController extends Controller
     public function index(Request $request)
     {
         $year = (int) $request->input('year', now()->year);
-        $reports = MonitoringReport::with(['profile', 'jenisPengajuan', 'versions', 'links' => fn ($q) => $q->latest()])
-            ->when($request->year, fn ($q, $v) => $q->where('report_year', $v))
-            ->when($request->program, fn ($q, $v) => $q->where('jenis_pengajuan_id', $v))
-            ->when($request->status, fn ($q, $v) => $q->where('status', $v))
-            ->when($request->search, fn ($q, $v) => $q->whereHas('profile', fn ($p) => $p->where('nama_lembaga', 'like', "%{$v}%")))
-            ->latest('report_year')->get();
+        $reports = $this->filteredReports($request)->with(['profile', 'jenisPengajuan', 'versions', 'links' => fn ($q) => $q->latest()])->get();
         $stats = [
             'total' => $reports->count(),
             'submitted' => $reports->where('status', 'submitted')->count(),
@@ -43,6 +38,39 @@ class MonitoringSekretariatController extends Controller
             if ($link && $link->expires_at->gt(now())) $link->public_url = route('monitoring-akreditasi.public.form', app(\App\Services\MonitoringReportLinkService::class)->decrypt($link));
         }
         return view('sekretariat.monitoring-evaluasi', compact('reports', 'stats', 'accreditations', 'year'));
+    }
+
+    private function filteredReports(Request $request)
+    {
+        return MonitoringReport::query()
+            ->when($request->year, fn ($q, $v) => $q->where('report_year', $v))
+            ->when($request->program, fn ($q, $v) => $q->where('jenis_pengajuan_id', $v))
+            ->when($request->status, fn ($q, $v) => $q->where('status', $v))
+            ->when($request->search, fn ($q, $v) => $q->whereHas('profile', fn ($p) => $p->where('nama_lembaga', 'like', "%{$v}%")))
+            ->latest('report_year');
+    }
+
+    public function exportFiltered(Request $request)
+    {
+        $reports = $this->filteredReports($request)->with(['profile', 'jenisPengajuan'])->get();
+        return response()->streamDownload(function () use ($reports) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Lembaga', 'Program', 'Tahun', 'Status', 'Pertanyaan', 'Jawaban']);
+            foreach ($reports as $report) {
+                $answers = $this->monitoring->answersForReport($report) ?? [];
+                $monev = Monev::where('legacy_report_id', $report->id)->first();
+                $questions = $monev
+                    ? MonevPertanyaan::where('kuesioner_id', $monev->kuesioner_id)->orderBy('order_number')->get()
+                    : collect(range(1, 26))->map(fn ($number) => (object) ['kode' => (string) $number]);
+                foreach ($questions as $question) {
+                    $code = $question->kode;
+                    $key = $code === '12a' ? '12.internal' : ($code === '12b' ? '12.external' : ($code === '23a' ? '23_keterangan' : $code));
+                    $value = data_get($answers, $key);
+                    fputcsv($handle, [$this->safeCsvValue($report->profile->nama_lembaga ?? ''), $this->safeCsvValue($report->jenisPengajuan->nama ?? ''), $report->report_year, $report->status, $code, $this->safeCsvValue(is_array($value) ? implode(', ', $value) : ($value ?? ''))]);
+                }
+            }
+            fclose($handle);
+        }, 'monitoring-akreditasi-filter.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     public function generateLink(int $profile, int $program, int $year, Request $request, MonitoringReportLinkService $links)

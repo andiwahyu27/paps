@@ -68,6 +68,7 @@ Route::prefix('monitoring-akreditasi-pstk')->name('monitoring-akreditasi.')->gro
 });
 
 Route::get('/monitoring-evaluasi', [MonitoringSekretariatController::class, 'index'])->name('monitoring-evaluasi');
+Route::get('/monitoring-evaluasi/export', [MonitoringSekretariatController::class, 'exportFiltered'])->middleware(['auth','is.sekretariat'])->name('monitoring-evaluasi.export-filtered');
 Route::get('/monitoring-evaluasi/{report}', [MonitoringSekretariatController::class, 'show'])->name('monitoring-evaluasi.detail');
 Route::get('/monitoring-evaluasi/{report}/export', [MonitoringSekretariatController::class, 'export'])->middleware(['auth','is.sekretariat'])->name('monitoring-evaluasi.export');
 Route::post('/monitoring-evaluasi/{profile}/{program}/{year}/link', [MonitoringSekretariatController::class, 'generateLink'])->middleware(['auth','is.sekretariat'])->name('monitoring-evaluasi.link.generate');
