@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 $app = require dirname(__DIR__, 2) . '/bootstrap/app.php';
@@ -37,7 +38,9 @@ if (DB::selectOne('SELECT DATABASE() AS name')->name !== $database) {
 if ($database === 'paps_restore_monev_dryst') {
     $config->set('monev.use_normalized_reports', true);
     foreach (['monitoring_reports', 'monitoring_report_versions'] as $table) {
-        DB::statement("CREATE TEMPORARY TABLE `{$table}` (legacy_access_disabled INT)");
+        if (Schema::hasTable($table)) {
+            DB::statement("CREATE TEMPORARY TABLE `{$table}` (legacy_access_disabled INT)");
+        }
     }
 } elseif (!$config->get('monev.use_normalized_reports')) {
     throw new RuntimeException('Mode Monev belum aktif pada konfigurasi dev.');
