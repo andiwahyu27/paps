@@ -13,5 +13,6 @@ class MonevSubmission extends Model
         'identity_snapshot' => 'array',
         'accreditation_snapshot' => 'array',
         'submitted_at' => 'datetime',
+        'is_late' => 'boolean',
     ];
 }

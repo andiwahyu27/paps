@@ -102,11 +102,9 @@ class MonitoringSekretariatController extends Controller
         $data = $request->validate(['expires_at' => 'nullable|date']);
         $this->authorizeAccreditation($profile, $program, $year);
         $issued = DB::transaction(function () use ($profile, $program, $year, $links, $data) {
-            $report = config('monev.use_normalized_reports')
-                ? $this->monitoring->findOrCreateMonev($profile, $program, $year)
-                : MonitoringReport::firstOrCreate(['profile_id' => $profile, 'jenis_pengajuan_id' => $program, 'report_year' => $year], ['status' => 'draft']);
+            $report = $this->monitoring->reportForLink($profile, $program, $year);
             return $links->issue($report, auth()->id(), $data['expires_at'] ?? null);
-        });
+        }, 3);
         return back()->with('generated_link', route('monitoring-akreditasi.public.form', $issued['token']))->with('success', 'Link monitoring berhasil dibuat.');
     }
 
@@ -132,7 +130,7 @@ class MonitoringSekretariatController extends Controller
 
     private function authorizeAccreditation(int $profileId, int $programId, int $year): void
     {
-        abort_if($year < 2020 || $year > now()->year, 422);
+        abort_if($year < 2020 || $year > 9999 || ($year > now()->year && !$this->monitoring->periodForYear($year)), 422);
         abort_unless(MonitoringAccreditation::where('profile_id', $profileId)->where('jenis_pengajuan_id', $programId)
             ->whereDate('valid_from', '<=', $year . '-12-31')->whereDate('valid_until', '>=', $year . '-01-01')->exists(), 404);
     }

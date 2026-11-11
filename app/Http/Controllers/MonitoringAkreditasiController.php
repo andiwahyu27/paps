@@ -23,7 +23,8 @@ class MonitoringAkreditasiController extends Controller
     public function global()
     {
         $period = MonitoringReportingPeriod::global();
-        $state = $period?->stateAt(now());
+        $at = now();
+        $state = $period?->stateAt($at);
         $profile = $this->service->profileForUser(auth()->id());
         $programs = collect();
         $notice = null;
@@ -35,17 +36,23 @@ class MonitoringAkreditasiController extends Controller
                 ->where('profile_id', $profile->id)->where('report_year', $period->report_year)
                 ->get()->keyBy('jenis_pengajuan_id');
             $programs = $this->service->programsFor($profile, $period->report_year)
-                ->unique('jenis_pengajuan_id')->map(function ($accreditation) use ($reports, $period, $state) {
+                ->unique('jenis_pengajuan_id')->map(function ($accreditation) use ($reports, $period, $at) {
                     $programId = $accreditation->jenis_pengajuan_id;
                     $report = $reports->get($programId);
-                    [$status, $label, $url] = match ($report?->status) {
-                        'submitted' => ['Terkirim', 'Lihat Laporan', route('monitoring-akreditasi.view', $report)],
-                        'revision_draft' => ['Draf Revisi', 'Lanjutkan Draf', route('monitoring-akreditasi.edit', $report)],
-                        'draft' => ['Draf', 'Lanjutkan Draf', route('monitoring-akreditasi.edit', $report)],
-                        default => ['Belum dibuat', 'Buat Laporan', $state === 'open'
-                            ? route('monitoring-akreditasi.create', ['year' => $period->report_year, 'program' => $programId])
-                            : null],
-                    };
+                    $access = $this->service->reportAccess($period, $report, $at);
+                    if ($access === 'closed') {
+                        [$status, $label, $url] = ['Belum dibuat', null, null];
+                    } elseif ($access === 'closed_submitted' || $report?->status === 'submitted') {
+                        [$status, $label, $url] = ['Terkirim', 'Lihat Laporan', route('monitoring-akreditasi.view', $report)];
+                    } elseif ($report) {
+                        $status = $report->status === 'revision_draft' ? 'Draf Revisi' : ($report->edit_version > 1 ? 'Draf' : 'Belum dibuat');
+                        $label = $status === 'Belum dibuat' ? 'Buat Laporan' : 'Lanjutkan Draf';
+                        $url = route('monitoring-akreditasi.edit', $report);
+                    } else {
+                        [$status, $label, $url] = ['Belum dibuat', 'Buat Laporan', route('monitoring-akreditasi.create', [
+                            'year' => $period->report_year, 'program' => $programId,
+                        ])];
+                    }
 
                     return ['name' => $accreditation->jenisPengajuan?->nama, 'status' => $status, 'label' => $label, 'url' => $url];
                 });
@@ -66,11 +73,17 @@ class MonitoringAkreditasiController extends Controller
         $link = $links->findActive($token);
         $report = $links->linkedReport($link);
         $this->authorizeReport($report);
+        $period = $this->service->periodForYear($report->report_year);
+        $access = $this->service->reportAccess($period, $report, now());
+        if ($response = $this->unavailableForm($period, $access, $report)) {
+            return $response;
+        }
         $accreditation = $this->service->programsFor($report->profile, $report->report_year)->firstWhere('jenis_pengajuan_id', $report->jenis_pengajuan_id);
         $answers = array_replace($this->identityAnswers($report->profile, $accreditation, $report->report_year), $this->editableAnswers($report));
         return response()->view('lembaga.monitoring-akreditasi.public-form', [
             'profile' => $report->profile, 'report' => $report, 'accreditations' => $this->service->programsFor($report->profile, $report->report_year),
             'answers' => $answers, 'year' => $report->report_year, 'token' => $token, 'link' => $link, 'accreditation' => $accreditation,
+            'lateDeadline' => $access === 'late_draft' ? $period->closes_at : null,
             'questionnaireQuestions' => $this->service->questionnaireQuestions($report),
         ])->header('Cache-Control', 'no-store, private')->header('Referrer-Policy', 'no-referrer');
     }
@@ -94,7 +107,7 @@ class MonitoringAkreditasiController extends Controller
         $data = $this->validateReport($request, $report->report_year, $report->jenis_pengajuan_id, true, $report);
         $answers = $this->lockIdentityAnswers($data['answers'], $report->profile, $report->jenis_pengajuan_id, $report->report_year);
         $report = $this->submitReport($request, $report, $answers, 'secretariat_link');
-        return response()->json(['ok' => true, 'message' => 'Laporan berhasil dikirim.', 'edit_version' => $report->edit_version])
+        return response()->json($this->submittedPayload($report))
             ->header('Cache-Control', 'no-store, private')->header('Referrer-Policy', 'no-referrer');
     }
 
@@ -110,23 +123,36 @@ class MonitoringAkreditasiController extends Controller
         $reports = $this->service->reportQuery()->with('jenisPengajuan')
             ->where('profile_id', $profile->id)->when($request->program, fn ($q, $v) => $q->where('jenis_pengajuan_id', $v))
             ->when($request->status, fn ($q, $v) => $q->where('status', $v))->orderByDesc('report_year')->get();
-        return view('lembaga.monitoring-akreditasi.index', compact('profile', 'reports', 'year'));
+        $periods = MonitoringReportingPeriod::whereIn('report_year', $reports->pluck('report_year')->push($year)->unique())
+            ->get()->keyBy('report_year');
+        $at = now();
+        $accessByReport = $reports->mapWithKeys(fn ($report) => [
+            $report->getKey() => $this->service->reportAccess($periods->get($report->report_year), $report, $at),
+        ]);
+        $canCreate = $this->service->reportAccess($periods->get($year), null, $at) === 'open';
+        return view('lembaga.monitoring-akreditasi.index', compact('profile', 'reports', 'year', 'accessByReport', 'canCreate'));
     }
 
     public function create(Request $request)
     {
         $profile = $this->profile(); $year = (int) $request->input('year', now()->year);
+        $period = $this->service->periodForYear($year);
         $accreditations = $this->service->programsFor($profile, $year);
         $accreditation = null;
         $data = $request->validate(['program' => 'sometimes|required|integer']);
+        $report = null;
         if (isset($data['program'])) {
             $accreditation = $accreditations->firstWhere('jenis_pengajuan_id', $data['program']) ?? abort(403);
             $report = $this->service->reportQuery()->where([
                 'profile_id' => $profile->id, 'report_year' => $year, 'jenis_pengajuan_id' => $accreditation->jenis_pengajuan_id,
             ])->first();
-            if ($report) {
-                return redirect()->route($report->status === 'submitted' ? 'monitoring-akreditasi.view' : 'monitoring-akreditasi.edit', $report);
-            }
+        }
+        $access = $this->service->reportAccess($period, $report, now());
+        if ($response = $this->unavailableForm($period, $access, $report)) {
+            return $response;
+        }
+        if ($report) {
+            return redirect()->route($report->status === 'submitted' ? 'monitoring-akreditasi.view' : 'monitoring-akreditasi.edit', $report);
         }
 
         return view('lembaga.monitoring-akreditasi.form', [
@@ -159,8 +185,7 @@ class MonitoringAkreditasiController extends Controller
         if (config('monev.use_normalized_reports')) {
             $report = $this->service->startMonevDraft($profile, $data['jenis_pengajuan_id'], $data['report_year'], $data['answers']);
         } else {
-            $report = MonitoringReport::firstOrCreate(['profile_id' => $profile->id, 'jenis_pengajuan_id' => $data['jenis_pengajuan_id'], 'report_year' => $data['report_year']], ['status' => 'draft', 'updated_by' => auth()->id()]);
-            $report = $this->service->saveDraft($report, $data['answers'], auth()->id());
+            $report = $this->service->startLegacyDraft($profile, $data['jenis_pengajuan_id'], $data['report_year'], $data['answers'], auth()->id());
         }
         if ($request->expectsJson()) return response()->json(['ok' => true, 'edit_version' => $report->edit_version, 'edit_url' => route('monitoring-akreditasi.edit', $report)]);
         return redirect()->route('monitoring-akreditasi.edit', $report)->with('success', 'Draf monitoring berhasil disimpan.');
@@ -170,8 +195,18 @@ class MonitoringAkreditasiController extends Controller
     {
         $report = $this->service->resolveReport($report);
         $this->authorizeReport($report); $profile = $this->profile();
+        $period = $this->service->periodForYear($report->report_year);
+        $access = $this->service->reportAccess($period, $report, now());
+        if ($response = $this->unavailableForm($period, $access, $report)) {
+            return $response;
+        }
         $accreditation = $this->service->programsFor($profile, $report->report_year)->firstWhere('jenis_pengajuan_id', $report->jenis_pengajuan_id);
-        return view('lembaga.monitoring-akreditasi.form', ['profile' => $profile, 'report' => $report, 'accreditations' => $this->service->programsFor($profile, $report->report_year), 'accreditation' => $accreditation, 'answers' => array_replace($this->identityAnswers($profile, $accreditation, $report->report_year), $this->editableAnswers($report)), 'year' => $report->report_year, 'questionnaireQuestions' => $this->service->questionnaireQuestions($report)]);
+        return view('lembaga.monitoring-akreditasi.form', [
+            'profile' => $profile, 'report' => $report, 'accreditation' => $accreditation,
+            'answers' => array_replace($this->identityAnswers($profile, $accreditation, $report->report_year), $this->editableAnswers($report)),
+            'year' => $report->report_year, 'questionnaireQuestions' => $this->service->questionnaireQuestions($report),
+            'lateDeadline' => $access === 'late_draft' ? $period->closes_at : null,
+        ]);
     }
 
     public function view(string $report)
@@ -179,9 +214,19 @@ class MonitoringAkreditasiController extends Controller
         $report = $this->service->resolveReport($report);
         $this->authorizeReport($report);
         $profile = $this->profile();
+        $period = $this->service->periodForYear($report->report_year);
+        $access = $this->service->reportAccess($period, $report, now());
+        if ($access === 'closed') {
+            return $this->unavailableForm($period, $access, $report);
+        }
         $accreditation = $this->service->programsFor($profile, $report->report_year)->firstWhere('jenis_pengajuan_id', $report->jenis_pengajuan_id);
-        $answers = array_replace($this->identityAnswers($profile, $accreditation, $report->report_year), $this->service->answersForReport($report) ?? []);
-        return view('lembaga.monitoring-akreditasi.view', compact('report', 'profile', 'accreditation', 'answers'));
+        $reportAnswers = $access === 'closed_submitted'
+            ? $this->service->latestSubmission($report)?->answers
+            : $this->editableAnswers($report);
+        $answers = array_replace($this->identityAnswers($profile, $accreditation, $report->report_year), $reportAnswers ?? []);
+        $canEdit = in_array($access, ['open', 'late_draft'], true);
+        $displayStatus = $access === 'closed_submitted' ? 'submitted' : $report->status;
+        return view('lembaga.monitoring-akreditasi.view', compact('report', 'profile', 'accreditation', 'answers', 'canEdit', 'displayStatus'));
     }
 
     public function reset(Request $request, string $report)
@@ -213,8 +258,33 @@ class MonitoringAkreditasiController extends Controller
         $this->authorizeReport($report); $data = $this->validateReport($request, $report->report_year, $report->jenis_pengajuan_id, true, $report);
         $data['answers'] = $this->lockIdentityAnswers($data['answers'] ?? [], $this->profile(), $report->jenis_pengajuan_id, $report->report_year);
         $report = $this->submitReport($request, $report, $data['answers'], 'account');
-        if ($request->expectsJson()) return response()->json(['ok' => true, 'message' => 'Laporan berhasil dikirim.', 'edit_version' => $report->edit_version]);
+        if ($request->expectsJson()) return response()->json($this->submittedPayload($report));
         return redirect()->route('monitoring-akreditasi.index')->with('success', 'Laporan monitoring berhasil dikirim.');
+    }
+
+    private function unavailableForm(?MonitoringReportingPeriod $period, string $access, MonitoringReport|Monev|null $report)
+    {
+        if ($access === 'closed_submitted') {
+            return redirect()->route('monitoring-akreditasi.view', $report)->header('Cache-Control', 'no-store, private');
+        }
+        if (in_array($access, ['upcoming', 'closed'], true)) {
+            return response()->view('lembaga.monitoring-akreditasi.period', [
+                'period' => $period, 'state' => $access, 'reportsUrl' => route('monitoring-akreditasi.index', ['year' => $period->report_year]),
+            ])->header('Cache-Control', 'no-store, private');
+        }
+
+        return null;
+    }
+
+    private function submittedPayload(MonitoringReport|Monev $report): array
+    {
+        $payload = ['ok' => true, 'message' => 'Laporan berhasil dikirim.', 'edit_version' => $report->edit_version];
+        $period = $this->service->periodForYear($report->report_year);
+        if ($this->service->reportAccess($period, $report, now()) === 'closed_submitted') {
+            $payload['view_url'] = route('monitoring-akreditasi.view', $report);
+        }
+
+        return $payload;
     }
 
     private function editableAnswers(MonitoringReport|Monev $report): array
@@ -249,8 +319,11 @@ class MonitoringAkreditasiController extends Controller
 
     private function validateReport(Request $request, ?int $fixedYear = null, ?int $fixedProgram = null, bool $submit = false, MonitoringReport|Monev|null $report = null): array
     {
-        $rules = ['jenis_pengajuan_id' => 'required|integer', 'report_year' => 'required|integer|min:2020|max:' . now()->year, 'answers' => 'sometimes|array', 'answers.*' => 'nullable', 'edit_version' => 'nullable|integer|min:1'];
+        $rules = ['jenis_pengajuan_id' => 'required|integer', 'report_year' => 'required|integer|min:2020|max:9999', 'answers' => 'sometimes|array', 'answers.*' => 'nullable', 'edit_version' => 'nullable|integer|min:1'];
         $data = $request->validate($rules); $data['jenis_pengajuan_id'] = $fixedProgram ?? $data['jenis_pengajuan_id']; $data['report_year'] = $fixedYear ?? $data['report_year'];
+        if ($data['report_year'] > now()->year && !$this->service->periodForYear($data['report_year'])) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['report_year' => 'Periode untuk tahun ini belum dijadwalkan.']);
+        }
         if ($submit) {
             $questions = $this->service->questionnaireQuestions($report);
             $answers = $data['answers'] ?? [];

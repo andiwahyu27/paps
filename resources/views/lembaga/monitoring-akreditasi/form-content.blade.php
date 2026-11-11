@@ -89,6 +89,12 @@
 @endphp
 
 <div class="container-xxl flex-grow-1 container-p-y" id="monitoring-form">
+    @if (!empty($lateDeadline))
+        <div class="alert alert-warning" role="alert">
+            Pelaporan ditutup pada {{ $lateDeadline->timezone('Asia/Jakarta')->format('d/m/Y H:i') }} WIB.
+            Draf Anda masih dapat dilengkapi. Mohon segera kirim laporan.
+        </div>
+    @endif
     <div class="modal fade" id="submit-confirm-modal" tabindex="-1" aria-labelledby="submit-confirm-title"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -593,13 +599,14 @@
                     body: new FormData(form)
                 });
                 if (!response.ok) {
+                    const payload = await response.json().catch(() => ({}));
                     const messages = {
                         401: 'Sesi login tidak berlaku. Silakan login kembali.',
                         419: 'Sesi form berakhir. Muat ulang halaman.',
                         429: 'Terlalu banyak penyimpanan dalam waktu singkat. Silakan tunggu 1 menit sebelum mencoba lagi.',
                         500: 'Server gagal menyimpan draf. Periksa log aplikasi.'
                     };
-                    throw new Error(response.status === 409 ?
+                    throw new Error(response.status === 422 && payload.message ? payload.message : response.status === 409 ?
                         'Laporan berubah di sesi lain. Salin jawaban lalu muat ulang.' : (messages[response
                             .status] || 'Gagal menyimpan draf. Periksa koneksi lalu coba lagi.'));
                 }
@@ -710,9 +717,9 @@
                         renderReview();
                         markInvalidQuestions(Object.keys(payload.errors || {}).map(key => key.match(
                             /answers\.(\d+)/)?.[1] || (key === 'answers.has_training' ? 'has_training' : null)).filter(Boolean));
-                        showValidationToast(messages.join(' ') ||
+                        showValidationToast(messages.join(' ') || payload.message ||
                             'Data belum lengkap. Periksa pertanyaan wajib pada ringkasan.');
-                        setSaveStatus(messages.join(' ') || 'Data belum lengkap.', 'error');
+                        setSaveStatus(messages.join(' ') || payload.message || 'Data belum lengkap.', 'error');
                         button.disabled = false;
                         return;
                     }
@@ -725,6 +732,10 @@
                 const version = form.querySelector('[name="edit_version"]');
                 if (version && payload.edit_version) version.value = payload.edit_version;
                 dirty = false;
+                if (payload.view_url) {
+                    window.location.href = payload.view_url;
+                    return;
+                }
                 button.disabled = false;
                 showValidationToast(payload.message || 'Laporan berhasil dikirim.', 'success');
                 setSaveStatus('Laporan berhasil dikirim. Anda tetap berada di halaman Tinjau & Kirim.', 'success');

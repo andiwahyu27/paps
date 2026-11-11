@@ -17,6 +17,9 @@
             @if (!empty($notice))
                 <p class="mb-0">{{ $notice }}</p>
             @endif
+            @isset($reportsUrl)
+                <a href="{{ $reportsUrl }}" class="btn btn-outline-primary">Laporan Saya</a>
+            @endisset
             @if (isset($programs) && $programs->isNotEmpty())
                 <div class="table-responsive">
                     <table class="table">

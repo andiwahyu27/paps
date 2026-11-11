@@ -16,7 +16,7 @@
 | --- | --- | --- |
 | 1 | Sekretariat bisa mengatur periode dan menyalin URL permanen | Selesai |
 | 2 | Link mengarahkan akun lembaga ke program yang tepat setelah login Google atau GOJAGS | Selesai |
-| 3 | Aturan tenggat berlaku pada semua jalur perubahan laporan | Menunggu |
+| 3 | Aturan tenggat berlaku pada semua jalur perubahan laporan | Selesai |
 | 4 | Ringkasan laporan seragam dan menampilkan waktu kirim untuk sekretariat | Menunggu |
 | 5 | Alur dari surat sampai ekspor diverifikasi di dev | Menunggu |
 
@@ -51,11 +51,15 @@
 
 ## Task 3 — Penegakan tenggat dan kiriman terlambat
 
-- [ ] Tambahkan pemeriksaan periode bersama di layanan laporan untuk membuat, menyimpan draf, mengirim, dan reset. Terapkan pemeriksaan dalam transaksi dengan penguncian yang konsisten pada saat menulis. Gunakan histori kiriman untuk mengenali laporan yang pernah dikirim meskipun status sekarang `revision_draft`.
-- [ ] Setelah tutup, izinkan simpan dan kirim hanya untuk draf yang tersimpan sebelum tenggat dan belum memiliki kiriman resmi. Laporan kosong yang dibuat otomatis oleh generate link tidak memenuhi syarat draf tersimpan. Untuk laporan yang pernah dikirim, tolak edit, reset, dan submit, serta ambil kiriman terakhir untuk tampilan lembaga.
-- [ ] Pada draf yang masih boleh dikirim, tampilkan banner kuning berisi waktu penutupan WIB dan ajakan segera mengirim. Tolak request yang sudah tidak memenuhi syarat dengan pesan yang bisa ditampilkan form. Pertahankan jawaban terakhir yang berhasil tersimpan.
-- [ ] Simpan waktu submit dan metadata keterlambatan di arsip kiriman dalam transaksi submit. Periksa juga tautan sekretariat dan menu mandiri agar aturan tidak bisa dilewati dengan memakai rute lain.
-- [ ] Uji sebelum buka, tepat saat tutup, dan sesudah tutup. Uji tab lama, laporan kosong dari generate link, draf terlambat yang menjadi hanya-baca setelah submit, draf revisi yang dikunci, serta dua program dengan status berbeda.
+- [x] Tambahkan pemeriksaan periode bersama di layanan laporan untuk membuat, menyimpan draf, mengirim, dan reset. Terapkan pemeriksaan dalam transaksi dengan penguncian yang konsisten pada saat menulis. Gunakan histori kiriman untuk mengenali laporan yang pernah dikirim meskipun status sekarang `revision_draft`.
+- [x] Setelah tutup, izinkan simpan dan kirim hanya untuk draf yang tersimpan sebelum tenggat dan belum memiliki kiriman resmi. Laporan kosong yang dibuat otomatis oleh generate link tidak memenuhi syarat draf tersimpan. Untuk laporan yang pernah dikirim, tolak edit, reset, dan submit, serta ambil kiriman terakhir untuk tampilan lembaga.
+- [x] Pada draf yang masih boleh dikirim, tampilkan banner kuning berisi waktu penutupan WIB dan ajakan segera mengirim. Tolak request yang sudah tidak memenuhi syarat dengan pesan yang bisa ditampilkan form. Pertahankan jawaban terakhir yang berhasil tersimpan.
+- [x] Simpan waktu submit dan metadata keterlambatan di arsip kiriman dalam transaksi submit. Periksa juga tautan sekretariat dan menu mandiri agar aturan tidak bisa dilewati dengan memakai rute lain.
+- [x] Uji sebelum buka, tepat saat tutup, dan sesudah tutup. Uji tab lama, laporan kosong dari generate link, draf terlambat yang menjadi hanya-baca setelah submit, draf revisi yang dikunci, serta dua program dengan status berbeda.
+
+**Verifikasi.** PHPUnit lulus (26 tes, 216 asersi). Pengujian mencakup jam buka inklusif, jam tutup eksklusif, tab lama, link per lembaga, akses menu, draf terlambat, serta draf revisi yang tetap tersimpan untuk sekretariat.
+
+**Keputusan.** Untuk draf lama yang mempunyai jawaban, migrasi memakai waktu pembaruan terakhir sebagai waktu simpan yang diketahui. Setelah tutup, reset diblokir dan draf yang memenuhi syarat tetap dapat disimpan atau dikirim.
 
 ## Task 4 — Tampilan laporan bersama dan waktu kirim
 

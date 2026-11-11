@@ -28,7 +28,9 @@
     <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4">
         <h4 class="fw-bold py-3 mb-0"><span class="text-muted fw-light">Lembaga / Monitoring Akreditasi PSTK /</span> Hasil Laporan</h4>
         <div>
-            <a href="{{ route('monitoring-akreditasi.edit', $report) }}" class="btn btn-primary"><i class="bx bx-edit me-1"></i>Edit</a>
+            @if ($canEdit)
+                <a href="{{ route('monitoring-akreditasi.edit', $report) }}" class="btn btn-primary"><i class="bx bx-edit me-1"></i>Edit</a>
+            @endif
             <a href="{{ route('monitoring-akreditasi.index') }}" class="btn btn-outline-secondary">Kembali</a>
         </div>
     </div>
@@ -37,10 +39,12 @@
         <div class="col-md-4"><small class="text-muted d-block">Lembaga</small><strong>{{ $profile->nama_lembaga }}</strong></div>
         <div class="col-md-4"><small class="text-muted d-block">Program</small><strong>{{ $accreditation?->jenisPengajuan?->nama ?? '-' }}</strong></div>
         <div class="col-md-2"><small class="text-muted d-block">Tahun</small><strong>{{ $report->report_year }}</strong></div>
-        <div class="col-md-2"><small class="text-muted d-block">Status</small><span class="badge bg-{{ $report->status === 'submitted' ? 'success' : 'warning' }}">{{ $report->status === 'submitted' ? 'Terkirim' : 'Draf' }}</span></div>
+        <div class="col-md-2"><small class="text-muted d-block">Status</small><span class="badge bg-{{ $displayStatus === 'submitted' ? 'success' : 'warning' }}">{{ ['submitted' => 'Terkirim', 'revision_draft' => 'Draf Revisi', 'draft' => 'Draf'][$displayStatus] }}</span></div>
     </div></div></div>
     <div class="card"><div class="card-header"><h5 class="mb-0">Jawaban Laporan Monitoring</h5></div><div class="card-body">
-        <div class="alert alert-info">Halaman ini menampilkan hasil laporan dalam mode baca. Pilih Edit jika ada jawaban yang perlu diperbarui.</div>
+        @if ($canEdit)
+            <div class="alert alert-info">Pilih Edit jika ada jawaban yang perlu diperbarui.</div>
+        @endif
         <div class="row g-3">
             @if ($hasValue($hasTraining))
                 <div class="col-12"><div class="border rounded p-3"><strong>Apakah lembaga menyelenggarakan pelatihan setelah terakreditasi?</strong><div>{{ $hasTraining }}</div></div></div>

@@ -6,10 +6,14 @@ use App\Models\JenisPengajuan;
 use App\Models\MonitoringAccreditation;
 use App\Models\MonitoringReport;
 use App\Models\MonitoringReportVersion;
+use App\Models\MonitoringReportingPeriod;
 use App\Models\Monev;
 use App\Models\MonevKuesioner;
 use App\Models\MonevPertanyaan;
+use App\Models\MonevSubmission;
 use App\Models\Profile;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -18,6 +22,98 @@ class MonitoringReportService
     public function reportQuery()
     {
         return config('monev.use_normalized_reports') ? Monev::query() : MonitoringReport::query();
+    }
+
+    public function periodForYear(int $year, bool $writing = false): ?MonitoringReportingPeriod
+    {
+        $query = MonitoringReportingPeriod::where('report_year', $year);
+        if ($writing) {
+            // The schedule editor takes an exclusive lock on this same row.
+            // Lock it before the report, even when the year has no schedule yet.
+            MonitoringReportingPeriod::settings()->sharedLock()->first();
+            $query->sharedLock();
+        }
+
+        return $query->first();
+    }
+
+    public function latestSubmission(MonitoringReport|Monev $report): MonitoringReportVersion|MonevSubmission|null
+    {
+        if ($report instanceof Monev) {
+            return $report->latestSubmission;
+        }
+
+        return $report->submitted_version
+            ? $report->versions()->where('version', $report->submitted_version)->first()
+            : null;
+    }
+
+    public function reportAccess(?MonitoringReportingPeriod $period, MonitoringReport|Monev|null $report, CarbonInterface $at, bool $writing = false): string
+    {
+        $state = $period?->stateAt($at) ?? 'open';
+        if ($state !== 'closed' || !$report) {
+            return $state;
+        }
+
+        if ($report instanceof Monev) {
+            $submission = $writing ? $report->submissions()->sharedLock()->first(['id']) : $report->latestSubmission;
+            if ($submission || $report->submitted_at) {
+                return 'closed_submitted';
+            }
+
+            $savedAt = $report->first_draft_saved_at ? CarbonImmutable::parse($report->first_draft_saved_at, 'UTC') : null;
+        } else {
+            if ($report->submitted_version) {
+                return 'closed_submitted';
+            }
+
+            $versions = $report->versions()->whereNotNull('created_at')->orderBy('created_at');
+            $savedAt = ($writing ? $versions->sharedLock() : $versions)->first()?->created_at;
+        }
+
+        return $savedAt && $savedAt->lt($period->closes_at) ? 'late_draft' : 'closed';
+    }
+
+    private function assertPeriodAllowsChange(?MonitoringReportingPeriod $period, MonitoringReport|Monev|null $report, CarbonInterface $at, bool $reset = false): void
+    {
+        $access = $this->reportAccess($period, $report, $at, true);
+        if ($access === 'open' || ($access === 'late_draft' && !$reset)) {
+            return;
+        }
+
+        abort(422, match ($access) {
+            'upcoming' => 'Periode pelaporan belum dibuka.',
+            'closed_submitted' => 'Periode pelaporan sudah ditutup. Kiriman terakhir hanya dapat dilihat.',
+            'late_draft' => 'Jawaban draf tidak dapat direset setelah periode pelaporan ditutup.',
+            default => 'Periode pelaporan sudah ditutup. Hanya draf yang disimpan sebelum tenggat yang dapat dilanjutkan.',
+        });
+    }
+
+    public function startLegacyDraft(Profile $profile, int $program, int $year, array $answers, int $userId): MonitoringReport
+    {
+        return DB::transaction(function () use ($profile, $program, $year, $answers, $userId) {
+            $period = $this->periodForYear($year, true);
+            $this->assertPeriodAllowsChange($period, null, now());
+            $report = MonitoringReport::firstOrCreate([
+                'profile_id' => $profile->id, 'jenis_pengajuan_id' => $program, 'report_year' => $year,
+            ], ['status' => 'draft', 'updated_by' => $userId]);
+
+            return $this->saveDraft($report, $answers, $userId);
+        }, 3);
+    }
+
+    public function reportForLink(int $profile, int $program, int $year): MonitoringReport|Monev
+    {
+        $period = $this->periodForYear($year, true);
+        $key = ['profile_id' => $profile, 'jenis_pengajuan_id' => $program, 'report_year' => $year];
+        if ($period?->stateAt(now()) === 'closed') {
+            return $this->reportQuery()->where($key)->lockForUpdate()->first()
+                ?? abort(422, 'Periode pelaporan sudah ditutup. Laporan baru tidak dapat dibuat.');
+        }
+
+        return config('monev.use_normalized_reports')
+            ? $this->findOrCreateMonev($profile, $program, $year)
+            : MonitoringReport::firstOrCreate($key, ['status' => 'draft']);
     }
 
     public function resolveReport(string $identifier): MonitoringReport|Monev
@@ -42,7 +138,9 @@ class MonitoringReportService
     public function saveDraft(MonitoringReport $report, array $answers, ?int $userId, string $channel = 'account', ?int $expectedVersion = null): MonitoringReport
     {
         return DB::transaction(function () use ($report, $answers, $userId, $channel, $expectedVersion) {
+            $period = $this->periodForYear($report->report_year, true);
             $locked = MonitoringReport::whereKey($report->id)->lockForUpdate()->firstOrFail();
+            $this->assertPeriodAllowsChange($period, $locked, now());
             abort_if($expectedVersion !== null && $locked->edit_version !== $expectedVersion, 409, 'Laporan berubah pada sesi lain. Salin perubahan Anda lalu muat ulang.');
             $version = max(1, (int) $locked->edit_version);
             $locked->fill(['status' => $locked->submitted_version ? 'revision_draft' : 'draft', 'edit_version' => $version + 1, 'updated_by' => $userId])->save();
@@ -55,7 +153,10 @@ class MonitoringReportService
     public function submit(MonitoringReport $report, array $answers, Profile $profile, ?int $userId, string $channel = 'account', ?int $expectedVersion = null): MonitoringReport
     {
         return DB::transaction(function () use ($report, $answers, $profile, $userId, $channel, $expectedVersion) {
+            $period = $this->periodForYear($report->report_year, true);
             $report = MonitoringReport::whereKey($report->id)->lockForUpdate()->firstOrFail();
+            $receivedAt = now();
+            $this->assertPeriodAllowsChange($period, $report, $receivedAt);
             abort_if($expectedVersion !== null && $report->edit_version !== $expectedVersion, 409, 'Laporan berubah pada sesi lain. Salin perubahan Anda lalu muat ulang.');
             $version = $report->edit_version;
             $accreditation = MonitoringAccreditation::with('jenisPengajuan')
@@ -63,11 +164,16 @@ class MonitoringReportService
                 ->whereDate('valid_from', '<=', $report->report_year . '-12-31')->whereDate('valid_until', '>=', $report->report_year . '-01-01')->firstOrFail();
             $report->fill(['status' => 'submitted', 'edit_version' => $version + 1, 'submitted_version' => $version, 'updated_by' => $userId])->save();
             $submission = $report->versions()->create([
-                'version' => $version, 'answers' => $answers, 'submitted_by' => $userId, 'submitted_at' => now(), 'submission_channel' => $channel,
+                'version' => $version, 'answers' => $answers, 'submitted_by' => $userId, 'submitted_at' => $receivedAt, 'submission_channel' => $channel,
                 'identity_snapshot' => $profile->only(['id', 'nama_lembaga', 'alamat_lembaga', 'telepon', 'email', 'website']),
                 'accreditation_snapshot' => $accreditation->toArray(),
             ]);
-            $this->syncNormalized($report, $answers, $submission);
+            $monev = $this->syncNormalized($report, $answers, $submission);
+            if ($period && $monev) {
+                $this->archiveMonevSubmission($monev, $version, $answers, $submission->only([
+                    'identity_snapshot', 'accreditation_snapshot', 'submitted_by', 'submitted_at',
+                ]), $channel, $period);
+            }
             return $report->fresh();
         });
     }
@@ -141,10 +247,12 @@ class MonitoringReportService
     public function startMonevDraft(Profile $profile, int $program, int $year, array $answers): Monev
     {
         return DB::transaction(function () use ($profile, $program, $year, $answers) {
+            $period = $this->periodForYear($year, true);
+            $this->assertPeriodAllowsChange($period, null, now());
             $monev = $this->findOrCreateMonev($profile->id, $program, $year);
             abort_if($monev->edit_version !== 1, 409, 'Laporan sudah ada. Buka draf dari daftar laporan sebelum mengubahnya.');
             return $this->writeMonevDraft($monev, $answers, 1);
-        });
+        }, 3);
     }
 
     public function findOrCreateMonev(int $profileId, int $program, int $year): Monev
@@ -163,10 +271,14 @@ class MonitoringReportService
     public function writeMonevDraft(Monev $report, array $answers, int $expectedVersion): Monev
     {
         return DB::transaction(function () use ($report, $answers, $expectedVersion) {
+            $period = $this->periodForYear($report->report_year, true);
             $locked = $this->lockMonevRevision($report, $expectedVersion);
+            $savedAt = now();
+            $this->assertPeriodAllowsChange($period, $locked, $savedAt);
             $locked->update([
                 'status' => $locked->submitted_at ? 'revision_draft' : 'draft',
                 'edit_version' => $locked->edit_version + 1,
+                'first_draft_saved_at' => $locked->first_draft_saved_at ?? $savedAt->copy()->utc()->toDateTimeString(),
             ]);
             $this->replaceMonevAnswers($locked, $answers);
             return $locked;
@@ -176,16 +288,19 @@ class MonitoringReportService
     public function submitMonev(Monev $report, array $answers, Profile $profile, int $userId, string $channel, int $expectedVersion): Monev
     {
         return DB::transaction(function () use ($report, $answers, $profile, $userId, $channel, $expectedVersion) {
+            $period = $this->periodForYear($report->report_year, true);
             $locked = $this->lockMonevRevision($report, $expectedVersion);
+            $receivedAt = now();
+            $this->assertPeriodAllowsChange($period, $locked, $receivedAt);
             $accreditation = $this->programsFor($profile, $locked->report_year)->firstWhere('jenis_pengajuan_id', $locked->jenis_pengajuan_id);
             abort_unless($accreditation, 404, 'Akreditasi program tidak ditemukan.');
             $submission = [
                 'submitted_by' => $userId,
-                'submitted_at' => now(),
+                'submitted_at' => $receivedAt,
                 'identity_snapshot' => $profile->only(['id', 'nama_lembaga', 'alamat_lembaga', 'telepon', 'email', 'website']),
                 'accreditation_snapshot' => $accreditation->toArray(),
             ];
-            return $this->recordMonevSubmission($locked, $answers, $submission, $channel);
+            return $this->recordMonevSubmission($locked, $answers, $submission, $channel, $period);
         });
     }
 
@@ -200,24 +315,35 @@ class MonitoringReportService
         });
     }
 
-    private function recordMonevSubmission(Monev $report, array $answers, array $submission, string $channel): Monev
+    private function recordMonevSubmission(Monev $report, array $answers, array $submission, string $channel, ?MonitoringReportingPeriod $period = null): Monev
     {
-        DB::table('monev_submissions')->insert([
-            'monev_id' => $report->id, 'version' => $report->edit_version, 'submission_channel' => $channel,
-            'answers' => json_encode($answers, JSON_THROW_ON_ERROR),
-            'identity_snapshot' => json_encode($submission['identity_snapshot'], JSON_THROW_ON_ERROR),
-            'accreditation_snapshot' => json_encode($submission['accreditation_snapshot'], JSON_THROW_ON_ERROR),
-            'submitted_at' => $submission['submitted_at'], 'submitted_by' => $submission['submitted_by'],
-        ]);
+        $this->archiveMonevSubmission($report, $report->edit_version, $answers, $submission, $channel, $period);
         $report->update($submission + ['status' => 'submitted', 'edit_version' => $report->edit_version + 1]);
         $this->replaceMonevAnswers($report, $answers);
         return $report;
     }
 
+    private function archiveMonevSubmission(Monev $report, int $version, array $answers, array $submission, string $channel, ?MonitoringReportingPeriod $period): void
+    {
+        $deadline = $period ? [
+            'period_closed_at' => $period->closes_at->toDateTimeString(),
+            'is_late' => $submission['submitted_at']->gte($period->closes_at),
+        ] : [];
+        DB::table('monev_submissions')->insert([
+            'monev_id' => $report->id, 'version' => $version, 'submission_channel' => $channel,
+            'answers' => json_encode($answers, JSON_THROW_ON_ERROR),
+            'identity_snapshot' => json_encode($submission['identity_snapshot'], JSON_THROW_ON_ERROR),
+            'accreditation_snapshot' => json_encode($submission['accreditation_snapshot'], JSON_THROW_ON_ERROR),
+            'submitted_at' => $submission['submitted_at'], 'submitted_by' => $submission['submitted_by'],
+        ] + $deadline);
+    }
+
     public function resetMonev(Monev $report, int $expectedVersion): void
     {
         DB::transaction(function () use ($report, $expectedVersion) {
+            $period = $this->periodForYear($report->report_year, true);
             $locked = $this->lockMonevRevision($report, $expectedVersion);
+            $this->assertPeriodAllowsChange($period, $locked, now(), true);
             $identityCodes = array_map('strval', range(1, 9));
             $locked->answers()->whereHas('question', fn ($query) => $query->whereNotIn('kode', $identityCodes))->delete();
             $locked->update([
@@ -299,7 +425,9 @@ class MonitoringReportService
     public function resetAnswers(MonitoringReport $report, int $userId): MonitoringReport
     {
         return DB::transaction(function () use ($report, $userId) {
+            $period = $this->periodForYear($report->report_year, true);
             $locked = MonitoringReport::whereKey($report->id)->lockForUpdate()->firstOrFail();
+            $this->assertPeriodAllowsChange($period, $locked, now(), true);
             $version = max(1, (int) $locked->edit_version);
             $identity = $this->identityAnswersForReport($locked);
             $locked->fill([

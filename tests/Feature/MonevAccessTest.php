@@ -104,6 +104,8 @@ class MonevAccessTest extends TestCase
         $migration->up();
         $migration = require database_path('migrations/2026_11_11_000007_create_monitoring_reporting_periods.php');
         $migration->up();
+        $migration = require database_path('migrations/2026_11_11_000008_track_monitoring_reporting_deadlines.php');
+        $migration->up();
     }
 
     public function test_member_of_another_profile_cannot_view_or_edit_report(): void
@@ -223,6 +225,110 @@ class MonevAccessTest extends TestCase
     {
         $google = (new \Laravel\Socialite\Two\User())->map(['email' => $member->email]);
         \Laravel\Socialite\Facades\Socialite::shouldReceive('driver->user')->once()->andReturn($google);
+    }
+
+    public function test_reporting_deadline_applies_to_old_tabs_and_individual_links(): void
+    {
+        config(['monev.use_normalized_reports' => true]);
+        $this->report();
+        $secretariat = User::create(['name' => 'Sekretariat', 'role' => 2]);
+        $member = $this->member(1);
+        $this->setGlobalPeriod(2026);
+        $this->accreditProgram(1, 1, 'Program Draf');
+        $this->accreditProgram(1, 2, 'Program Kosong');
+        $this->accreditProgram(2, 3, 'Program Lembaga Lain');
+        $this->travelTo(\Carbon\Carbon::parse('2026-11-11 07:59:59', 'Asia/Jakarta'));
+        $global = route('monitoring-akreditasi.global');
+        $this->actingAs($secretariat)->post(route('monitoring-evaluasi.link.generate', [1, 2, 2026]))
+            ->assertSessionHas('generated_link');
+        $tokenUrl = session('generated_link');
+        $placeholder = \App\Models\Monev::where('jenis_pengajuan_id', 2)->firstOrFail();
+        $draft = $this->draftPayload(1);
+
+        $this->actingAs($member)->postJson(route('monitoring-akreditasi.store'), $draft)->assertUnprocessable()
+            ->assertJsonFragment(['message' => 'Periode pelaporan belum dibuka.']);
+        $this->get($tokenUrl)->assertOk()->assertSeeText('Pelaporan dibuka pada');
+
+        $this->travelTo(\Carbon\Carbon::parse('2026-11-11 08:00:00', 'Asia/Jakarta'));
+        $this->postJson(route('monitoring-akreditasi.store'), $draft)->assertOk()->assertJsonPath('edit_version', 2);
+        $saved = \App\Models\Monev::where('jenis_pengajuan_id', 1)->firstOrFail();
+        $this->get(route('monitoring-akreditasi.edit', $saved))->assertOk();
+        $this->get($tokenUrl)->assertOk();
+
+        $this->travelTo(\Carbon\Carbon::parse('2026-11-11 16:00:00', 'Asia/Jakarta'));
+        $this->get($global)->assertOk()->assertSeeText('11/11/2026 16:00 WIB')->assertSeeText('Lanjutkan Draf')
+            ->assertSeeText('Program Kosong')->assertSeeText('Belum dibuat')->assertDontSeeText('Program Lembaga Lain');
+        $this->get(route('monitoring-akreditasi.edit', $saved))->assertOk()->assertSeeText('segera kirim');
+        $this->get($tokenUrl)->assertOk()->assertSeeText('Pelaporan ditutup pada');
+        $this->postJson($tokenUrl . '/draft', $this->draftPayload(2))->assertUnprocessable();
+        $this->postJson($tokenUrl . '/submit', $this->draftPayload(2))->assertUnprocessable();
+        $this->postJson(route('monitoring-akreditasi.store'), $this->draftPayload(2))->assertUnprocessable();
+        $this->postJson(route('monitoring-akreditasi.reset', $saved), ['edit_version' => 2])->assertUnprocessable();
+        $this->get(route('monitoring-akreditasi.index', ['year' => 2026]))->assertOk()
+            ->assertDontSeeText('Buat Laporan')->assertDontSeeText('Reset Jawaban');
+        $this->actingAs($secretariat)->postJson(route('monitoring-evaluasi.link.generate', [2, 3, 2026]))
+            ->assertUnprocessable();
+        $this->actingAs($member);
+        $this->assertSame(1, $placeholder->fresh()->edit_version);
+        $this->assertSame(0, $placeholder->answers()->count());
+        $this->assertSame(2, $saved->fresh()->edit_version);
+
+        $draft['edit_version'] = 2;
+        $this->putJson(route('monitoring-akreditasi.update', $saved), $draft)->assertOk()->assertJsonPath('edit_version', 3);
+        $draft['edit_version'] = 3;
+        $this->postJson(route('monitoring-akreditasi.submit', $saved), $draft)->assertOk()
+            ->assertJsonPath('view_url', route('monitoring-akreditasi.view', $saved));
+        $this->assertDatabaseHas('monev_submissions', [
+            'monev_id' => $saved->id, 'submitted_at' => '2026-11-11 16:00:00',
+            'period_closed_at' => '2026-11-11 09:00:00', 'is_late' => true,
+        ]);
+        $draft['edit_version'] = 4;
+        $this->putJson(route('monitoring-akreditasi.update', $saved), $draft)->assertUnprocessable();
+        $this->get(route('monitoring-akreditasi.edit', $saved))->assertRedirect(route('monitoring-akreditasi.view', $saved));
+        $this->get(route('monitoring-akreditasi.view', $saved))->assertOk()->assertDontSee(route('monitoring-akreditasi.edit', $saved));
+        $this->get($global)->assertOk()->assertSeeText('Lihat Laporan')->assertDontSeeText('Lanjutkan Draf');
+    }
+
+    public function test_revision_draft_is_locked_after_the_deadline_and_member_sees_the_official_submission(): void
+    {
+        config(['monev.use_normalized_reports' => true]);
+        $this->report();
+        $this->setGlobalPeriod(2026);
+        $this->accreditProgram(1, 1, 'Statistik');
+        $this->travelTo(\Carbon\Carbon::parse('2026-11-11 09:00:00', 'Asia/Jakarta'));
+        $draft = $this->draftPayload(1);
+        $this->actingAs($this->member(1))->postJson(route('monitoring-akreditasi.store'), $draft)->assertOk();
+        $report = \App\Models\Monev::firstOrFail();
+        $draft['edit_version'] = 2;
+        $this->postJson(route('monitoring-akreditasi.submit', $report), $draft)->assertOk();
+        $this->get(route('monitoring-akreditasi.global'))->assertRedirect(route('monitoring-akreditasi.view', $report));
+        $draft['edit_version'] = 3;
+        $draft['answers'][24] = 'Jawaban revisi tersimpan';
+        $this->putJson(route('monitoring-akreditasi.update', $report), $draft)->assertOk();
+        $this->get(route('monitoring-akreditasi.global'))->assertRedirect(route('monitoring-akreditasi.edit', $report));
+
+        $this->travelTo(\Carbon\Carbon::parse('2026-11-11 16:01:00', 'Asia/Jakarta'));
+        $draft['edit_version'] = 4;
+        $this->postJson(route('monitoring-akreditasi.reset', $report), $draft)->assertUnprocessable();
+        $this->putJson(route('monitoring-akreditasi.update', $report), $draft)->assertUnprocessable();
+        $this->postJson(route('monitoring-akreditasi.submit', $report), $draft)->assertUnprocessable();
+        $this->get(route('monitoring-akreditasi.view', $report))->assertOk()
+            ->assertSeeText('Jawaban kiriman resmi')->assertDontSeeText('Jawaban revisi tersimpan')
+            ->assertDontSee(route('monitoring-akreditasi.edit', $report));
+        $this->assertSame('revision_draft', $report->fresh()->status);
+        $this->assertSame('Jawaban revisi tersimpan', app(\App\Services\MonitoringReportService::class)->answersForReport($report->fresh())[24]);
+    }
+
+    private function draftPayload(int $program): array
+    {
+        return [
+            'jenis_pengajuan_id' => $program, 'report_year' => 2026, 'edit_version' => 1,
+            'answers' => [
+                1 => 'Lembaga Satu', 2 => 'Program', 3 => 'Alamat', 4 => '0800',
+                5 => 'anggota@example.test', 7 => 'UJI', 8 => 'A', 9 => 2026,
+                'has_training' => 'Tidak', 24 => 'Jawaban kiriman resmi', 25 => 'Lanjut', 26 => 'Nihil',
+            ],
+        ];
     }
 
     public function test_another_member_of_same_profile_can_view_a_draft(): void
