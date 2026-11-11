@@ -18,7 +18,7 @@
 | 2 | Link mengarahkan akun lembaga ke program yang tepat setelah login Google atau GOJAGS | Selesai |
 | 3 | Aturan tenggat berlaku pada semua jalur perubahan laporan | Selesai |
 | 4 | Ringkasan laporan seragam dan menampilkan waktu kirim untuk sekretariat | Selesai |
-| 5 | Alur dari surat sampai ekspor diverifikasi di dev | Menunggu |
+| 5 | Alur dari surat sampai ekspor diverifikasi di dev | Lulus di MySQL dev. Validasi login interaktif menunggu |
 
 ## Aturan yang disepakati
 
@@ -72,7 +72,11 @@
 
 ## Task 5 — Verifikasi dev dan kesiapan link surat
 
-- [ ] Jalankan suite PHPUnit. Uji di MySQL dev dengan dua akun lembaga dari profil berbeda dan akun sekretariat. Periksa link yang sama dari surat sebelum buka, selama buka, dan setelah tutup.
+- [x] Jalankan suite PHPUnit. Uji di MySQL dev dengan dua akun lembaga dari profil berbeda dan akun sekretariat. Periksa link yang sama dari surat sebelum buka, selama buka, dan setelah tutup.
 - [ ] Uji callback Google dan GOJAGS dengan akun yang sah. Jika penyedia login tidak tersedia di dev, catat bagian yang telah diuji otomatis dan validasi interaktif yang masih diperlukan.
-- [ ] Lakukan satu simulasi surat dari salin link hingga draf, submit, peringatan keterlambatan, lihat laporan dan ekspor. Ulangi untuk program kedua yang belum menyimpan draf saat tenggat lewat.
-- [ ] Perbarui tabel tracking dengan hasil uji dan commit per task. URL siap dicantumkan di surat setelah jalur login yang digunakan lembaga dan periode yang dipilih diverifikasi pada lingkungan tujuan.
+- [x] Lakukan satu simulasi surat dari salin link hingga draf, submit, peringatan keterlambatan, lihat laporan dan ekspor. Ulangi untuk program kedua yang belum menyimpan draf saat tenggat lewat.
+- [x] Perbarui tabel tracking dengan hasil uji dan commit per task. URL siap dicantumkan di surat setelah jalur login yang digunakan lembaga dan periode yang dipilih diverifikasi pada lingkungan tujuan.
+
+**Verifikasi 11 November 2026.** Suite PHPUnit lulus (27 tes, 242 asersi). Dua migrasi fitur berhasil dijalankan pada skema MySQL lokal `paps`. Simulasi HTTP menggunakan akun sekretariat dan dua akun lembaga dari profil berbeda. URL yang sama menampilkan jadwal sebelum buka, mengarahkan ke program saat buka, dan menampilkan pilihan sesuai status setelah tutup. Draf yang memenuhi syarat berhasil dikirim terlambat, tampil hanya-baca, dan terunduh di CSV. Program kedua yang hanya mempunyai placeholder ditolak saat menyimpan setelah tutup. Seluruh transaksi data simulasi dibatalkan. Tombol salin juga lulus pengujian JavaScript untuk clipboard tersedia, tidak tersedia, dan akses ditolak.
+
+**Validasi sebelum surat terbit.** Callback Google diuji dengan respons Socialite tiruan, dan callback GOJAGS diuji dengan JWT sintetis yang valid. Login interaktif dengan akun lembaga yang sah masih perlu diperiksa pada lingkungan tujuan, termasuk periode nyata yang dipilih sekretariat.
