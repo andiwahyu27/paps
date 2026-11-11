@@ -15,6 +15,11 @@ use Illuminate\Support\Facades\Schema;
 
 class MonitoringReportService
 {
+    public function reportQuery()
+    {
+        return config('monev.use_normalized_reports') ? Monev::query() : MonitoringReport::query();
+    }
+
     public function resolveReport(string $identifier): MonitoringReport|Monev
     {
         if (!config('monev.use_normalized_reports')) {

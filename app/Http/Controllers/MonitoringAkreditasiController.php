@@ -24,8 +24,41 @@ class MonitoringAkreditasiController extends Controller
     {
         $period = MonitoringReportingPeriod::global();
         $state = $period?->stateAt(now());
+        $profile = $this->service->profileForUser(auth()->id());
+        $programs = collect();
+        $notice = null;
 
-        return view('lembaga.monitoring-akreditasi.period', compact('period', 'state'));
+        if (!$profile) {
+            $notice = 'Profil lembaga belum terhubung. Hubungi sekretariat untuk memperbarui akun Anda.';
+        } elseif ($period && $state !== 'upcoming') {
+            $reports = $this->service->reportQuery()
+                ->where('profile_id', $profile->id)->where('report_year', $period->report_year)
+                ->get()->keyBy('jenis_pengajuan_id');
+            $programs = $this->service->programsFor($profile, $period->report_year)
+                ->unique('jenis_pengajuan_id')->map(function ($accreditation) use ($reports, $period, $state) {
+                    $programId = $accreditation->jenis_pengajuan_id;
+                    $report = $reports->get($programId);
+                    [$status, $label, $url] = match ($report?->status) {
+                        'submitted' => ['Terkirim', 'Lihat Laporan', route('monitoring-akreditasi.view', $report)],
+                        'revision_draft' => ['Draf Revisi', 'Lanjutkan Draf', route('monitoring-akreditasi.edit', $report)],
+                        'draft' => ['Draf', 'Lanjutkan Draf', route('monitoring-akreditasi.edit', $report)],
+                        default => ['Belum dibuat', 'Buat Laporan', $state === 'open'
+                            ? route('monitoring-akreditasi.create', ['year' => $period->report_year, 'program' => $programId])
+                            : null],
+                    };
+
+                    return ['name' => $accreditation->jenisPengajuan?->nama, 'status' => $status, 'label' => $label, 'url' => $url];
+                });
+
+            if ($programs->isEmpty()) {
+                $notice = 'Belum ada program terakreditasi untuk lembaga Anda pada tahun ini.';
+            } elseif ($state === 'open' && $programs->count() === 1) {
+                return redirect()->to($programs->first()['url'])->header('Cache-Control', 'no-store, private');
+            }
+        }
+
+        return response()->view('lembaga.monitoring-akreditasi.period', compact('period', 'state', 'notice', 'programs'))
+            ->header('Cache-Control', 'no-store, private');
     }
 
     public function publicForm(string $token, MonitoringReportLinkService $links)
@@ -74,8 +107,7 @@ class MonitoringAkreditasiController extends Controller
     {
         $profile = $this->profile();
         $year = (int) $request->input('year', now()->year);
-        $model = config('monev.use_normalized_reports') ? Monev::class : MonitoringReport::class;
-        $reports = $model::with('jenisPengajuan')
+        $reports = $this->service->reportQuery()->with('jenisPengajuan')
             ->where('profile_id', $profile->id)->when($request->program, fn ($q, $v) => $q->where('jenis_pengajuan_id', $v))
             ->when($request->status, fn ($q, $v) => $q->where('status', $v))->orderByDesc('report_year')->get();
         return view('lembaga.monitoring-akreditasi.index', compact('profile', 'reports', 'year'));
@@ -85,7 +117,23 @@ class MonitoringAkreditasiController extends Controller
     {
         $profile = $this->profile(); $year = (int) $request->input('year', now()->year);
         $accreditations = $this->service->programsFor($profile, $year);
-        return view('lembaga.monitoring-akreditasi.form', ['profile' => $profile, 'report' => null, 'accreditations' => $accreditations, 'accreditation' => null, 'answers' => $this->identityAnswers($profile, null, $year), 'year' => $year, 'questionnaireQuestions' => $this->service->questionnaireQuestions()]);
+        $accreditation = null;
+        $data = $request->validate(['program' => 'sometimes|required|integer']);
+        if (isset($data['program'])) {
+            $accreditation = $accreditations->firstWhere('jenis_pengajuan_id', $data['program']) ?? abort(403);
+            $report = $this->service->reportQuery()->where([
+                'profile_id' => $profile->id, 'report_year' => $year, 'jenis_pengajuan_id' => $accreditation->jenis_pengajuan_id,
+            ])->first();
+            if ($report) {
+                return redirect()->route($report->status === 'submitted' ? 'monitoring-akreditasi.view' : 'monitoring-akreditasi.edit', $report);
+            }
+        }
+
+        return view('lembaga.monitoring-akreditasi.form', [
+            'profile' => $profile, 'report' => null, 'accreditations' => $accreditations, 'accreditation' => $accreditation,
+            'answers' => $this->identityAnswers($profile, $accreditation, $year), 'year' => $year,
+            'questionnaireQuestions' => $this->service->questionnaireQuestions(),
+        ]);
     }
 
     private function identityAnswers(Profile $profile, $accreditation, int $year): array

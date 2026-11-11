@@ -24,6 +24,7 @@ class MonevAccessTest extends TestCase
             $table->string('name');
             $table->string('email')->nullable();
             $table->string('password')->nullable();
+            $table->rememberToken();
             $table->unsignedInteger('role');
             $table->unsignedBigInteger('id_profile')->nullable();
             $table->timestamps();
@@ -143,6 +144,85 @@ class MonevAccessTest extends TestCase
         $this->actingAs($this->member(1))->post('/monitoring-evaluasi/periode', $schedule)
             ->assertForbidden();
         $this->assertSame(2025, \App\Models\MonitoringReportingPeriod::global()->report_year);
+    }
+
+    public function test_google_resumes_the_global_link_with_the_period_selected_at_return(): void
+    {
+        config(['monev.use_normalized_reports' => true]);
+        $this->travelTo(\Carbon\Carbon::parse('2026-11-11 09:00:00', 'Asia/Jakarta'));
+        $this->report();
+        $member = $this->member(1);
+        $member->update(['email' => 'anggota@example.test']);
+        $this->accreditProgram(1, 1, 'Program Lembaga Satu');
+        $this->accreditProgram(2, 2, 'Program Lembaga Dua');
+        $this->setGlobalPeriod(2025);
+        $global = route('monitoring-akreditasi.global');
+        $this->get($global)->assertRedirect(route('login'))->assertSessionHas('url.intended', $global);
+        $this->setGlobalPeriod(2026);
+
+        $this->mockGoogle($member);
+        $this->get('/auth-callback')->assertRedirect($global);
+        $this->get($global)->assertRedirect(route('monitoring-akreditasi.create', ['year' => 2026, 'program' => 1]));
+        $this->get(route('monitoring-akreditasi.create', ['year' => 2026, 'program' => 2]))->assertForbidden();
+        $this->assertDatabaseCount('tr_monev', 0);
+
+        $this->accreditProgram(1, 3, 'Program Kedua');
+        $this->get($global)->assertOk()->assertSeeText('Program Lembaga Satu')->assertSeeText('Program Kedua')
+            ->assertDontSeeText('Program Lembaga Dua');
+    }
+
+    public function test_direct_google_login_uses_home_and_global_link_explains_a_missing_profile(): void
+    {
+        $member = $this->member(99);
+        $member->update(['email' => 'anggota@example.test']);
+        $this->mockGoogle($member);
+        $this->get('/auth-callback')->assertRedirect(route('home'));
+        $this->get(route('monitoring-akreditasi.global'))->assertOk()->assertSeeText('Profil lembaga belum terhubung');
+    }
+
+    public function test_gojags_resumes_global_link_and_shows_the_opening_notice(): void
+    {
+        $this->travelTo(\Carbon\Carbon::parse('2026-11-11 07:59:59', 'Asia/Jakarta'));
+        $this->report();
+        $member = $this->member(1);
+        $member->update(['email' => 'anggota@example.test']);
+        $this->setGlobalPeriod(2026);
+        $global = route('monitoring-akreditasi.global');
+        $this->get($global)->assertRedirect(route('login'));
+        config(['services.gojags.jwt_secret' => 'kunci-sintetis-khusus-pengujian', 'services.gojags.issuer' => 'gojags.test']);
+        $token = \Firebase\JWT\JWT::encode([
+            'iss' => 'gojags.test', 'exp' => time() + 60, 'email' => $member->email, 'name' => $member->name,
+        ], config('services.gojags.jwt_secret'), 'HS256');
+        $this->withCookie('gojags_sso_state', 'state-uji')->get('/callback-gojags?' . http_build_query([
+            'state' => 'state-uji', 'token' => $token,
+        ]))->assertRedirect($global);
+        $this->get($global)->assertOk()->assertSeeText('11/11/2026 08:00 WIB');
+        $this->travelTo(\Carbon\Carbon::parse('2026-11-11 08:00:00', 'Asia/Jakarta'));
+        $this->get($global)->assertOk()->assertSeeText('Belum ada program terakreditasi');
+    }
+
+    private function setGlobalPeriod(int $year): void
+    {
+        $period = \App\Models\MonitoringReportingPeriod::updateOrCreate(['report_year' => $year], [
+            'opens_at' => '2026-11-11 01:00:00', 'closes_at' => '2026-11-11 09:00:00',
+        ]);
+        \App\Models\MonitoringReportingPeriod::settings()->update(['period_id' => $period->id]);
+    }
+
+    private function accreditProgram(int $profile, int $program, string $name): void
+    {
+        DB::table('mt_jenis_pengajuans')->insert(['id' => $program, 'nama' => $name]);
+        DB::table('monitoring_accreditations')->insert([
+            'profile_id' => $profile, 'jenis_pengajuan_id' => $program,
+            'valid_from' => '2026-01-01', 'valid_until' => '2027-01-01',
+            'certificate_number' => 'UJI', 'predicate' => 'A',
+        ]);
+    }
+
+    private function mockGoogle(User $member): void
+    {
+        $google = (new \Laravel\Socialite\Two\User())->map(['email' => $member->email]);
+        \Laravel\Socialite\Facades\Socialite::shouldReceive('driver->user')->once()->andReturn($google);
     }
 
     public function test_another_member_of_same_profile_can_view_a_draft(): void

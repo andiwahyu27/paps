@@ -15,7 +15,7 @@
 | Task | Hasil yang bisa diperiksa | Status |
 | --- | --- | --- |
 | 1 | Sekretariat bisa mengatur periode dan menyalin URL permanen | Selesai |
-| 2 | Link mengarahkan akun lembaga ke program yang tepat setelah login Google atau GOJAGS | Menunggu |
+| 2 | Link mengarahkan akun lembaga ke program yang tepat setelah login Google atau GOJAGS | Selesai |
 | 3 | Aturan tenggat berlaku pada semua jalur perubahan laporan | Menunggu |
 | 4 | Ringkasan laporan seragam dan menampilkan waktu kirim untuk sekretariat | Menunggu |
 | 5 | Alur dari surat sampai ekspor diverifikasi di dev | Menunggu |
@@ -42,10 +42,12 @@
 
 ## Task 2 — Akses global dan kembali setelah login
 
-- [ ] Hubungkan route `monitoring-akreditasi.global` ke alur masuk di controller Monitoring Akreditasi. GET hanya membaca data. Sistem menyimpan tujuan login melalui mekanisme Laravel dan memeriksa periode serta profil saat pengguna kembali.
-- [ ] Di `app/Http/Controllers/Auth/LoginController.php`, ubah callback Google langsung agar memakai `redirect()->intended(...)` setelah autentikasi berhasil, dengan halaman utama sebagai tujuan bawaan. Pertahankan alur GOJAGS yang sudah memakai tujuan login. Tujuan setelah login tetap berasal dari rute internal yang dibuka pengguna.
-- [ ] Gunakan program terakreditasi untuk tahun periode. Arahkan satu program ke form baru, draf, atau halaman lihat sesuai hasil pemeriksaan. Untuk beberapa program, tampilkan daftar dan statusnya. Untuk periode belum dijadwalkan, belum buka, sudah tutup, atau lembaga tanpa program, tampilkan pemberitahuan PAPS yang sesuai.
-- [ ] Verifikasi login langsung dan login dari URL global, akun tanpa profil, satu atau beberapa program, periode yang berubah saat proses login, serta penolakan akses ke program lembaga lain.
+- [x] Hubungkan route `monitoring-akreditasi.global` ke alur masuk di controller Monitoring Akreditasi. GET hanya membaca data. Sistem menyimpan tujuan login melalui mekanisme Laravel dan memeriksa periode serta profil saat pengguna kembali.
+- [x] Di `app/Http/Controllers/Auth/LoginController.php`, ubah callback Google langsung agar memakai `redirect()->intended(...)` setelah autentikasi berhasil, dengan halaman utama sebagai tujuan bawaan. Pertahankan alur GOJAGS yang sudah memakai tujuan login. Tujuan setelah login tetap berasal dari rute internal yang dibuka pengguna.
+- [x] Gunakan program terakreditasi untuk tahun periode. Arahkan satu program ke form baru, draf, atau halaman lihat sesuai hasil pemeriksaan. Untuk beberapa program, tampilkan daftar dan statusnya. Untuk periode belum dijadwalkan, belum buka, sudah tutup, atau lembaga tanpa program, tampilkan pemberitahuan PAPS yang sesuai.
+- [x] Verifikasi login langsung dan login dari URL global, akun tanpa profil, satu atau beberapa program, periode yang berubah saat proses login, serta penolakan akses ke program lembaga lain.
+
+**Verifikasi.** PHPUnit lulus (24 tes, 157 asersi). Pengujian callback Google menggunakan respons Socialite tiruan dan GOJAGS menggunakan JWT sintetis. Pengujian juga mencakup perubahan periode selama login, batas jam buka, profil kosong, daftar program, dan penolakan program milik lembaga lain.
 
 ## Task 3 — Penegakan tenggat dan kiriman terlambat
 

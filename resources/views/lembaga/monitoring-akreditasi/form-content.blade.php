@@ -161,8 +161,8 @@
                     @method('PUT')<input type="hidden" name="edit_version" value="{{ $report->edit_version }}">
                 @endif
                 <input type="hidden" name="report_year" value="{{ $year }}">
-                @if ($report)
-                    <input type="hidden" name="jenis_pengajuan_id" value="{{ $report->jenis_pengajuan_id }}">
+                @if ($report || $accreditation)
+                    <input type="hidden" name="jenis_pengajuan_id" value="{{ $report?->jenis_pengajuan_id ?? $accreditation->jenis_pengajuan_id }}">
                 @else
                     <div class="card mb-4">
                         <div class="card-body"><label class="form-label" for="program-select">Program

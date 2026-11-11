@@ -62,7 +62,7 @@ class LoginController extends Controller
             // $pegawai = PusdiklatPegawai::where('gmail', $user_google->getEmail())->first();
             if ($user) {
                 Auth::login($user, true);
-                return redirect()->route('home');
+                return redirect()->intended(route('home'));
             } else {
                 return redirect()->route('login')
                     ->with('error', 'Akun ' . $user_google->getEmail() . ' belum terdaftar dalam sistem, harap hubungi admin.');;
