@@ -18,28 +18,19 @@
                 </div>
                 <div class="col-md-6">
                     <strong>Status</strong>
-                    <p><span class="badge bg-success">{{ $report->status }}</span></p>
-                    <strong>Versi terkirim</strong>
-                    <p>{{ $submission?->version ?? '-' }}</p>
+                    <p>@include('monitoring-akreditasi.report-status', ['status' => $report->status])</p>
+                    <strong>Waktu Kirim Terakhir</strong>
+                    <p>
+                        {{ $submittedAt ? $submittedAt->copy()->timezone('Asia/Jakarta')->format('d/m/Y H:i:s') . ' WIB' : 'Belum dikirim' }}
+                        @if ($submission?->is_late)
+                            <span class="badge bg-warning">Terlambat</span>
+                        @endif
+                    </p>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-header"><h5 class="mb-0">Jawaban Laporan</h5></div>
-        <div class="card-body">
-            @foreach($questions as $question)
-                @php
-                    $answer = data_get($answers, app(\App\Services\MonitoringReportService::class)->answerKey($question->kode));
-                    $displayAnswer = is_array($answer) ? implode(', ', $answer) : ($answer ?? '-');
-                @endphp
-                <div class="border-bottom py-2">
-                    <span class="fw-semibold">{{ $question->pertanyaan ?? 'Pertanyaan ' . $question->kode }}</span>
-                    <div>{{ is_scalar($displayAnswer) ? $displayAnswer : '-' }}</div>
-                </div>
-            @endforeach
-        </div>
-    </div>
+    @include('monitoring-akreditasi.report-summary')
 </div>
 @endsection

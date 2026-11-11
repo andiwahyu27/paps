@@ -37,7 +37,7 @@ class MonitoringSekretariatController extends Controller
             'submitted' => $reports->where('status', 'submitted')->count(),
             'draft' => $reports->whereIn('status', ['draft', 'revision_draft'])->count(),
             'nihil' => $reports->filter(function ($report) {
-                $answers = $this->lastSubmission($report)?->answers;
+                $answers = $this->monitoring->latestSubmission($report)?->answers;
                 return data_get($answers, 'has_training') === 'Tidak' || (int) data_get($answers, '10', -1) === 0;
             })->count(),
         ];
@@ -138,14 +138,13 @@ class MonitoringSekretariatController extends Controller
     public function show(string $report)
     {
         $report = $this->monitoring->resolveReport($report);
-        $report->load(['profile', 'jenisPengajuan', $report instanceof Monev ? 'latestSubmission' : 'versions']);
-        $submission = $this->lastSubmission($report);
-        $questions = $this->reportQuestions($report);
+        $report->load(['profile', 'jenisPengajuan']);
+        $submission = $this->monitoring->latestSubmission($report);
+        $submittedAt = $submission?->submitted_at ?? ($report instanceof Monev ? $report->submitted_at : null);
+        $questionnaire = $this->monitoring->questionnaireForReport($report);
+        $questions = $this->monitoring->reportQuestions($report);
         $answers = $this->reportAnswers($report);
-        if ($report instanceof MonitoringReport && $submission) {
-            $answers += $submission->answers ?? [];
-        }
-        return view('sekretariat.monitoring-akreditasi-detail', compact('report', 'submission', 'questions', 'answers'));
+        return view('sekretariat.monitoring-akreditasi-detail', compact('report', 'submission', 'submittedAt', 'questionnaire', 'questions', 'answers'));
     }
 
     public function export(string $report)
@@ -155,28 +154,16 @@ class MonitoringSekretariatController extends Controller
         return $this->downloadReports([$report], 'monitoring-akreditasi-' . $report->uuid . '.csv');
     }
 
-    private function lastSubmission(MonitoringReport|Monev $report)
-    {
-        return $report instanceof Monev
-            ? $report->latestSubmission
-            : $report->versions->firstWhere('version', $report->submitted_version);
-    }
-
-    private function reportQuestions(MonitoringReport|Monev $report)
-    {
-        $questions = $this->monitoring->questionnaireQuestions($report);
-        return $questions->isNotEmpty() ? $questions
-            : collect(range(1, 26))->map(fn ($number) => (object) ['kode' => (string) $number]);
-    }
-
     private function reportAnswers(MonitoringReport|Monev $report): array
     {
-        $answers = $this->monitoring->answersForReport($report) ?? [];
-        if ($report instanceof MonitoringReport) return $answers;
+        $answers = $this->monitoring->answersForReport($report);
+        if ($report instanceof MonitoringReport) {
+            return $answers ?? $report->versions()->latest('version')->first()?->answers ?? [];
+        }
 
         $identity = $report->identity_snapshot;
         $accreditation = $report->accreditation_snapshot;
-        return $answers + [
+        return ($answers ?? []) + [
             1 => data_get($identity, 'nama_lembaga', $report->profile?->nama_lembaga),
             2 => data_get($identity, 'nama_program', $report->jenisPengajuan?->nama),
             3 => data_get($identity, 'alamat_lembaga', data_get($identity, 'alamat')),
@@ -196,7 +183,7 @@ class MonitoringSekretariatController extends Controller
             fputcsv($handle, ['Lembaga', 'Program', 'Tahun', 'Status', 'Pertanyaan', 'Jawaban']);
             foreach ($reports as $report) {
                 $answers = $this->reportAnswers($report);
-                foreach ($this->reportQuestions($report) as $question) {
+                foreach ($this->monitoring->reportQuestions($report) as $question) {
                     $value = data_get($answers, $this->monitoring->answerKey($question->kode));
                     fputcsv($handle, [
                         $this->safeCsvValue($report->profile->nama_lembaga ?? ''),

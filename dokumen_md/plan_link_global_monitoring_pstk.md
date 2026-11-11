@@ -17,7 +17,7 @@
 | 1 | Sekretariat bisa mengatur periode dan menyalin URL permanen | Selesai |
 | 2 | Link mengarahkan akun lembaga ke program yang tepat setelah login Google atau GOJAGS | Selesai |
 | 3 | Aturan tenggat berlaku pada semua jalur perubahan laporan | Selesai |
-| 4 | Ringkasan laporan seragam dan menampilkan waktu kirim untuk sekretariat | Menunggu |
+| 4 | Ringkasan laporan seragam dan menampilkan waktu kirim untuk sekretariat | Selesai |
 | 5 | Alur dari surat sampai ekspor diverifikasi di dev | Menunggu |
 
 ## Aturan yang disepakati
@@ -63,10 +63,12 @@
 
 ## Task 4 — Tampilan laporan bersama dan waktu kirim
 
-- [ ] Ekstrak komponen ringkasan dari `resources/views/lembaga/monitoring-akreditasi/view.blade.php` dan pakai pada detail sekretariat. Sembunyikan pertanyaan kosong dan blok pelatihan yang tidak berlaku. Pertahankan angka nol, jawaban jamak, dan tahun empat digit.
-- [ ] Tampilkan **Jenis Kuesioner** dan **Versi Kuesioner** dari instrumen yang terikat pada laporan. Status **Draf**, **Draf Revisi**, atau **Terkirim** tampil terpisah. Sekretariat tetap punya **Ekspor CSV**. Lembaga melihat **Edit** hanya jika masih berhak mengubah laporan.
-- [ ] Sekretariat melihat **Waktu Kirim Terakhir** dalam WIB atau **Belum dikirim**, dengan penanda **Terlambat** jika kiriman tercatat terlambat. Saat ada draf revisi, isi detail dan CSV tetap berasal dari draf terkini, sementara waktu kirim berasal dari arsip resmi terakhir.
-- [ ] Uji konsistensi detail dan CSV sekretariat untuk draf dan kiriman. Uji lembaga setelah tenggat saat ada draf revisi, termasuk bahwa jawaban di halaman lihat berasal dari kiriman terakhir dan tombol Edit tidak muncul.
+- [x] Ekstrak komponen ringkasan dari `resources/views/lembaga/monitoring-akreditasi/view.blade.php` dan pakai pada detail sekretariat. Sembunyikan pertanyaan kosong dan blok pelatihan yang tidak berlaku. Pertahankan angka nol, jawaban jamak, dan tahun empat digit.
+- [x] Tampilkan **Jenis Kuesioner** dan **Versi Kuesioner** dari instrumen yang terikat pada laporan. Status **Draf**, **Draf Revisi**, atau **Terkirim** tampil terpisah. Sekretariat tetap punya **Ekspor CSV**. Lembaga melihat **Edit** hanya jika masih berhak mengubah laporan.
+- [x] Sekretariat melihat **Waktu Kirim Terakhir** dalam WIB atau **Belum dikirim**, dengan penanda **Terlambat** jika kiriman tercatat terlambat. Saat ada draf revisi, isi detail dan CSV tetap berasal dari draf terkini, sementara waktu kirim berasal dari arsip resmi terakhir.
+- [x] Uji konsistensi detail dan CSV sekretariat untuk draf dan kiriman. Uji lembaga setelah tenggat saat ada draf revisi, termasuk bahwa jawaban di halaman lihat berasal dari kiriman terakhir dan tombol Edit tidak muncul.
+
+**Verifikasi.** PHPUnit lulus (27 tes, 242 asersi). Lembaga dan sekretariat memakai ringkasan dengan instrumen yang terikat. Detail dan CSV mengambil jawaban draf revisi terkini untuk sekretariat. Waktu kirim dan penanda keterlambatan tetap mengikuti arsip, termasuk setelah jadwal diubah. Kolom CSV tetap mengikuti format ekspor yang sudah digunakan.
 
 ## Task 5 — Verifikasi dev dan kesiapan link surat
 

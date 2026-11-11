@@ -226,7 +226,11 @@ class MonitoringAkreditasiController extends Controller
         $answers = array_replace($this->identityAnswers($profile, $accreditation, $report->report_year), $reportAnswers ?? []);
         $canEdit = in_array($access, ['open', 'late_draft'], true);
         $displayStatus = $access === 'closed_submitted' ? 'submitted' : $report->status;
-        return view('lembaga.monitoring-akreditasi.view', compact('report', 'profile', 'accreditation', 'answers', 'canEdit', 'displayStatus'));
+        $questionnaire = $this->service->questionnaireForReport($report);
+        $questions = $this->service->reportQuestions($report);
+        return view('lembaga.monitoring-akreditasi.view', compact(
+            'report', 'profile', 'accreditation', 'answers', 'canEdit', 'displayStatus', 'questionnaire', 'questions',
+        ));
     }
 
     public function reset(Request $request, string $report)

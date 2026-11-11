@@ -43,9 +43,16 @@ class MonitoringReportService
             return $report->latestSubmission;
         }
 
-        return $report->submitted_version
-            ? $report->versions()->where('version', $report->submitted_version)->first()
-            : null;
+        if (!$report->submitted_version) {
+            return null;
+        }
+
+        $archive = MonevSubmission::where('monev_id', Monev::where('legacy_report_id', $report->id)->value('id'))
+            ->where('version', $report->submitted_version)->first();
+
+        return $archive ?? ($report->relationLoaded('versions')
+            ? $report->versions->firstWhere('version', $report->submitted_version)
+            : $report->versions()->where('version', $report->submitted_version)->first());
     }
 
     public function reportAccess(?MonitoringReportingPeriod $period, MonitoringReport|Monev|null $report, CarbonInterface $at, bool $writing = false): string
@@ -195,6 +202,26 @@ class MonitoringReportService
 
         return MonevPertanyaan::where('kuesioner_id', $questionnaireId)
             ->orderBy('order_number')->get()->keyBy('kode');
+    }
+
+    public function questionnaireForReport(MonitoringReport|Monev $report): ?MonevKuesioner
+    {
+        if ($report instanceof Monev) {
+            return $report->questionnaire;
+        }
+        if (!Schema::hasTable('tr_monev')) {
+            return null;
+        }
+
+        return Monev::with('questionnaire')->where('legacy_report_id', $report->id)->first()?->questionnaire;
+    }
+
+    public function reportQuestions(MonitoringReport|Monev $report): \Illuminate\Support\Collection
+    {
+        $questions = $this->questionnaireQuestions($report);
+
+        return $questions->isNotEmpty() ? $questions
+            : collect(range(1, 26))->map(fn ($number) => (object) ['kode' => (string) $number]);
     }
 
     public function answerKey(string $code): string

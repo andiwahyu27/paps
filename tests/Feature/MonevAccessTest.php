@@ -287,6 +287,11 @@ class MonevAccessTest extends TestCase
         $this->get(route('monitoring-akreditasi.edit', $saved))->assertRedirect(route('monitoring-akreditasi.view', $saved));
         $this->get(route('monitoring-akreditasi.view', $saved))->assertOk()->assertDontSee(route('monitoring-akreditasi.edit', $saved));
         $this->get($global)->assertOk()->assertSeeText('Lihat Laporan')->assertDontSeeText('Lanjutkan Draf');
+        $this->actingAs($secretariat)->post(route('monitoring-evaluasi.period.save'), [
+            'report_year' => 2026, 'opens_at' => '2026-11-11T08:00', 'closes_at' => '2026-11-11T17:00',
+        ])->assertSessionHasNoErrors();
+        $this->get(route('monitoring-evaluasi.detail', $saved))->assertOk()
+            ->assertSeeText('11/11/2026 16:00:00 WIB')->assertSeeText('Terlambat');
     }
 
     public function test_revision_draft_is_locked_after_the_deadline_and_member_sees_the_official_submission(): void
@@ -317,6 +322,13 @@ class MonevAccessTest extends TestCase
             ->assertDontSee(route('monitoring-akreditasi.edit', $report));
         $this->assertSame('revision_draft', $report->fresh()->status);
         $this->assertSame('Jawaban revisi tersimpan', app(\App\Services\MonitoringReportService::class)->answersForReport($report->fresh())[24]);
+        $secretariat = User::create(['name' => 'Sekretariat', 'role' => 2]);
+        $this->actingAs($secretariat)->get(route('monitoring-evaluasi.detail', $report))->assertOk()
+            ->assertSeeText('Draf Revisi')->assertSeeText('11/11/2026 09:00:00 WIB')
+            ->assertSeeText('Jawaban revisi tersimpan')->assertDontSeeText('Jawaban kiriman resmi')->assertDontSeeText('Terlambat');
+        $csv = $this->get(route('monitoring-evaluasi.export', $report))->assertOk()->streamedContent();
+        $this->assertStringContainsString('Jawaban revisi tersimpan', $csv);
+        $this->assertStringNotContainsString('Jawaban kiriman resmi', $csv);
     }
 
     private function draftPayload(int $program): array

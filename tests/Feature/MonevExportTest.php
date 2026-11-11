@@ -145,7 +145,11 @@ class MonevExportTest extends TestCase
         DB::table('monev_submissions')->insert([
             'monev_id' => $report->id, 'version' => 1, 'answers' => '{"has_training":"Tidak"}',
             'identity_snapshot' => '{}', 'accreditation_snapshot' => '{}',
-            'submitted_at' => now(), 'submitted_by' => 1, 'submission_channel' => 'account',
+            'submitted_at' => '2026-11-11 14:35:12', 'submitted_by' => 1, 'submission_channel' => 'account',
+        ]);
+        DB::table('mt_kuesioner')->where('id', $report->kuesioner_id)->update(['is_active' => false]);
+        DB::table('mt_kuesioner')->insert([
+            'kode' => 'monitoring-akreditasi-pstk', 'nama' => 'Monev baru', 'jenis' => 'versi-aktif', 'versi' => 2, 'is_active' => true,
         ]);
         config(['monev.use_normalized_reports' => true]);
         Schema::drop('monitoring_reports');
@@ -154,11 +158,38 @@ class MonevExportTest extends TestCase
         $this->assertSame(1, $dashboard->viewData('stats')['nihil']);
         $detail = $this->get(route('monitoring-evaluasi.detail', $legacy))->assertOk();
         $this->assertSame(0, $detail->viewData('answers')[12]['internal']);
-        $detail->assertSeeText('Tatap muka, Daring');
+        $detail->assertSeeText('Tatap muka, Daring')->assertSeeText('Draf Revisi')
+            ->assertSeeText('Jenis Kuesioner')->assertSeeText('monev')->assertDontSeeText('versi-aktif')
+            ->assertSeeText('Versi Kuesioner')->assertSeeText('11/11/2026 14:35:12 WIB')->assertDontSeeText('Terlambat');
         $csv = $this->get(route('monitoring-evaluasi.export', $report))->assertOk()->streamedContent();
         $rows = array_column(array_slice($this->csvRows($csv), 1), 5, 4);
         $this->assertSame('0', $rows['12a']);
         $this->assertSame('Tatap muka, Daring', $rows['14']);
+    }
+
+    public function test_summary_omits_empty_and_inapplicable_answers_and_keeps_the_reporting_year(): void
+    {
+        $this->fixture();
+        $report = \App\Models\Monev::firstOrFail();
+        foreach ([
+            ['has_training', 'Pelatihan diselenggarakan', 'Tidak'],
+            ['6', 'Pertanyaan yang kosong', null],
+            ['9', 'Tahun pemantauan', null],
+        ] as $index => [$code, $label, $answer]) {
+            $question = DB::table('mt_pertanyaan')->insertGetId([
+                'kuesioner_id' => $report->kuesioner_id, 'kode' => $code, 'blok' => 'identitas',
+                'pertanyaan' => $label, 'tipe_pertanyaan' => 'text', 'order_number' => 20 + $index,
+            ]);
+            if ($answer !== null) {
+                DB::table('tr_monev_jawaban')->insert([
+                    'monev_id' => $report->id, 'pertanyaan_id' => $question, 'text_value' => $answer,
+                ]);
+            }
+        }
+        config(['monev.use_normalized_reports' => true]);
+        $this->actingAs($this->secretariat())->get(route('monitoring-evaluasi.detail', $report))->assertOk()
+            ->assertSeeText('Belum dikirim')->assertSeeText('Tahun pemantauan')->assertSeeText('2026')
+            ->assertDontSeeText('Pertanyaan yang kosong')->assertDontSeeText('Tatap muka, Daring');
     }
 
     private function fixture(): MonitoringReport
