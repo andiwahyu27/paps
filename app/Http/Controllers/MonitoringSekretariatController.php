@@ -6,6 +6,8 @@ use App\Models\MonitoringReport;
 use App\Models\MonitoringAccreditation;
 use App\Models\MonitoringReportLink;
 use App\Models\Profile;
+use App\Models\Monev;
+use App\Models\MonevPertanyaan;
 use App\Services\MonitoringReportLinkService;
 use App\Services\MonitoringReportService;
 use Illuminate\Http\Request;
@@ -89,15 +91,20 @@ class MonitoringSekretariatController extends Controller
     {
         $report->load(['profile', 'jenisPengajuan']);
         $answers = $this->monitoring->answersForReport($report) ?? [];
-        return response()->streamDownload(function () use ($report, $answers) {
+        $monev = Monev::where('legacy_report_id', $report->id)->first();
+        $questions = $monev
+            ? MonevPertanyaan::where('kuesioner_id', $monev->kuesioner_id)->orderBy('order_number')->get()
+            : collect(range(1, 26))->map(fn ($number) => (object) ['kode' => (string) $number]);
+        return response()->streamDownload(function () use ($report, $answers, $questions) {
             $handle = fopen('php://output', 'w');
             fputcsv($handle, ['Lembaga', 'Program', 'Tahun', 'Status', 'Pertanyaan', 'Jawaban']);
-            foreach (range(1, 26) as $number) {
-                $value = $number <= 9 ? null : data_get($answers, (string) $number);
-                if ($number === 12) $value = 'Internal: ' . data_get($answers, '12.internal', 0) . '; Eksternal: ' . data_get($answers, '12.external', 0);
+            foreach ($questions as $question) {
+                $code = $question->kode;
+                $key = $code === '12a' ? '12.internal' : ($code === '12b' ? '12.external' : ($code === '23a' ? '23_keterangan' : $code));
+                $value = data_get($answers, $key);
                 if (is_array($value)) $value = implode(', ', $value);
                 $value = $this->safeCsvValue($value ?? '');
-                fputcsv($handle, [$this->safeCsvValue($report->profile->nama_lembaga ?? ''), $this->safeCsvValue($report->jenisPengajuan->nama ?? ''), $report->report_year, $report->status, $number, $value]);
+                fputcsv($handle, [$this->safeCsvValue($report->profile->nama_lembaga ?? ''), $this->safeCsvValue($report->jenisPengajuan->nama ?? ''), $report->report_year, $report->status, $code, $value]);
             }
             fclose($handle);
         }, 'monitoring-akreditasi-' . $report->uuid . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);

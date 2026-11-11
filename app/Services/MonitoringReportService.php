@@ -136,6 +136,41 @@ class MonitoringReportService
         return $answers;
     }
 
+    public function resetAnswers(MonitoringReport $report, int $userId): MonitoringReport
+    {
+        return DB::transaction(function () use ($report, $userId) {
+            $locked = MonitoringReport::whereKey($report->id)->lockForUpdate()->firstOrFail();
+            $version = max(1, (int) $locked->edit_version);
+            $identity = $this->identityAnswersForReport($locked);
+            $locked->fill([
+                'status' => $locked->submitted_version ? 'revision_draft' : 'draft',
+                'edit_version' => $version + 1,
+                'updated_by' => $userId,
+            ])->save();
+            $locked->versions()->updateOrCreate([
+                'version' => $version,
+            ], [
+                'answers' => $identity,
+                'submission_channel' => 'account',
+            ]);
+            if (Schema::hasTable('tr_monev')) {
+                $monev = Monev::where('legacy_report_id', $locked->id)->first();
+                if ($monev) {
+                    $monev->fill(['status' => $locked->status, 'edit_version' => $locked->edit_version])->save();
+                    $monev->answers()->whereHas('question', fn ($q) => $q->whereNotIn('kode', ['1', '2', '3', '4', '5', '6', '7', '8', '9']))->delete();
+                }
+            }
+            return $locked->fresh();
+        });
+    }
+
+    private function identityAnswersForReport(MonitoringReport $report): array
+    {
+        $version = $report->versions()->latest('version')->first();
+        $answers = $version?->answers ?? [];
+        return array_intersect_key($answers, array_flip([1, 2, 3, 4, 5, 6, 7, 8, 9]));
+    }
+
     public function legacyCount(string $table): int
     {
         return DB::connection('mysql_gen1')->table($table)->count();

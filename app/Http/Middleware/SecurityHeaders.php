@@ -19,7 +19,7 @@ class SecurityHeaders
         $response = $next($request);
 
         // Jangan bocorkan versi PHP.
-        if (function_exists('header_remove')) {
+        if (function_exists('header_remove') && !headers_sent()) {
             header_remove('X-Powered-By');
         }
         $response->headers->remove('X-Powered-By');

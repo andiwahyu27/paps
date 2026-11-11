@@ -55,6 +55,22 @@ class TtdTokenTest extends TestCase
             $table->string('status_ttd');
             $table->timestamps();
         });
+        Schema::create('tb_penilaians', function ($table) {
+            $table->increments('id');
+            $table->unsignedInteger('id_pengajuan');
+            $table->string('pra_paska')->nullable();
+            $table->unsignedInteger('id_item_penilaian')->nullable();
+            $table->text('catatan')->nullable();
+            $table->text('rekomendasi')->nullable();
+            $table->softDeletes();
+        });
+        Schema::create('mt_items', function ($table) {
+            $table->increments('id');
+            $table->unsignedInteger('id_unsur')->nullable();
+        });
+        Schema::create('mt_unsurs', function ($table) {
+            $table->increments('id');
+        });
     }
 
     public function test_token_route_and_generation(): void
@@ -87,7 +103,7 @@ class TtdTokenTest extends TestCase
         $this->assertSame(3, Pengajuan::whereNotNull('ttd_token')->count());
     }
 
-    public function test_signature_uses_token_and_rejects_overwrite(): void
+    public function test_signature_uses_token_and_allows_replacement_before_submission(): void
     {
         $pengajuan = $this->makePengajuan();
         $png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
@@ -109,11 +125,14 @@ class TtdTokenTest extends TestCase
             'status_ttd' => 'signed',
         ]);
 
+        $firstPath = DigitalSignature::where('pengajuan_id', $pengajuan->id)->where('jenis_user', 'asesor1')->value('ttd');
         $this->postJson('/ettd/save-signature', [
             'token' => $pengajuan->ttd_token,
             'signer_type' => 'asesor1',
             'signature_data' => $png,
-        ])->assertStatus(409);
+        ])->assertOk();
+        $replacementPath = DigitalSignature::where('pengajuan_id', $pengajuan->id)->where('jenis_user', 'asesor1')->value('ttd');
+        $this->assertNotSame($firstPath, $replacementPath);
 
         $this->postJson('/ettd/save-signature', [
             'token' => $pengajuan->ttd_token,

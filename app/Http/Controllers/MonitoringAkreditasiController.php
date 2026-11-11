@@ -109,6 +109,22 @@ class MonitoringAkreditasiController extends Controller
         return view('lembaga.monitoring-akreditasi.form', ['profile' => $profile, 'report' => $report, 'accreditations' => $this->service->programsFor($profile, $report->report_year), 'accreditation' => $accreditation, 'answers' => array_replace($this->identityAnswers($profile, $accreditation, $report->report_year), $this->service->answersForReport($report) ?? $version?->answers ?? []), 'year' => $report->report_year]);
     }
 
+    public function view(MonitoringReport $report)
+    {
+        $this->authorizeReport($report);
+        $profile = $this->profile();
+        $accreditation = $this->service->programsFor($profile, $report->report_year)->firstWhere('jenis_pengajuan_id', $report->jenis_pengajuan_id);
+        $answers = array_replace($this->identityAnswers($profile, $accreditation, $report->report_year), $this->service->answersForReport($report) ?? []);
+        return view('lembaga.monitoring-akreditasi.view', compact('report', 'profile', 'accreditation', 'answers'));
+    }
+
+    public function reset(MonitoringReport $report)
+    {
+        $this->authorizeReport($report);
+        $this->service->resetAnswers($report, auth()->id());
+        return redirect()->route('monitoring-akreditasi.view', $report)->with('success', 'Jawaban berhasil direset. Laporan kembali menjadi draf.');
+    }
+
     public function update(Request $request, MonitoringReport $report)
     {
         $this->authorizeReport($report); $data = $this->validateReport($request, $report->report_year, $report->jenis_pengajuan_id);

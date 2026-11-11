@@ -60,7 +60,9 @@ Route::prefix('monitoring-akreditasi-pstk')->name('monitoring-akreditasi.')->gro
     Route::get('/', [MonitoringAkreditasiController::class, 'index'])->name('index');
     Route::get('/create', [MonitoringAkreditasiController::class, 'create'])->name('create');
     Route::post('/', [MonitoringAkreditasiController::class, 'store'])->name('store');
+    Route::get('/{report}/view', [MonitoringAkreditasiController::class, 'view'])->name('view');
     Route::get('/{report}/edit', [MonitoringAkreditasiController::class, 'edit'])->name('edit');
+    Route::post('/{report}/reset', [MonitoringAkreditasiController::class, 'reset'])->name('reset');
     Route::put('/{report}', [MonitoringAkreditasiController::class, 'update'])->name('update');
     Route::post('/{report}/submit', [MonitoringAkreditasiController::class, 'submit'])->name('submit');
 });
