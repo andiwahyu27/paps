@@ -12,11 +12,15 @@ use Illuminate\Support\Facades\DB;
 
 class BackfillMonev extends Command
 {
-    protected $signature = 'monev:backfill {--dry-run}';
+    protected $signature = 'monev:backfill {--dry-run} {--repair-participants : Restore missing participant counts from the current legacy version}';
     protected $description = 'Backfill monitoring reports into the normalized Monev tables';
 
     public function handle(MonevAnswerCodec $codec): int
     {
+        if ($this->option('repair-participants')) {
+            return $this->repairParticipants($codec);
+        }
+
         $questionnaire = MonevKuesioner::where('kode', 'monitoring-akreditasi-pstk')->where('versi', 1)->firstOrFail();
         $questions = MonevPertanyaan::where('kuesioner_id', $questionnaire->id)->get()->keyBy('kode');
         $reports = MonitoringReport::with(['versions', 'profile'])->orderBy('id')->get();
@@ -25,8 +29,11 @@ class BackfillMonev extends Command
 
         foreach ($reports as $report) {
             if (Monev::where('legacy_report_id', $report->id)->exists()) continue;
-            $version = $report->submitted_version
+            $submitted = $report->submitted_version
                 ? $report->versions->firstWhere('version', $report->submitted_version)
+                : null;
+            $version = $report->status === 'submitted'
+                ? $submitted
                 : $report->versions->sortByDesc('version')->first();
             if (!$version) {
                 $this->warn("Report {$report->id} tidak memiliki versi jawaban.");
@@ -40,7 +47,7 @@ class BackfillMonev extends Command
                 $blocked++;
                 continue;
             }
-            $ready[] = [$report, $version, $encoded];
+            $ready[] = [$report, $submitted, $encoded];
         }
 
         $this->line(sprintf('Dry run: %d siap, %d terblokir, %d sudah dilewati.', count($ready), $blocked, $reports->count() - count($ready) - $blocked));
@@ -50,7 +57,7 @@ class BackfillMonev extends Command
         }
 
         DB::transaction(function () use ($ready, $questionnaire) {
-            foreach ($ready as [$report, $version, $answers]) {
+            foreach ($ready as [$report, $submitted, $answers]) {
                 $monev = Monev::create([
                     'uuid' => $report->uuid,
                     'kuesioner_id' => $questionnaire->id,
@@ -59,16 +66,50 @@ class BackfillMonev extends Command
                     'report_year' => $report->report_year,
                     'status' => $report->status === 'submitted' ? 'submitted' : 'draft',
                     'edit_version' => $report->edit_version,
-                    'submitted_by' => $version->submitted_by,
-                    'submitted_at' => $version->submitted_at,
-                    'identity_snapshot' => $version->identity_snapshot,
-                    'accreditation_snapshot' => $version->accreditation_snapshot,
+                    'submitted_by' => $submitted?->submitted_by,
+                    'submitted_at' => $submitted?->submitted_at,
+                    'identity_snapshot' => $submitted?->identity_snapshot,
+                    'accreditation_snapshot' => $submitted?->accreditation_snapshot,
                     'legacy_report_id' => $report->id,
                 ]);
                 $monev->answers()->createMany($answers);
             }
         });
         $this->info('Backfill Monev berhasil disimpan.');
+        return self::SUCCESS;
+    }
+
+    private function repairParticipants(MonevAnswerCodec $codec): int
+    {
+        $dryRun = $this->option('dry-run');
+        $restored = DB::transaction(function () use ($codec, $dryRun) {
+            $count = 0;
+            foreach (MonitoringReport::query()->orderBy('id')->cursor() as $report) {
+                if (!$dryRun) {
+                    $report = MonitoringReport::whereKey($report->id)->lockForUpdate()->firstOrFail();
+                }
+                $monev = Monev::where('legacy_report_id', $report->id)->first();
+                if (!$monev || (int) $monev->edit_version !== $report->edit_version) continue;
+                $version = $report->status === 'submitted'
+                    ? $report->versions()->where('version', $report->submitted_version)->first()
+                    : $report->versions()->latest('version')->first();
+                $questions = MonevPertanyaan::where('kuesioner_id', $monev->kuesioner_id)
+                    ->whereIn('kode', ['12a', '12b'])->get()->keyBy('kode');
+                foreach (['internal' => '12a', 'external' => '12b'] as $part => $code) {
+                    $question = $questions->get($code);
+                    $value = data_get($version?->answers, '12.' . $part);
+                    if (!$question || $value === null || $value === '') continue;
+                    if ($monev->answers()->where('pertanyaan_id', $question->id)->exists()) continue;
+                    $row = $codec->encode($question->tipe_pertanyaan, $value);
+                    if (!$dryRun) {
+                        $monev->answers()->create(['pertanyaan_id' => $question->id] + $row);
+                    }
+                    $count++;
+                }
+            }
+            return $count;
+        });
+        $this->info(sprintf('%d nilai peserta %s.', $restored, $dryRun ? 'siap dipulihkan' : 'dipulihkan'));
         return self::SUCCESS;
     }
 
@@ -81,7 +122,7 @@ class BackfillMonev extends Command
         }
         $rows = [];
         foreach ($answers as $key => $value) {
-            if ($key === '12' && is_array($value)) {
+            if ((string) $key === '12' && is_array($value)) {
                 foreach (['internal' => '12a', 'external' => '12b'] as $part => $code) {
                     if (!$this->addRow($rows, $questions, $codec, $code, $value[$part] ?? null)) return null;
                 }

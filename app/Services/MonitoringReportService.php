@@ -90,7 +90,7 @@ class MonitoringReportService
         $rows = [];
         $answers['has_training'] = $answers['has_training'] ?? ((int) ($answers[10] ?? 0) > 0 ? 'Ya' : 'Tidak');
         foreach ($answers as $key => $value) {
-            if ($key === '12' && is_array($value)) {
+            if ((string) $key === '12' && is_array($value)) {
                 foreach (['internal' => '12a', 'external' => '12b'] as $part => $code) $this->appendNormalized($rows, $questions, $code, $value[$part] ?? null);
                 continue;
             }

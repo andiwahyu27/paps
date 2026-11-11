@@ -35,19 +35,21 @@ class MonitoringAkreditasiController extends Controller
 
     public function publicDraft(Request $request, string $token, MonitoringReportLinkService $links)
     {
-        $link = $links->findActive($token); $data = $this->validateReport($request, $link->report->report_year, $link->report->jenis_pengajuan_id);
+        $link = $links->findActive($token);
         $this->authorizeReport($link->report);
+        $data = $this->validateReport($request, $link->report->report_year, $link->report->jenis_pengajuan_id);
         $data['answers'] = $this->lockIdentityAnswers($data['answers'] ?? [], $link->report->profile, $link->report->jenis_pengajuan_id, $link->report->report_year);
-        $report = $this->service->saveDraft($link->report, $data['answers'] ?? [], null, 'secretariat_link', (int) $request->input('edit_version'));
+        $report = $this->service->saveDraft($link->report, $data['answers'] ?? [], $request->user()->id, 'secretariat_link', (int) $request->input('edit_version'));
         return response()->json(['ok' => true, 'edit_version' => $report->edit_version])->header('Cache-Control', 'no-store, private');
     }
 
     public function publicSubmit(Request $request, string $token, MonitoringReportLinkService $links)
     {
-        $link = $links->findActive($token); $data = $this->validateReport($request, $link->report->report_year, $link->report->jenis_pengajuan_id, true);
+        $link = $links->findActive($token);
         $this->authorizeReport($link->report);
+        $data = $this->validateReport($request, $link->report->report_year, $link->report->jenis_pengajuan_id, true);
         $data['answers'] = $this->lockIdentityAnswers($data['answers'] ?? [], $link->report->profile, $link->report->jenis_pengajuan_id, $link->report->report_year);
-        $report = $this->service->submit($link->report, $data['answers'], $link->report->profile, null, 'secretariat_link', (int) $request->input('edit_version'));
+        $report = $this->service->submit($link->report, $data['answers'], $link->report->profile, $request->user()->id, 'secretariat_link', (int) $request->input('edit_version'));
         return response()->json(['ok' => true, 'message' => 'Laporan berhasil dikirim.', 'edit_version' => $report->edit_version])
             ->header('Cache-Control', 'no-store, private')->header('Referrer-Policy', 'no-referrer');
     }
