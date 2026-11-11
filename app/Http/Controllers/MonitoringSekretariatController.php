@@ -53,8 +53,11 @@ class MonitoringSekretariatController extends Controller
         $periods = MonitoringReportingPeriod::orderByDesc('report_year')->get();
         $globalPeriod = MonitoringReportingPeriod::global();
         $editingPeriod = $periods->firstWhere('report_year', $request->query('periode'));
+        $reportYears = $periods->pluck('report_year')->merge(range(now()->year, 2020))->unique()->sortDesc();
 
-        return view('sekretariat.monitoring-evaluasi', compact('reports', 'stats', 'accreditations', 'year', 'periods', 'globalPeriod', 'editingPeriod'));
+        return view('sekretariat.monitoring-evaluasi', compact(
+            'reports', 'stats', 'accreditations', 'year', 'periods', 'globalPeriod', 'editingPeriod', 'reportYears',
+        ));
     }
 
     public function savePeriod(Request $request)

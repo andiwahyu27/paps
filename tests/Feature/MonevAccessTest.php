@@ -148,6 +148,16 @@ class MonevAccessTest extends TestCase
         $this->assertSame(2025, \App\Models\MonitoringReportingPeriod::global()->report_year);
     }
 
+    public function test_secretariat_can_filter_reports_by_a_scheduled_future_year(): void
+    {
+        $year = now()->year + 1;
+        $this->setGlobalPeriod($year);
+        $secretariat = User::create(['name' => 'Sekretariat', 'role' => 2]);
+
+        $this->actingAs($secretariat)->get(route('monitoring-evaluasi', ['year' => $year]))
+            ->assertOk()->assertSee('<option value="' . $year . '" selected>' . $year . '</option>', false);
+    }
+
     public function test_google_resumes_the_global_link_with_the_period_selected_at_return(): void
     {
         config(['monev.use_normalized_reports' => true]);
@@ -258,7 +268,8 @@ class MonevAccessTest extends TestCase
         $this->travelTo(\Carbon\Carbon::parse('2026-11-11 16:00:00', 'Asia/Jakarta'));
         $this->get($global)->assertOk()->assertSeeText('11/11/2026 16:00 WIB')->assertSeeText('Lanjutkan Draf')
             ->assertSeeText('Program Kosong')->assertSeeText('Belum dibuat')->assertDontSeeText('Program Lembaga Lain');
-        $this->get(route('monitoring-akreditasi.edit', $saved))->assertOk()->assertSeeText('segera kirim');
+        $this->get(route('monitoring-akreditasi.edit', $saved))->assertOk()->assertSeeText('segera kirim')
+            ->assertSee('<option value="Tidak" selected>Tidak</option>', false);
         $this->get($tokenUrl)->assertOk()->assertSeeText('Pelaporan ditutup pada');
         $this->postJson($tokenUrl . '/draft', $this->draftPayload(2))->assertUnprocessable();
         $this->postJson($tokenUrl . '/submit', $this->draftPayload(2))->assertUnprocessable();

@@ -32,7 +32,7 @@
             </div>
             <div class="col-md-auto">
                 <div class="form-check mb-2">
-                    <input type="checkbox" class="form-check-input" name="activate" id="period-activate" value="1" @checked(old('activate'))>
+                    <input type="checkbox" class="form-check-input" name="activate" id="period-activate" value="1" {{ old('activate') ? 'checked' : '' }}>
                     <label class="form-check-label" for="period-activate">Jadikan tujuan link global</label>
                 </div>
                 @error('activate')<div class="text-danger small">{{ $message }}</div>@enderror

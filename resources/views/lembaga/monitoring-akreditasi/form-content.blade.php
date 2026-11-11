@@ -244,8 +244,8 @@
                                                 <select class="form-select answer-field" id="answer-has-training"
                                                     name="answers[has_training]">
                                                     <option value="">Pilih jawaban</option>
-                                                    <option value="Ya" @selected(old('answers.has_training', $answers['has_training'] ?? '') === 'Ya')>Ya</option>
-                                                    <option value="Tidak" @selected(old('answers.has_training', $answers['has_training'] ?? '') === 'Tidak')>Tidak</option>
+                                                    <option value="Ya" {{ old('answers.has_training', $answers['has_training'] ?? '') === 'Ya' ? 'selected' : '' }}>Ya</option>
+                                                    <option value="Tidak" {{ old('answers.has_training', $answers['has_training'] ?? '') === 'Tidak' ? 'selected' : '' }}>Tidak</option>
                                                 </select>
                                                 <div class="form-text">Jika Ya, pertanyaan 10–23 wajib diisi. Jika Tidak, lanjut ke blok D.</div>
                                             @elseif ($number === 12)
@@ -277,7 +277,7 @@
                                                     name="answers[23]">
                                                     <option value="">Pilih jawaban</option>
                                                     @foreach ($questionnaireQuestions->get(23)?->opsi ?? ['Ada', 'Tidak ada'] as $choice)
-                                                        <option value="{{ $choice }}" @selected(old('answers.23', $answers['23'] ?? '') === $choice)>{{ ['Ada' => 'Ada tindak lanjut', 'Tidak ada' => 'Tidak ada tindak lanjut'][$choice] ?? $choice }}</option>
+                                                        <option value="{{ $choice }}" {{ old('answers.23', $answers['23'] ?? '') === $choice ? 'selected' : '' }}>{{ ['Ada' => 'Ada tindak lanjut', 'Tidak ada' => 'Tidak ada tindak lanjut'][$choice] ?? $choice }}</option>
                                                     @endforeach
                                                 </select>
                                                 <textarea
@@ -337,7 +337,7 @@
                                                     <option value="">Pilih jawaban</option>
                                                     @foreach ($choices as $choice)
                                                         <option value="{{ $choice }}"
-                                                            @selected(old('answers.' . $number, $answers[(string) $number] ?? '') === $choice)>{{ $choice }}</option>
+                                                            {{ old('answers.' . $number, $answers[(string) $number] ?? '') === $choice ? 'selected' : '' }}>{{ $choice }}</option>
                                                     @endforeach
                                                 </select>
                                             @else
