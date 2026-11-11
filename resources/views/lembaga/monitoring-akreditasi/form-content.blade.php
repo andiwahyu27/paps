@@ -63,6 +63,19 @@
             'Lengkapi evaluasi, kendala, rencana, dan dukungan yang dibutuhkan. Tinjau ringkasan seluruh blok sebelum mengirim laporan.',
         ],
     ];
+    $questionnaireQuestions = $questionnaireQuestions ?? collect();
+    foreach ($blocks as &$block) {
+        foreach ($block[1] as $number => $label) {
+            $block[1][$number] = $questionnaireQuestions->get($number)?->pertanyaan ?? $label;
+        }
+        uksort($block[1], static function ($first, $second) use ($questionnaireQuestions) {
+            $firstCode = $first === 12 ? '12a' : $first;
+            $secondCode = $second === 12 ? '12a' : $second;
+            return ($questionnaireQuestions->get($firstCode)?->order_number ?? PHP_INT_MAX)
+                <=> ($questionnaireQuestions->get($secondCode)?->order_number ?? PHP_INT_MAX);
+        });
+    }
+    unset($block);
     $blocks[] = [
         'Tinjau & Kirim',
         [],
@@ -257,10 +270,9 @@
                                                 <select class="form-select answer-field" id="answer-23"
                                                     name="answers[23]">
                                                     <option value="">Pilih jawaban</option>
-                                                    <option value="Ada" @selected(old('answers.23', $answers['23'] ?? '') === 'Ada')>Ada tindak
-                                                        lanjut</option>
-                                                    <option value="Tidak ada" @selected(old('answers.23', $answers['23'] ?? '') === 'Tidak ada')>Tidak ada
-                                                        tindak lanjut</option>
+                                                    @foreach ($questionnaireQuestions->get(23)?->opsi ?? ['Ada', 'Tidak ada'] as $choice)
+                                                        <option value="{{ $choice }}" @selected(old('answers.23', $answers['23'] ?? '') === $choice)>{{ ['Ada' => 'Ada tindak lanjut', 'Tidak ada' => 'Tidak ada tindak lanjut'][$choice] ?? $choice }}</option>
+                                                    @endforeach
                                                 </select>
                                                 <textarea
                                                     class="form-control answer-field mt-2 {{ old('answers.23', $answers['23'] ?? '') === 'Ada' ? '' : 'd-none' }}"
@@ -268,7 +280,7 @@
                                                     placeholder="Jelaskan tindak lanjut yang dilakukan">{{ old('answers.23_keterangan', $answers['23_keterangan'] ?? '') }}</textarea>
                                             @elseif(in_array($number, [14, 17, 18]))
                                                 @php
-                                                    $choices = [
+                                                    $choices = $questionnaireQuestions->get($number)?->opsi ?? [
                                                         14 => ['Tatap muka', 'Daring', 'Blended learning'],
                                                         17 => ['Internal', 'Eksternal'],
                                                         18 => [
@@ -298,7 +310,7 @@
                                                 </div>
                                             @elseif(in_array($number, [13, 15, 16, 19, 20, 21, 22]))
                                                 @php
-                                                    $choices = [
+                                                    $choices = $questionnaireQuestions->get($number)?->opsi ?? [
                                                         13 => ['Sesuai', 'Ada modifikasi minor', 'Tidak sesuai'],
                                                         15 => [
                                                             'Sangat memuaskan',

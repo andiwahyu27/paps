@@ -3,9 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Models\MonitoringAccreditation;
+use App\Models\Monev;
 use App\Models\MonitoringReport;
 use App\Models\MonitoringReportImportSource;
 use App\Models\Profile;
+use App\Services\MonitoringReportService;
 use Carbon\Carbon;
 use DateTime;
 use DateTimeZone;
@@ -68,7 +70,7 @@ class ImportMonitoringReportHistory extends Command
         'PROGRAM PELATIHAN TEKNIS DI BIDANG SISTEM TEKNOLOGI BERBASIS KOMPUTER' => 'SISTEM TEKNOLOGI BERBASIS KOMPUTER',
     ];
 
-    public function handle(): int
+    public function handle(MonitoringReportService $monitoring): int
     {
         $file = $this->option('file');
         $sourceRef = trim((string) $this->option('source-ref'));
@@ -122,8 +124,30 @@ class ImportMonitoringReportHistory extends Command
         }
 
         try {
-            DB::transaction(function () use ($prepared) {
+            DB::transaction(function () use ($prepared, $monitoring) {
                 foreach ($prepared['ready'] as $item) {
+                    $source = [
+                        'source_ref' => $item['source_ref'],
+                        'source_key' => $item['source_key'],
+                        'content_hash' => $item['content_hash'],
+                        'source_row' => $item['source_row'],
+                        'source_timestamp' => $item['source_timestamp'],
+                        'raw_responses' => $item['raw_responses'],
+                        'imported_at' => now(),
+                    ];
+                    if (config('monev.use_normalized_reports')) {
+                        $monev = $monitoring->importMonev(
+                            $item['profile'], $item['accreditation']->jenis_pengajuan_id, $item['year'], $item['answers'],
+                            [
+                                'identity_snapshot' => $item['identity_snapshot'],
+                                'accreditation_snapshot' => $item['accreditation_snapshot'],
+                                'submitted_by' => null,
+                                'submitted_at' => $item['submitted_at'],
+                            ]
+                        );
+                        MonitoringReportImportSource::create($source + ['monev_id' => $monev->id]);
+                        continue;
+                    }
                     $report = $item['report'];
                     if (!$report) {
                         $report = new MonitoringReport();
@@ -138,7 +162,7 @@ class ImportMonitoringReportHistory extends Command
                     $report->updated_by = null;
                     $report->save();
 
-                    $report->versions()->create([
+                    $submission = $report->versions()->create([
                         'version' => 1,
                         'answers' => $item['answers'],
                         'identity_snapshot' => $item['identity_snapshot'],
@@ -148,15 +172,14 @@ class ImportMonitoringReportHistory extends Command
                         'submission_channel' => 'historical_import',
                     ]);
 
-                    $report->importSources()->create([
-                        'source_ref' => $item['source_ref'],
-                        'source_key' => $item['source_key'],
-                        'content_hash' => $item['content_hash'],
-                        'source_row' => $item['source_row'],
-                        'source_timestamp' => $item['source_timestamp'],
-                        'raw_responses' => $item['raw_responses'],
-                        'imported_at' => now(),
-                    ]);
+                    $monev = $monitoring->syncNormalized($report, $item['answers'], $submission);
+                    if (Schema::hasColumn('monitoring_report_import_sources', 'monev_id')) {
+                        if (!$monev) {
+                            throw new \RuntimeException('Laporan histori belum dipetakan ke Monev.');
+                        }
+                        $source['monev_id'] = $monev->id;
+                    }
+                    $report->importSources()->create($source);
                 }
             });
         } catch (Throwable $exception) {
@@ -234,6 +257,7 @@ class ImportMonitoringReportHistory extends Command
 
     private function prepareRows(array $rows, string $sourceRef, string $timestampFormat, string $sourceTimezone): array
     {
+        $normalized = config('monev.use_normalized_reports');
         $accreditations = MonitoringAccreditation::with(['profile', 'jenisPengajuan'])->get();
         $ready = [];
         $blocked = [];
@@ -337,12 +361,14 @@ class ImportMonitoringReportHistory extends Command
             }
             $seenReportKeys[$reportKey] = true;
 
-            $sourceImport = MonitoringReportImportSource::with('report')->where('source_key', $sourceKey)->first();
+            $sourceRelation = $normalized ? 'monev' : 'report';
+            $sourceImport = MonitoringReportImportSource::with($sourceRelation)->where('source_key', $sourceKey)->first();
             if ($sourceImport) {
-                $sameReport = $sourceImport->report
-                    && (int) $sourceImport->report->profile_id === (int) $profile->id
-                    && (int) $sourceImport->report->jenis_pengajuan_id === (int) $accreditation->jenis_pengajuan_id
-                    && (int) $sourceImport->report->report_year === $year;
+                $sourceReport = $sourceImport->{$sourceRelation};
+                $sameReport = $sourceReport
+                    && (int) $sourceReport->profile_id === (int) $profile->id
+                    && (int) $sourceReport->jenis_pengajuan_id === (int) $accreditation->jenis_pengajuan_id
+                    && (int) $sourceReport->report_year === $year;
                 if ($sourceImport->content_hash === $contentHash && $sameReport) {
                     $already++;
                 } else {
@@ -351,12 +377,16 @@ class ImportMonitoringReportHistory extends Command
                 continue;
             }
 
-            $report = MonitoringReport::withCount('versions')
+            $reports = $normalized ? Monev::withCount(['answers', 'submissions']) : MonitoringReport::withCount('versions');
+            $report = $reports
                 ->where('profile_id', $profile->id)
                 ->where('jenis_pengajuan_id', $accreditation->jenis_pengajuan_id)
                 ->where('report_year', $year)
                 ->first();
-            if ($report && ($report->versions_count > 0 || $report->submitted_version !== null)) {
+            $hasContent = $normalized
+                ? $report && ($report->answers_count > 0 || $report->submissions_count > 0 || $report->submitted_at || $report->edit_version !== 1)
+                : $report && ($report->versions_count > 0 || $report->submitted_version !== null);
+            if ($hasContent) {
                 $blocked[] = ['row' => $rowNumber, 'reasons' => ['laporan sudah memiliki versi dan tidak berasal dari import ini']];
                 continue;
             }

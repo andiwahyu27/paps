@@ -20,41 +20,22 @@
                     <strong>Status</strong>
                     <p><span class="badge bg-success">{{ $report->status }}</span></p>
                     <strong>Versi terkirim</strong>
-                    <p>{{ $report->submitted_version ?? '-' }}</p>
+                    <p>{{ $submission?->version ?? '-' }}</p>
                 </div>
             </div>
         </div>
     </div>
 
-    @php
-        $version = $report->versions->firstWhere('version', $report->submitted_version);
-        $identity = $version->identity_snapshot ?? [];
-        $accreditation = $version->accreditation_snapshot ?? [];
-        $answers = $version->answers ?? [];
-        $answers = app(\App\Services\MonitoringReportService::class)->answersForReport($report) ?? $answers;
-        $identityAnswers = [
-            1 => data_get($identity, 'nama_lembaga', $report->profile->nama_lembaga ?? null),
-            2 => data_get($identity, 'nama_program', data_get($accreditation, 'nama_program', $report->jenisPengajuan->nama ?? null)),
-            3 => data_get($identity, 'alamat_lembaga', data_get($identity, 'alamat', null)),
-            4 => data_get($identity, 'telepon', null),
-            5 => data_get($identity, 'email', null),
-            6 => data_get($identity, 'website', null),
-            7 => data_get($accreditation, 'certificate_number', null),
-            8 => data_get($accreditation, 'predicate', null),
-            9 => $report->report_year,
-        ];
-    @endphp
-
     <div class="card">
         <div class="card-header"><h5 class="mb-0">Jawaban Laporan</h5></div>
         <div class="card-body">
-            @foreach(range(1, 26) as $number)
+            @foreach($questions as $question)
                 @php
-                    $answer = $number <= 9 ? ($identityAnswers[$number] ?? '-') : data_get($answers, (string) $number, '-');
-                    $displayAnswer = is_array($answer) ? implode(', ', $answer) : $answer;
+                    $answer = data_get($answers, app(\App\Services\MonitoringReportService::class)->answerKey($question->kode));
+                    $displayAnswer = is_array($answer) ? implode(', ', $answer) : ($answer ?? '-');
                 @endphp
                 <div class="border-bottom py-2">
-                    <span class="fw-semibold">Pertanyaan {{ $number }}</span>
+                    <span class="fw-semibold">{{ $question->pertanyaan ?? 'Pertanyaan ' . $question->kode }}</span>
                     <div>{{ is_scalar($displayAnswer) ? $displayAnswer : '-' }}</div>
                 </div>
             @endforeach

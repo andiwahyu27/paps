@@ -17,4 +17,9 @@ class MonitoringReportImportSource extends Model
     {
         return $this->belongsTo(MonitoringReport::class, 'monitoring_report_id');
     }
+
+    public function monev()
+    {
+        return $this->belongsTo(Monev::class, 'monev_id');
+    }
 }

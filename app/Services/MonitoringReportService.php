@@ -15,6 +15,16 @@ use Illuminate\Support\Facades\Schema;
 
 class MonitoringReportService
 {
+    public function resolveReport(string $identifier): MonitoringReport|Monev
+    {
+        if (!config('monev.use_normalized_reports')) {
+            abort_unless(ctype_digit($identifier), 404);
+            return MonitoringReport::findOrFail($identifier);
+        }
+        abort_unless(ctype_digit($identifier) || \Illuminate\Support\Str::isUuid($identifier), 404);
+        return Monev::where(ctype_digit($identifier) ? 'legacy_report_id' : 'uuid', $identifier)->firstOrFail();
+    }
+
     public function programsFor(Profile $profile, int $year)
     {
         return MonitoringAccreditation::with('jenisPengajuan')
@@ -32,7 +42,7 @@ class MonitoringReportService
             $version = max(1, (int) $locked->edit_version);
             $locked->fill(['status' => $locked->submitted_version ? 'revision_draft' : 'draft', 'edit_version' => $version + 1, 'updated_by' => $userId])->save();
             $locked->versions()->updateOrCreate(['version' => $version], ['answers' => $answers, 'submission_channel' => $channel]);
-            $this->syncNormalized($locked, $answers, null);
+            $this->syncNormalized($locked, $answers);
             return $locked->fresh();
         });
     }
@@ -47,38 +57,181 @@ class MonitoringReportService
                 ->where('profile_id', $profile->id)->where('jenis_pengajuan_id', $report->jenis_pengajuan_id)
                 ->whereDate('valid_from', '<=', $report->report_year . '-12-31')->whereDate('valid_until', '>=', $report->report_year . '-01-01')->firstOrFail();
             $report->fill(['status' => 'submitted', 'edit_version' => $version + 1, 'submitted_version' => $version, 'updated_by' => $userId])->save();
-            $report->versions()->create([
+            $submission = $report->versions()->create([
                 'version' => $version, 'answers' => $answers, 'submitted_by' => $userId, 'submitted_at' => now(), 'submission_channel' => $channel,
                 'identity_snapshot' => $profile->only(['id', 'nama_lembaga', 'alamat_lembaga', 'telepon', 'email', 'website']),
                 'accreditation_snapshot' => $accreditation->toArray(),
             ]);
-            $this->syncNormalized($report, $answers, $userId, $profile);
+            $this->syncNormalized($report, $answers, $submission);
             return $report->fresh();
         });
     }
 
-    private function syncNormalized(MonitoringReport $report, array $answers, ?int $submittedBy, ?Profile $profile = null): void
+    private function activeQuestionnaire(): ?MonevKuesioner
     {
-        if (!Schema::hasTable('tr_monev')) return;
-        $questionnaire = MonevKuesioner::where('kode', 'monitoring-akreditasi-pstk')->where('versi', 1)->first();
-        if (!$questionnaire) return;
-        $questions = MonevPertanyaan::where('kuesioner_id', $questionnaire->id)->get()->keyBy('kode');
-        $monev = Monev::firstOrCreate(['legacy_report_id' => $report->id], [
-            'uuid' => $report->uuid,
-            'kuesioner_id' => $questionnaire->id,
-            'profile_id' => $report->profile_id,
-            'jenis_pengajuan_id' => $report->jenis_pengajuan_id,
-            'report_year' => $report->report_year,
-            'status' => 'draft',
-            'edit_version' => $report->edit_version,
-        ]);
+        return MonevKuesioner::where('kode', 'monitoring-akreditasi-pstk')
+            ->where('is_active', true)->orderByDesc('versi')->first();
+    }
+
+    public function questionnaireQuestions(MonitoringReport|Monev|null $report = null): \Illuminate\Support\Collection
+    {
+        if (!Schema::hasTable('tr_monev')) return collect();
+
+        $questionnaireId = $report instanceof Monev
+            ? $report->kuesioner_id
+            : ($report ? Monev::where('legacy_report_id', $report->id)->value('kuesioner_id') : null);
+        $questionnaireId ??= $this->activeQuestionnaire()?->id;
+
+        return MonevPertanyaan::where('kuesioner_id', $questionnaireId)
+            ->orderBy('order_number')->get()->keyBy('kode');
+    }
+
+    public function answerKey(string $code): string
+    {
+        return match ($code) {
+            '12a' => '12.internal',
+            '12b' => '12.external',
+            '23a' => '23_keterangan',
+            default => $code,
+        };
+    }
+
+    public function ensureMonevReport(MonitoringReport $report): ?Monev
+    {
+        if (!Schema::hasTable('tr_monev')) return null;
+        $monev = Monev::where('legacy_report_id', $report->id)->first();
+        if (!$monev) {
+            $questionnaire = $this->activeQuestionnaire();
+            if (!$questionnaire) return null;
+            $monev = Monev::create([
+                'legacy_report_id' => $report->id,
+                'uuid' => $report->uuid,
+                'kuesioner_id' => $questionnaire->id,
+                'profile_id' => $report->profile_id,
+                'jenis_pengajuan_id' => $report->jenis_pengajuan_id,
+                'report_year' => $report->report_year,
+                'status' => 'draft',
+                'edit_version' => $report->edit_version,
+            ]);
+        }
+        return $monev;
+    }
+
+    public function syncNormalized(MonitoringReport $report, array $answers, ?MonitoringReportVersion $submission = null): ?Monev
+    {
+        $monev = $this->ensureMonevReport($report);
+        if (!$monev) return null;
         $monev->fill(['status' => $report->status === 'submitted' ? 'submitted' : 'draft', 'edit_version' => $report->edit_version]);
-        if ($submittedBy !== null) {
-            $monev->submitted_by = $submittedBy;
-            $monev->submitted_at = now();
-            $monev->identity_snapshot = $profile?->only(['id', 'nama_lembaga', 'alamat_lembaga', 'telepon', 'email', 'website']);
+        if ($submission) {
+            $monev->submitted_by = $submission->submitted_by;
+            $monev->submitted_at = $submission->submitted_at;
+            $monev->identity_snapshot = $submission->identity_snapshot;
+            $monev->accreditation_snapshot = $submission->accreditation_snapshot;
         }
         $monev->save();
+        $this->replaceMonevAnswers($monev, $answers);
+        return $monev;
+    }
+
+    public function startMonevDraft(Profile $profile, int $program, int $year, array $answers): Monev
+    {
+        return DB::transaction(function () use ($profile, $program, $year, $answers) {
+            $monev = $this->findOrCreateMonev($profile->id, $program, $year);
+            abort_if($monev->edit_version !== 1, 409, 'Laporan sudah ada. Buka draf dari daftar laporan sebelum mengubahnya.');
+            return $this->writeMonevDraft($monev, $answers, 1);
+        });
+    }
+
+    public function findOrCreateMonev(int $profileId, int $program, int $year): Monev
+    {
+        $key = ['profile_id' => $profileId, 'jenis_pengajuan_id' => $program, 'report_year' => $year];
+        $questionnaire = $this->activeQuestionnaire();
+        abort_unless($questionnaire, 503, 'Kuesioner aktif belum tersedia.');
+        DB::table('tr_monev')->upsert([array_merge($key, [
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'kuesioner_id' => $questionnaire->id, 'status' => 'draft', 'edit_version' => 1,
+            'created_at' => now(), 'updated_at' => now(),
+        ])], array_keys($key), ['profile_id']);
+        return Monev::where($key)->lockForUpdate()->firstOrFail();
+    }
+
+    public function writeMonevDraft(Monev $report, array $answers, int $expectedVersion): Monev
+    {
+        return DB::transaction(function () use ($report, $answers, $expectedVersion) {
+            $locked = $this->lockMonevRevision($report, $expectedVersion);
+            $locked->update([
+                'status' => $locked->submitted_at ? 'revision_draft' : 'draft',
+                'edit_version' => $locked->edit_version + 1,
+            ]);
+            $this->replaceMonevAnswers($locked, $answers);
+            return $locked;
+        });
+    }
+
+    public function submitMonev(Monev $report, array $answers, Profile $profile, int $userId, string $channel, int $expectedVersion): Monev
+    {
+        return DB::transaction(function () use ($report, $answers, $profile, $userId, $channel, $expectedVersion) {
+            $locked = $this->lockMonevRevision($report, $expectedVersion);
+            $accreditation = $this->programsFor($profile, $locked->report_year)->firstWhere('jenis_pengajuan_id', $locked->jenis_pengajuan_id);
+            abort_unless($accreditation, 404, 'Akreditasi program tidak ditemukan.');
+            $submission = [
+                'submitted_by' => $userId,
+                'submitted_at' => now(),
+                'identity_snapshot' => $profile->only(['id', 'nama_lembaga', 'alamat_lembaga', 'telepon', 'email', 'website']),
+                'accreditation_snapshot' => $accreditation->toArray(),
+            ];
+            return $this->recordMonevSubmission($locked, $answers, $submission, $channel);
+        });
+    }
+
+    public function importMonev(Profile $profile, int $program, int $year, array $answers, array $submission): Monev
+    {
+        return DB::transaction(function () use ($profile, $program, $year, $answers, $submission) {
+            $report = $this->findOrCreateMonev($profile->id, $program, $year);
+            if ($report->submitted_at || $report->edit_version !== 1 || $report->answers()->exists() || $report->submissions()->exists()) {
+                throw new \RuntimeException('Laporan Monev sudah memiliki jawaban atau kiriman.');
+            }
+            return $this->recordMonevSubmission($report, $answers, $submission, 'historical_import');
+        });
+    }
+
+    private function recordMonevSubmission(Monev $report, array $answers, array $submission, string $channel): Monev
+    {
+        DB::table('monev_submissions')->insert([
+            'monev_id' => $report->id, 'version' => $report->edit_version, 'submission_channel' => $channel,
+            'answers' => json_encode($answers, JSON_THROW_ON_ERROR),
+            'identity_snapshot' => json_encode($submission['identity_snapshot'], JSON_THROW_ON_ERROR),
+            'accreditation_snapshot' => json_encode($submission['accreditation_snapshot'], JSON_THROW_ON_ERROR),
+            'submitted_at' => $submission['submitted_at'], 'submitted_by' => $submission['submitted_by'],
+        ]);
+        $report->update($submission + ['status' => 'submitted', 'edit_version' => $report->edit_version + 1]);
+        $this->replaceMonevAnswers($report, $answers);
+        return $report;
+    }
+
+    public function resetMonev(Monev $report, int $expectedVersion): void
+    {
+        DB::transaction(function () use ($report, $expectedVersion) {
+            $locked = $this->lockMonevRevision($report, $expectedVersion);
+            $identityCodes = array_map('strval', range(1, 9));
+            $locked->answers()->whereHas('question', fn ($query) => $query->whereNotIn('kode', $identityCodes))->delete();
+            $locked->update([
+                'status' => $locked->submitted_at ? 'revision_draft' : 'draft',
+                'edit_version' => $locked->edit_version + 1,
+            ]);
+        });
+    }
+
+    private function lockMonevRevision(Monev $report, int $expectedVersion): Monev
+    {
+        $locked = Monev::whereKey($report->id)->lockForUpdate()->firstOrFail();
+        abort_if($locked->edit_version !== $expectedVersion, 409, 'Laporan berubah pada sesi lain. Salin perubahan Anda lalu muat ulang.');
+        return $locked;
+    }
+
+    private function replaceMonevAnswers(Monev $monev, array $answers): void
+    {
+        $questions = MonevPertanyaan::where('kuesioner_id', $monev->kuesioner_id)->get()->keyBy('kode');
         $monev->answers()->delete();
         foreach ($this->normalizedAnswers($answers, $questions) as [$question, $numeric, $text]) {
             $monev->answers()->create(['pertanyaan_id' => $question->id, 'numeric_value' => $numeric, 'text_value' => $text]);
@@ -114,10 +267,12 @@ class MonitoringReportService
         return Profile::whereHas('pic', fn ($q) => $q->whereKey($userId))->first();
     }
 
-    public function answersForReport(MonitoringReport $report): ?array
+    public function answersForReport(MonitoringReport|Monev $report): ?array
     {
         if (!Schema::hasTable('tr_monev')) return null;
-        $monev = Monev::with('answers.question')->where('legacy_report_id', $report->id)->first();
+        $monev = $report instanceof Monev
+            ? $report->loadMissing('answers.question')
+            : Monev::with('answers.question')->where('legacy_report_id', $report->id)->first();
         if (!$monev || $monev->answers->isEmpty()) return null;
         $answers = [];
         foreach ($monev->answers as $answer) {

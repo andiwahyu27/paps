@@ -79,6 +79,17 @@ class MonevExportTest extends TestCase
             $table->decimal('numeric_value', 24, 8)->nullable();
             $table->text('text_value')->nullable();
         });
+        Schema::create('monitoring_accreditations', function (Blueprint $table) {
+            $table->id();
+            $table->date('valid_from');
+            $table->date('valid_until');
+        });
+        Schema::create('monitoring_report_links', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('monev_id');
+        });
+        $migration = require database_path('migrations/2026_11_11_000002_create_monev_submissions.php');
+        $migration->up();
     }
 
     public function test_export_reads_current_draft_and_preserves_zero_multiple_choices_and_safe_text(): void
@@ -122,6 +133,30 @@ class MonevExportTest extends TestCase
         $this->assertStringContainsString('Lembaga Uji', $csv);
         $this->assertStringNotContainsString('Lembaga Lain', $csv);
         $this->assertSame(6, count($this->csvRows($csv)));
+    }
+
+    public function test_normalized_dashboard_keeps_last_submission_stats_and_exports_current_draft(): void
+    {
+        $legacy = $this->fixture();
+        $report = \App\Models\Monev::firstOrFail();
+        $report->update(['status' => 'revision_draft']);
+        DB::table('monev_submissions')->insert([
+            'monev_id' => $report->id, 'version' => 1, 'answers' => '{"has_training":"Tidak"}',
+            'identity_snapshot' => '{}', 'accreditation_snapshot' => '{}',
+            'submitted_at' => now(), 'submitted_by' => 1, 'submission_channel' => 'account',
+        ]);
+        config(['monev.use_normalized_reports' => true]);
+        Schema::drop('monitoring_reports');
+        $this->actingAs($this->secretariat());
+        $dashboard = $this->get(route('monitoring-evaluasi', ['year' => 2026]))->assertOk();
+        $this->assertSame(1, $dashboard->viewData('stats')['nihil']);
+        $detail = $this->get(route('monitoring-evaluasi.detail', $legacy))->assertOk();
+        $this->assertSame(0, $detail->viewData('answers')[12]['internal']);
+        $detail->assertSeeText('Tatap muka, Daring');
+        $csv = $this->get(route('monitoring-evaluasi.export', $report))->assertOk()->streamedContent();
+        $rows = array_column(array_slice($this->csvRows($csv), 1), 5, 4);
+        $this->assertSame('0', $rows['12a']);
+        $this->assertSame('Tatap muka, Daring', $rows['14']);
     }
 
     private function fixture(): MonitoringReport

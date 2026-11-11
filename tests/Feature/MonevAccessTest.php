@@ -77,7 +77,8 @@ class MonevAccessTest extends TestCase
         });
         Schema::create('monitoring_report_links', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('monitoring_report_id');
+            $table->unsignedBigInteger('monitoring_report_id')->nullable();
+            $table->unsignedBigInteger('monev_id')->nullable();
             $table->string('token_hash')->unique();
             $table->text('token_encrypted');
             $table->unsignedBigInteger('created_by');
@@ -87,7 +88,8 @@ class MonevAccessTest extends TestCase
         });
         Schema::create('monitoring_report_link_audits', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('monitoring_report_id');
+            $table->unsignedBigInteger('monitoring_report_id')->nullable();
+            $table->unsignedBigInteger('monev_id')->nullable();
             $table->unsignedBigInteger('monitoring_report_link_id');
             $table->unsignedBigInteger('actor_id');
             $table->string('action');
@@ -96,6 +98,8 @@ class MonevAccessTest extends TestCase
             $table->timestamp('created_at');
         });
         $migration = require database_path('migrations/2026_11_10_000001_create_monev_questionnaire_tables.php');
+        $migration->up();
+        $migration = require database_path('migrations/2026_11_11_000002_create_monev_submissions.php');
         $migration->up();
     }
 
@@ -155,6 +159,7 @@ class MonevAccessTest extends TestCase
 
     public function test_link_submit_records_member_and_reopens_numeric_and_choice_answers(): void
     {
+        config(['monev.use_normalized_reports' => true]);
         $report = $this->report();
         DB::table('mt_jenis_pengajuans')->insert(['id' => 1, 'nama' => 'Statistik']);
         DB::table('monitoring_accreditations')->insert([
@@ -163,6 +168,12 @@ class MonevAccessTest extends TestCase
         ]);
         $this->member(1);
         $editor = $this->member(1);
+        DB::table('tr_monev')->insert([
+            'id' => 42, 'uuid' => $report->uuid, 'legacy_report_id' => $report->id,
+            'profile_id' => 1, 'jenis_pengajuan_id' => 1, 'report_year' => 2026,
+            'kuesioner_id' => DB::table('mt_kuesioner')->value('id'),
+        ]);
+        $monev = \App\Models\Monev::findOrFail(42);
         $link = app(\App\Services\MonitoringReportLinkService::class)->issue($report, $editor->id);
         $answers = [
             1 => 'Lembaga Satu', 2 => 'Statistik', 3 => 'Alamat', 4 => '0800',
@@ -176,15 +187,37 @@ class MonevAccessTest extends TestCase
         $this->actingAs($this->member(2))->getJson(route('monitoring-akreditasi.public.form', $link['token']))->assertForbidden();
         $this->actingAs($editor)->putJson(route('monitoring-akreditasi.update', $report), $payload)
             ->assertOk()->assertJsonPath('edit_version', 2);
+        $this->putJson(route('monitoring-akreditasi.update', $monev), $payload)->assertStatus(409);
+        $pinned = \App\Models\Monev::firstOrFail()->kuesioner_id;
+        DB::table('mt_kuesioner')->where('id', $pinned)->update(['is_active' => false]);
+        DB::table('mt_kuesioner')->insert([
+            'kode' => 'monitoring-akreditasi-pstk', 'nama' => 'Versi baru',
+            'jenis' => 'monitoring-akreditasi', 'versi' => 2, 'is_active' => true,
+        ]);
+        DB::table('mt_pertanyaan')->where('kuesioner_id', $pinned)->where('kode', '13')->update([
+            'pertanyaan' => 'Kesesuaian menurut versi laporan',
+            'opsi' => json_encode(['Sesuai instrumen lama']),
+        ]);
         $payload['edit_version'] = 2;
+        $payload['answers'][13] = 'Sesuai instrumen lama';
         $this->postJson(route('monitoring-akreditasi.public.submit', $link['token']), $payload)->assertOk();
         $this->assertDatabaseHas('tr_monev', ['legacy_report_id' => $report->id, 'submitted_by' => $editor->id]);
         $page = $this->get(route('monitoring-akreditasi.public.form', $link['token']))->assertOk();
         $reopened = $page->viewData('answers');
-        $this->assertSame('Sesuai', $reopened[13]);
+        $page->assertSeeText('Kesesuaian menurut versi laporan');
+        $this->assertSame('Sesuai instrumen lama', $reopened[13]);
         $this->assertSame(['Tatap muka', 'Daring'], $reopened[14]);
         $this->assertSame(0, $reopened[12]['internal']);
         $this->assertSame(4, $reopened[12]['external']);
+        $this->get(route('monitoring-akreditasi.edit', $monev))->assertOk();
+        $this->post(route('monitoring-akreditasi.reset', $monev), ['edit_version' => 3])->assertRedirect();
+        $this->assertDatabaseHas('monev_submissions', ['monev_id' => 42, 'submitted_by' => $editor->id, 'version' => 2]);
+        $this->assertSame('revision_draft', $monev->fresh()->status);
+        $remaining = app(\App\Services\MonitoringReportService::class)->answersForReport($monev->fresh());
+        $this->assertSame('Lembaga Satu', $remaining[1]);
+        $this->assertArrayNotHasKey(12, $remaining);
+        $this->assertSame(1, $report->fresh()->edit_version);
+        $this->assertSame(1, $report->versions()->count());
     }
 
     private function member(int $profileId): User
@@ -232,7 +265,10 @@ class MonevAccessTest extends TestCase
         $links = app(\App\Services\MonitoringReportLinkService::class);
         $member = $this->member(1);
         $this->actingAs($member);
+        $report->versions()->delete();
         $original = $links->issue($report, $member->id);
+        $monev = \App\Models\Monev::where('legacy_report_id', $report->id)->firstOrFail();
+        $this->assertDatabaseHas('monitoring_report_links', ['id' => $original['link']->id, 'monev_id' => $monev->id]);
         $originalUrl = route('monitoring-akreditasi.public.form', $original['token']);
         $original['link']->update(['expires_at' => now()->subMinute()]);
         $this->getJson($originalUrl)->assertStatus(410);
@@ -242,7 +278,44 @@ class MonevAccessTest extends TestCase
         $replacementUrl = route('monitoring-akreditasi.public.form', $replacement['token']);
         $this->get($replacementUrl)->assertOk();
         $links->delete($replacement['link'], $member->id);
+        $this->assertDatabaseHas('monitoring_report_link_audits', [
+            'monitoring_report_link_id' => $replacement['link']->id, 'action' => 'deleted', 'monev_id' => $monev->id,
+        ]);
         $this->getJson($replacementUrl)->assertNotFound();
         $this->get(route('monitoring-akreditasi.edit', $report))->assertOk();
+    }
+
+    public function test_new_normalized_draft_uses_uuid_and_cannot_overwrite_an_existing_draft(): void
+    {
+        config(['monev.use_normalized_reports' => true]);
+        $this->report();
+        DB::table('mt_jenis_pengajuans')->insert(['id' => 2, 'nama' => 'Statistik']);
+        DB::table('monitoring_accreditations')->insert([
+            'profile_id' => 1, 'jenis_pengajuan_id' => 2, 'valid_from' => '2025-01-01',
+            'valid_until' => '2027-01-01', 'certificate_number' => 'UJI', 'predicate' => 'A',
+        ]);
+        $payload = ['jenis_pengajuan_id' => 2, 'report_year' => 2026, 'answers' => [24 => 'Draf baru']];
+        $response = $this->actingAs($this->member(1))->postJson(route('monitoring-akreditasi.store'), $payload);
+        $report = \App\Models\Monev::firstOrFail();
+        $response->assertOk()->assertJsonPath('edit_url', route('monitoring-akreditasi.edit', $report));
+        $this->get($response->json('edit_url'))->assertOk()->assertSee('Draf baru');
+        $payload['answers'][24] = 'Jawaban pengganti';
+        $this->postJson(route('monitoring-akreditasi.store'), $payload)->assertStatus(409);
+        $this->assertDatabaseCount('tr_monev', 1);
+        $this->assertDatabaseCount('monitoring_reports', 1);
+        $this->assertSame('Draf baru', app(\App\Services\MonitoringReportService::class)->answersForReport($report)[24]);
+        $links = app(\App\Services\MonitoringReportLinkService::class);
+        $issued = $links->issue($report, $this->app['auth']->id());
+        $this->assertDatabaseHas('monitoring_report_links', ['id' => $issued['link']->id, 'monev_id' => $report->id, 'monitoring_report_id' => null]);
+        $url = route('monitoring-akreditasi.public.form', $issued['token']);
+        $this->get($url)->assertOk()->assertSee('Draf baru');
+        $issued['link']->update(['expires_at' => now()->subMinute()]);
+        $this->getJson($url)->assertStatus(410);
+        $links->updateExpiry($issued['link'], $this->app['auth']->id(), now('Asia/Jakarta')->addDay()->format('Y-m-d H:i:s'));
+        $this->get($url)->assertOk();
+        $replacement = $links->issue($report, $this->app['auth']->id());
+        $this->getJson($url)->assertNotFound();
+        $links->delete($replacement['link'], $this->app['auth']->id());
+        $this->getJson(route('monitoring-akreditasi.public.form', $replacement['token']))->assertNotFound();
     }
 }
