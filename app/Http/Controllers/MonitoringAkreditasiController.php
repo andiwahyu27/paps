@@ -15,17 +15,18 @@ class MonitoringAkreditasiController extends Controller
     public function __construct(MonitoringReportService $service)
     {
         $this->service = $service;
-        $this->middleware(['auth', 'is.lembaga'])->except(['publicForm', 'publicDraft', 'publicSubmit']);
+        $this->middleware(['auth', 'is.lembaga']);
     }
 
     public function publicForm(string $token, MonitoringReportLinkService $links)
     {
         $link = $links->findActive($token);
+        $this->authorizeReport($link->report);
         $report = $link->report;
         $version = $report->versions()->when($report->submitted_version, fn ($q) => $q->where('version', $report->submitted_version), fn ($q) => $q->latest('version'))->first()
             ?: $report->versions()->latest('version')->first();
         $accreditation = $this->service->programsFor($report->profile, $report->report_year)->firstWhere('jenis_pengajuan_id', $report->jenis_pengajuan_id);
-        $answers = array_replace($this->identityAnswers($report->profile, $accreditation, $report->report_year), $version?->answers ?? []);
+        $answers = array_replace($this->identityAnswers($report->profile, $accreditation, $report->report_year), $this->service->answersForReport($report) ?? $version?->answers ?? []);
         return response()->view('lembaga.monitoring-akreditasi.public-form', [
             'profile' => $report->profile, 'report' => $report, 'accreditations' => $this->service->programsFor($report->profile, $report->report_year),
             'answers' => $answers, 'year' => $report->report_year, 'token' => $token, 'link' => $link, 'accreditation' => $accreditation,
@@ -35,6 +36,7 @@ class MonitoringAkreditasiController extends Controller
     public function publicDraft(Request $request, string $token, MonitoringReportLinkService $links)
     {
         $link = $links->findActive($token); $data = $this->validateReport($request, $link->report->report_year, $link->report->jenis_pengajuan_id);
+        $this->authorizeReport($link->report);
         $data['answers'] = $this->lockIdentityAnswers($data['answers'] ?? [], $link->report->profile, $link->report->jenis_pengajuan_id, $link->report->report_year);
         $report = $this->service->saveDraft($link->report, $data['answers'] ?? [], null, 'secretariat_link', (int) $request->input('edit_version'));
         return response()->json(['ok' => true, 'edit_version' => $report->edit_version])->header('Cache-Control', 'no-store, private');
@@ -43,6 +45,7 @@ class MonitoringAkreditasiController extends Controller
     public function publicSubmit(Request $request, string $token, MonitoringReportLinkService $links)
     {
         $link = $links->findActive($token); $data = $this->validateReport($request, $link->report->report_year, $link->report->jenis_pengajuan_id, true);
+        $this->authorizeReport($link->report);
         $data['answers'] = $this->lockIdentityAnswers($data['answers'] ?? [], $link->report->profile, $link->report->jenis_pengajuan_id, $link->report->report_year);
         $report = $this->service->submit($link->report, $data['answers'], $link->report->profile, null, 'secretariat_link', (int) $request->input('edit_version'));
         return response()->json(['ok' => true, 'message' => 'Laporan berhasil dikirim.', 'edit_version' => $report->edit_version])
@@ -103,7 +106,7 @@ class MonitoringAkreditasiController extends Controller
         $version = $report->versions()->when($report->submitted_version, fn ($q) => $q->where('version', $report->submitted_version), fn ($q) => $q->latest('version'))->first()
             ?: $report->versions()->latest('version')->first();
         $accreditation = $this->service->programsFor($profile, $report->report_year)->firstWhere('jenis_pengajuan_id', $report->jenis_pengajuan_id);
-        return view('lembaga.monitoring-akreditasi.form', ['profile' => $profile, 'report' => $report, 'accreditations' => $this->service->programsFor($profile, $report->report_year), 'accreditation' => $accreditation, 'answers' => array_replace($this->identityAnswers($profile, $accreditation, $report->report_year), $version?->answers ?? []), 'year' => $report->report_year]);
+        return view('lembaga.monitoring-akreditasi.form', ['profile' => $profile, 'report' => $report, 'accreditations' => $this->service->programsFor($profile, $report->report_year), 'accreditation' => $accreditation, 'answers' => array_replace($this->identityAnswers($profile, $accreditation, $report->report_year), $this->service->answersForReport($report) ?? $version?->answers ?? []), 'year' => $report->report_year]);
     }
 
     public function update(Request $request, MonitoringReport $report)

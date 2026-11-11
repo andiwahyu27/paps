@@ -38,9 +38,9 @@
 
 **Interfaces:** `MonevAnswerCodec::encode(string $inputType, mixed $value): array` returns the two value columns. `monev:backfill --dry-run` previews conversion, and `monev:backfill` writes only after a clean preflight.
 
-- [ ] Define the four tables and seed the current instrument with stable codes and existing choices. Split question 12 into `12a` and `12b`. Keep a legacy report reference for link and import reconciliation.
-- [ ] Backfill the latest version for a revision draft and the official version for a submitted report. Retain the last official submitter and snapshot. Leave unknown submitters null. Reject unsupported values before writes. Re-running the command skips previously mapped reports without overwriting edits.
-- [ ] Verify dry run writes zero rows, a repeated import creates zero duplicates, and a revision draft with a null legacy submitter keeps the newer answers. Run `vendor/bin/phpunit --filter MonevBackfillTest` on a test database.
+- [x] Define the four tables and seed the current instrument with stable codes and existing choices. Split question 12 into `12a` and `12b`. Keep a legacy report reference for link and import reconciliation.
+- [x] Backfill the latest version for a revision draft and the official version for a submitted report. Retain the last official submitter and snapshot. Leave unknown submitters null. Reject unsupported values before writes. Re-running the command skips previously mapped reports without overwriting edits.
+- [x] Verify dry run writes zero rows, a repeated import creates zero duplicates, and a revision draft with a null legacy submitter keeps the newer answers. Database dry run reported 0 ready, 0 blocked and 4 skipped after import. Codec unit tests passed.
 
 ### Task 2: Shared form and access
 

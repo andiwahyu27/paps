@@ -7,12 +7,16 @@ use App\Models\MonitoringAccreditation;
 use App\Models\MonitoringReportLink;
 use App\Models\Profile;
 use App\Services\MonitoringReportLinkService;
+use App\Services\MonitoringReportService;
 use Illuminate\Http\Request;
 
 class MonitoringSekretariatController extends Controller
 {
-    public function __construct()
+    private $monitoring;
+
+    public function __construct(MonitoringReportService $monitoring)
     {
+        $this->monitoring = $monitoring;
         $this->middleware(['auth', 'is.sekretariat']);
     }
 
@@ -79,5 +83,29 @@ class MonitoringSekretariatController extends Controller
     {
         $report->load(['profile', 'jenisPengajuan', 'versions' => fn ($q) => $q->latest('version')]);
         return view('sekretariat.monitoring-akreditasi-detail', compact('report'));
+    }
+
+    public function export(MonitoringReport $report)
+    {
+        $report->load(['profile', 'jenisPengajuan']);
+        $answers = $this->monitoring->answersForReport($report) ?? [];
+        return response()->streamDownload(function () use ($report, $answers) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Lembaga', 'Program', 'Tahun', 'Status', 'Pertanyaan', 'Jawaban']);
+            foreach (range(1, 26) as $number) {
+                $value = $number <= 9 ? null : data_get($answers, (string) $number);
+                if ($number === 12) $value = 'Internal: ' . data_get($answers, '12.internal', 0) . '; Eksternal: ' . data_get($answers, '12.external', 0);
+                if (is_array($value)) $value = implode(', ', $value);
+                $value = $this->safeCsvValue($value ?? '');
+                fputcsv($handle, [$this->safeCsvValue($report->profile->nama_lembaga ?? ''), $this->safeCsvValue($report->jenisPengajuan->nama ?? ''), $report->report_year, $report->status, $number, $value]);
+            }
+            fclose($handle);
+        }, 'monitoring-akreditasi-' . $report->uuid . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    private function safeCsvValue($value): string
+    {
+        $value = (string) $value;
+        return preg_match('/^[=+\-@]/', $value) ? "'" . $value : $value;
     }
 }

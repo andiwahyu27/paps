@@ -4,7 +4,7 @@
 <div class="container-xxl flex-grow-1 container-p-y">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold py-3 mb-0"><span class="text-muted fw-light">Monitoring &amp; Evaluasi /</span> Detail</h4>
-        <a href="{{ route('monitoring-evaluasi') }}" class="btn btn-outline-secondary"><i class="bx bx-arrow-back"></i> Kembali</a>
+        <div><a href="{{ route('monitoring-evaluasi.export', $report) }}" class="btn btn-outline-success me-2"><i class="bx bx-download"></i> Ekspor CSV</a><a href="{{ route('monitoring-evaluasi') }}" class="btn btn-outline-secondary"><i class="bx bx-arrow-back"></i> Kembali</a></div>
     </div>
 
     <div class="card mb-4">
@@ -31,6 +31,7 @@
         $identity = $version->identity_snapshot ?? [];
         $accreditation = $version->accreditation_snapshot ?? [];
         $answers = $version->answers ?? [];
+        $answers = app(\App\Services\MonitoringReportService::class)->answersForReport($report) ?? $answers;
         $identityAnswers = [
             1 => data_get($identity, 'nama_lembaga', $report->profile->nama_lembaga ?? null),
             2 => data_get($identity, 'nama_program', data_get($accreditation, 'nama_program', $report->jenisPengajuan->nama ?? null)),
