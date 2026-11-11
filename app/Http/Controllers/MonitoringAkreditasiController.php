@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\MonitoringReport;
+use App\Models\MonitoringReportingPeriod;
 use App\Models\Monev;
 use App\Models\Profile;
 use App\Services\MonitoringReportService;
@@ -17,6 +18,14 @@ class MonitoringAkreditasiController extends Controller
     {
         $this->service = $service;
         $this->middleware(['auth', 'is.lembaga']);
+    }
+
+    public function global()
+    {
+        $period = MonitoringReportingPeriod::global();
+        $state = $period?->stateAt(now());
+
+        return view('lembaga.monitoring-akreditasi.period', compact('period', 'state'));
     }
 
     public function publicForm(string $token, MonitoringReportLinkService $links)

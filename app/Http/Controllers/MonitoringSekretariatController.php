@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\MonitoringReport;
 use App\Models\MonitoringAccreditation;
 use App\Models\MonitoringReportLink;
+use App\Models\MonitoringReportingPeriod;
 use App\Models\Profile;
 use App\Models\Monev;
 use App\Services\MonitoringReportLinkService;
 use App\Services\MonitoringReportService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -48,7 +50,34 @@ class MonitoringSekretariatController extends Controller
             $link = $report->links->first(fn ($item) => !$item->deleted_at);
             if ($link && $link->expires_at->gt(now())) $link->public_url = route('monitoring-akreditasi.public.form', app(\App\Services\MonitoringReportLinkService::class)->decrypt($link));
         }
-        return view('sekretariat.monitoring-evaluasi', compact('reports', 'stats', 'accreditations', 'year'));
+        $periods = MonitoringReportingPeriod::orderByDesc('report_year')->get();
+        $globalPeriod = MonitoringReportingPeriod::global();
+        $editingPeriod = $periods->firstWhere('report_year', $request->query('periode'));
+
+        return view('sekretariat.monitoring-evaluasi', compact('reports', 'stats', 'accreditations', 'year', 'periods', 'globalPeriod', 'editingPeriod'));
+    }
+
+    public function savePeriod(Request $request)
+    {
+        $data = $request->validate([
+            'report_year' => 'required|integer|min:2020|max:9999',
+            'opens_at' => 'required|date_format:Y-m-d\TH:i',
+            'closes_at' => 'required|date_format:Y-m-d\TH:i|after:opens_at',
+            'activate' => 'sometimes|boolean',
+        ]);
+
+        DB::transaction(function () use ($data) {
+            MonitoringReportingPeriod::settings()->lockForUpdate()->first();
+            $period = MonitoringReportingPeriod::updateOrCreate(['report_year' => $data['report_year']], [
+                'opens_at' => CarbonImmutable::parse($data['opens_at'], 'Asia/Jakarta')->utc()->toDateTimeString(),
+                'closes_at' => CarbonImmutable::parse($data['closes_at'], 'Asia/Jakarta')->utc()->toDateTimeString(),
+            ]);
+            if ($data['activate'] ?? false) {
+                MonitoringReportingPeriod::settings()->update(['period_id' => $period->id]);
+            }
+        }, 3);
+
+        return redirect()->route('monitoring-evaluasi')->with('success', 'Periode pelaporan berhasil disimpan.');
     }
 
     private function filteredReports(Request $request)

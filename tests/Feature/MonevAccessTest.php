@@ -101,6 +101,8 @@ class MonevAccessTest extends TestCase
         $migration->up();
         $migration = require database_path('migrations/2026_11_11_000002_create_monev_submissions.php');
         $migration->up();
+        $migration = require database_path('migrations/2026_11_11_000007_create_monitoring_reporting_periods.php');
+        $migration->up();
     }
 
     public function test_member_of_another_profile_cannot_view_or_edit_report(): void
@@ -116,6 +118,31 @@ class MonevAccessTest extends TestCase
             'edit_version' => 1,
             'answers' => [24 => 'Tidak ada'],
         ])->assertForbidden();
+    }
+
+    public function test_secretariat_can_schedule_and_switch_the_permanent_reporting_link(): void
+    {
+        $secretariat = User::create(['name' => 'Sekretariat', 'role' => 2]);
+        $url = url('/monitoring-akreditasi-pstk/lapor');
+        $schedule = [
+            'report_year' => 2026, 'opens_at' => '2026-11-11T08:00',
+            'closes_at' => '2026-11-11T16:00', 'activate' => '1',
+        ];
+        $this->actingAs($secretariat)->post('/monitoring-evaluasi/periode', array_replace($schedule, [
+            'closes_at' => $schedule['opens_at'],
+        ]))->assertSessionHasErrors('closes_at');
+        $this->post('/monitoring-evaluasi/periode', $schedule)->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('monitoring_reporting_periods', [
+            'report_year' => 2026, 'opens_at' => '2026-11-11 01:00:00', 'closes_at' => '2026-11-11 09:00:00',
+        ]);
+        $this->get('/monitoring-evaluasi')->assertOk()->assertSee($url)->assertSeeText('Salin Link Pelaporan');
+        $this->post('/monitoring-evaluasi/periode', array_replace($schedule, ['report_year' => 2025]))
+            ->assertSessionHasNoErrors();
+        $this->assertSame(2025, \App\Models\MonitoringReportingPeriod::global()->report_year);
+        $this->assertSame($url, route('monitoring-akreditasi.global'));
+        $this->actingAs($this->member(1))->post('/monitoring-evaluasi/periode', $schedule)
+            ->assertForbidden();
+        $this->assertSame(2025, \App\Models\MonitoringReportingPeriod::global()->report_year);
     }
 
     public function test_another_member_of_same_profile_can_view_a_draft(): void

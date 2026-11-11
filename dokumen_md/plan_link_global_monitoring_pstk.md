@@ -14,7 +14,7 @@
 
 | Task | Hasil yang bisa diperiksa | Status |
 | --- | --- | --- |
-| 1 | Sekretariat bisa mengatur periode dan menyalin URL permanen | Menunggu |
+| 1 | Sekretariat bisa mengatur periode dan menyalin URL permanen | Selesai |
 | 2 | Link mengarahkan akun lembaga ke program yang tepat setelah login Google atau GOJAGS | Menunggu |
 | 3 | Aturan tenggat berlaku pada semua jalur perubahan laporan | Menunggu |
 | 4 | Ringkasan laporan seragam dan menampilkan waktu kirim untuk sekretariat | Menunggu |
@@ -33,10 +33,12 @@
 
 ## Task 1 — Periode pelaporan dan salin link
 
-- [ ] Tambahkan migration MySQL dan model untuk periode pelaporan. Simpan tahun yang unik, waktu buka, waktu tutup, dan identitas periode yang ditetapkan untuk URL global. Perubahan tujuan harus atomik, termasuk saat dua sekretariat mengaktifkan periode bersamaan.
-- [ ] Tambahkan kontrol **Periode Pelaporan** pada dashboard `resources/views/sekretariat/monitoring-evaluasi.blade.php`. Validasi tanggal tutup sesudah tanggal buka. Hanya sekretariat yang boleh menyimpan jadwal atau mengganti periode tujuan. Tampilkan tahun, status jadwal, dan jam WIB.
-- [ ] Tambahkan GET `/monitoring-akreditasi-pstk/lapor` bernama `monitoring-akreditasi.global`, dengan halaman informasi periode sebagai tujuan awal. Tambahkan **Salin Link Pelaporan**. Jika clipboard tidak tersedia, tampilkan URL yang bisa disalin manual. Tombol tersedia sebelum, selama, dan sesudah periode.
-- [ ] Verifikasi dengan test bahwa jadwal tidak valid ditolak, satu periode menjadi tujuan global, pergantian tahun tidak mengubah URL, dan role lembaga tidak dapat mengubah jadwal.
+- [x] Tambahkan migration MySQL dan model untuk periode pelaporan. Simpan tahun yang unik, waktu buka, waktu tutup, dan identitas periode yang ditetapkan untuk URL global. Perubahan tujuan harus atomik, termasuk saat dua sekretariat mengaktifkan periode bersamaan.
+- [x] Tambahkan kontrol **Periode Pelaporan** pada dashboard `resources/views/sekretariat/monitoring-evaluasi.blade.php`. Validasi tanggal tutup sesudah tanggal buka. Hanya sekretariat yang boleh menyimpan jadwal atau mengganti periode tujuan. Tampilkan tahun, status jadwal, dan jam WIB.
+- [x] Tambahkan GET `/monitoring-akreditasi-pstk/lapor` bernama `monitoring-akreditasi.global`, dengan halaman informasi periode sebagai tujuan awal. Tambahkan **Salin Link Pelaporan**. Jika clipboard tidak tersedia, tampilkan URL yang bisa disalin manual. Tombol tersedia sebelum, selama, dan sesudah periode.
+- [x] Verifikasi dengan test bahwa jadwal tidak valid ditolak, satu periode menjadi tujuan global, pergantian tahun tidak mengubah URL, dan role lembaga tidak dapat mengubah jadwal.
+
+**Verifikasi.** PHPUnit lulus (21 tes, 130 asersi). Perubahan tujuan global diserialkan dengan penguncian satu baris pengaturan. Jadwal tersimpan dalam UTC.
 
 ## Task 2 — Akses global dan kembali setelah login
 

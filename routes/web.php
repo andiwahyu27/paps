@@ -54,6 +54,7 @@ Route::get('/pengaturan', [PengaturanController::class, 'index'])->name('pengatu
 Route::get('/error', [HomeController::class, 'error'])->name('error');
 
 Route::prefix('monitoring-akreditasi-pstk')->name('monitoring-akreditasi.')->group(function () {
+    Route::get('/lapor', [MonitoringAkreditasiController::class, 'global'])->name('global');
     Route::get('/form/{token}', [MonitoringAkreditasiController::class, 'publicForm'])->middleware('throttle:30,1')->name('public.form');
     Route::post('/form/{token}/draft', [MonitoringAkreditasiController::class, 'publicDraft'])->middleware('throttle:30,1')->name('public.draft');
     Route::post('/form/{token}/submit', [MonitoringAkreditasiController::class, 'publicSubmit'])->middleware('throttle:10,1')->name('public.submit');
@@ -68,6 +69,7 @@ Route::prefix('monitoring-akreditasi-pstk')->name('monitoring-akreditasi.')->gro
 });
 
 Route::get('/monitoring-evaluasi', [MonitoringSekretariatController::class, 'index'])->name('monitoring-evaluasi');
+Route::post('/monitoring-evaluasi/periode', [MonitoringSekretariatController::class, 'savePeriod'])->name('monitoring-evaluasi.period.save');
 Route::get('/monitoring-evaluasi/export', [MonitoringSekretariatController::class, 'exportFiltered'])->middleware(['auth','is.sekretariat'])->name('monitoring-evaluasi.export-filtered');
 Route::get('/monitoring-evaluasi/{report}', [MonitoringSekretariatController::class, 'show'])->name('monitoring-evaluasi.detail');
 Route::get('/monitoring-evaluasi/{report}/export', [MonitoringSekretariatController::class, 'export'])->middleware(['auth','is.sekretariat'])->name('monitoring-evaluasi.export');

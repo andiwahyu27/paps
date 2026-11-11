@@ -90,6 +90,8 @@ class MonevExportTest extends TestCase
         });
         $migration = require database_path('migrations/2026_11_11_000002_create_monev_submissions.php');
         $migration->up();
+        $migration = require database_path('migrations/2026_11_11_000007_create_monitoring_reporting_periods.php');
+        $migration->up();
     }
 
     public function test_export_reads_current_draft_and_preserves_zero_multiple_choices_and_safe_text(): void
