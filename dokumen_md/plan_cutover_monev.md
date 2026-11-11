@@ -19,7 +19,7 @@
 | 3 | Dashboard, detail, dan ekspor membaca sumber yang sama | Selesai, siap aktivasi bersama |
 | 4 | Link dan impor berjalan melalui `monev_id` | Selesai, siap aktivasi bersama |
 | 5 | Uji cutover di skema restore dan alihkan dev | Selesai, aktif di dev |
-| 6 | Arsip dan cleanup tabel lama setelah verifikasi | Arsip selesai, cleanup dev menunggu konfirmasi |
+| 6 | Arsip dan cleanup tabel lama setelah verifikasi | Selesai di dev |
 
 ## Batasan
 
@@ -69,4 +69,4 @@ Mode baru masih nonaktif pada database dev. Migrasi arsip kiriman dan perubahan 
 - [x] Arsipkan dan cocokkan seluruh kolom sumber untuk 5 laporan dan 193 versi di `paps` serta di skema restore. Arsip mencakup draf, kiriman, snapshot, dan atribusi historis.
 - [x] Uji migrasi manual di `paps_restore_monev_dryst`. Relasi link, audit, dan sumber impor kini mewajibkan `monev_id` di skema uji. Kedua tabel lama sudah terhapus di sana dan smoke test rute serta impor tetap lulus.
 - [x] Backup sebelum cleanup tersimpan di `/private/tmp/paps-dev-sebelum-cleanup.GxdAY9/paps.sql`. Restore ke `paps_cleanup_backup_gxday9` menghasilkan 5 laporan, 193 versi, 5 laporan arsip, 193 versi arsip, 5 Monev, dan 90 jawaban.
-- [ ] Setelah konfirmasi penghapusan di dev, jeda penulisan, verifikasi bahwa koneksi mengarah ke MySQL lokal `paps`, lalu jalankan `php artisan migrate --path=database/migrations/manual/2026_11_11_000006_remove_legacy_monev_reports.php`. Buka kembali aplikasi dan ulangi `php tests/Support/check-monev-cutover.php paps`. Jika perlu pemulihan, gunakan backup terverifikasi setelah merekonsiliasi perubahan yang terjadi setelah backup.
+- [x] Setelah konfirmasi, jeda aplikasi dev dan jalankan migrasi manual pada MySQL lokal `paps`. Verifikasi kedua tabel lama sudah terhapus dan arsip tetap memuat 5 laporan serta 193 versi. Buka kembali aplikasi dan jalankan `php tests/Support/check-monev-cutover.php paps`. Seluruh alur lulus dan transaksi uji dibatalkan. Jika perlu pemulihan, gunakan backup terverifikasi setelah merekonsiliasi perubahan yang terjadi setelah backup.
