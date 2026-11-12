@@ -33,13 +33,15 @@ class MonitoringSekretariatController extends Controller
             'profile', 'jenisPengajuan', $normalized ? 'latestSubmission' : 'versions',
             'links' => fn ($query) => $query->latest('id'),
         ])->get();
+        $trainingCounts = $reports->mapWithKeys(function ($report) {
+            $submission = $this->monitoring->latestSubmission($report);
+            return [$report->id => $submission ? (int) data_get($submission->answers, '10', 0) : null];
+        });
         $stats = [
             'total' => $reports->count(),
             'submitted' => $reports->where('status', 'submitted')->count(),
             'draft' => $reports->whereIn('status', ['draft', 'revision_draft'])->count(),
-            'training' => $reports->sum(fn ($report) => (int) data_get(
-                $this->monitoring->latestSubmission($report)?->answers, '10', 0
-            )),
+            'training' => $trainingCounts->sum(),
         ];
         $accreditations = MonitoringAccreditation::with(['jenisPengajuan', 'profile'])
             ->whereDate('valid_from', '<=', ($year - 1) . '-12-31')->whereDate('valid_until', '>=', $year . '-01-01')
@@ -56,7 +58,7 @@ class MonitoringSekretariatController extends Controller
         $reportYears = $periods->pluck('report_year')->merge(range(now()->year, 2020))->unique()->sortDesc();
 
         return view('sekretariat.monitoring-evaluasi', compact(
-            'reports', 'stats', 'accreditations', 'year', 'periods', 'globalPeriod', 'editingPeriod', 'reportYears',
+            'reports', 'stats', 'trainingCounts', 'accreditations', 'year', 'periods', 'globalPeriod', 'editingPeriod', 'reportYears',
         ));
     }
 

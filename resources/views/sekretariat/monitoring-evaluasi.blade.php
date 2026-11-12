@@ -7,7 +7,7 @@
     <div class="row mb-4">@foreach([['total','Total Laporan','bx-file','primary'],['submitted','Sudah Dikirim','bx-check-circle','success'],['draft','Masih Draf','bx-edit','warning'],['training','Pelatihan Terselenggara','bx-calendar-check','info']] as [$key,$label,$icon,$color])<div class="col-lg-3 col-md-6 col-12 mb-4"><div class="card"><div class="card-body"><div class="avatar flex-shrink-0"><i class="bx {{ $icon }} text-{{ $color }}" style="font-size:2rem"></i></div><span class="fw-semibold d-block mb-1">{{ $label }}</span><h3 class="card-title mb-2">{{ $stats[$key] ?? 0 }}</h3><small class="text-{{ $color }} fw-semibold">{{ $key === 'training' ? 'Pelatihan' : 'Laporan' }}</small></div></div></div>@endforeach</div>
     @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
     @if(session('generated_link'))<div class="alert alert-info">Link form: <a href="{{ session('generated_link') }}">{{ session('generated_link') }}</a> <button class="btn btn-sm btn-outline-primary" type="button" onclick="navigator.clipboard.writeText(@js(session('generated_link')))">Salin Link</button></div>@endif
-    <div class="card"><div class="card-header d-flex justify-content-between align-items-center"><h5 class="mb-0">Data Monitoring Akreditasi PSTK</h5><div class="d-flex gap-2"><a href="{{ route('monitoring-evaluasi.export-filtered', request()->only(['year', 'program', 'status', 'search'])) }}" class="btn btn-outline-primary btn-sm"><i class="bx bx-download"></i> Export CSV</a><button class="btn btn-primary btn-sm" onclick="window.print()"><i class="bx bx-printer"></i> Print</button></div></div><div class="card-body"><div class="table-responsive"><table id="monitoringReportsTable" class="table table-striped"><thead><tr><th>No</th><th>Nama Lembaga</th><th>Program</th><th>Tahun</th><th>Status Laporan</th><th>Status Link</th><th>Kedaluwarsa (WIB)</th><th>Aksi</th></tr></thead><tbody>
+    <div class="card"><div class="card-header d-flex justify-content-between align-items-center"><h5 class="mb-0">Data Monitoring Akreditasi PSTK</h5><div class="d-flex gap-2"><a href="{{ route('monitoring-evaluasi.export-filtered', request()->only(['year', 'program', 'status', 'search'])) }}" class="btn btn-outline-primary btn-sm"><i class="bx bx-download"></i> Export CSV</a><button class="btn btn-primary btn-sm" onclick="window.print()"><i class="bx bx-printer"></i> Print</button></div></div><div class="card-body"><div class="table-responsive"><table id="monitoringReportsTable" class="table table-striped"><thead><tr><th>No</th><th>Nama Lembaga</th><th>Program</th><th>Tahun</th><th>Status Laporan</th><th class="text-center">Pelatihan Terselenggara</th><th>Status Link</th><th>Kedaluwarsa (WIB)</th><th>Aksi</th></tr></thead><tbody>
     @php($rowNumber = 0)
     @foreach($accreditations as $accreditation)
         @php($report = $reports->first(fn($r) => $r->profile_id === $accreditation->profile_id && $r->jenis_pengajuan_id === $accreditation->jenis_pengajuan_id && $r->report_year === $year))
@@ -27,6 +27,7 @@
                     @include('monitoring-akreditasi.report-status', ['status' => $report->status])
                 @endif
             </td>
+            <td class="text-center">{{ $trainingCounts->get($report?->id) ?? '—' }}</td>
             <td>@include('sekretariat.monitoring-link-controls')</td>
             <td>
                 <div class="d-flex flex-column align-items-start gap-1">
@@ -69,6 +70,7 @@
                 <td>{{ $report->jenisPengajuan->nama ?? '-' }}</td>
                 <td>{{ $report->report_year }}</td>
                 <td>@include('monitoring-akreditasi.report-status', ['status' => $report->status])</td>
+                <td class="text-center">{{ $trainingCounts->get($report->id) ?? '—' }}</td>
                 <td>
                     @if ($historicalLink && !$historicalLink->deleted_at && $historicalLink->expires_at?->gt(now()))
                         <span class="badge bg-success">Aktif</span>

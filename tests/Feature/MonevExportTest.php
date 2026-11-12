@@ -234,6 +234,11 @@ class MonevExportTest extends TestCase
 
         $allYears = $this->get(route('monitoring-evaluasi'))->assertOk();
         $this->assertSame(7, $allYears->viewData('stats')['training']);
+        $document = new \DOMDocument();
+        @$document->loadHTML($allYears->getContent());
+        $xpath = new \DOMXPath($document);
+        $this->assertSame('5', trim($xpath->query('//table[@id="monitoringReportsTable"]/tbody/tr[td[4]="2026"]/td[6]')->item(0)->textContent));
+        $this->assertSame('2', trim($xpath->query('//table[@id="monitoringReportsTable"]/tbody/tr[td[4]="2025"]/td[6]')->item(0)->textContent));
         $currentYear = $this->get(route('monitoring-evaluasi', ['year' => 2026]))->assertOk();
         $this->assertSame(5, $currentYear->viewData('stats')['training']);
     }
