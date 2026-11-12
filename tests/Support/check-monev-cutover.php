@@ -84,7 +84,7 @@ try {
     $csv = $request($secretary, 'GET', '/monitoring-evaluasi/' . $report->uuid . '/export');
     ob_start();
     $csv->sendContent();
-    if (!str_contains(ob_get_clean(), 'Lembaga,Program,Tahun,Status,Pertanyaan,Jawaban')) {
+    if (!str_contains(ob_get_clean(), 'Nama Lembaga,Program,Tahun,Status Submit,No Pertanyaan,Pertanyaan,Jawaban')) {
         throw new RuntimeException('Header CSV tidak sesuai.');
     }
     $request($secretary, 'POST', '/monitoring-evaluasi/' . $report->uuid . '/link/regenerate', [], [302]);

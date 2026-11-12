@@ -154,7 +154,8 @@ class MonitoringSekretariatController extends Controller
     {
         $report = $this->monitoring->resolveReport($report);
         $report->load(['profile', 'jenisPengajuan']);
-        return $this->downloadReports([$report], 'monitoring-akreditasi-' . $report->uuid . '.csv');
+        $name = trim(mb_strtolower(preg_replace('/[^\pL\pN]+/u', '-', $report->profile->nama_lembaga ?? 'lembaga')), '-');
+        return $this->downloadReports([$report], 'monitoring-lapor-' . ($name ?: 'lembaga') . '-' . $report->report_year . '.csv');
     }
 
     private function reportAnswers(MonitoringReport|Monev $report): array
@@ -183,15 +184,19 @@ class MonitoringSekretariatController extends Controller
     {
         return response()->streamDownload(function () use ($reports) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['Lembaga', 'Program', 'Tahun', 'Status', 'Pertanyaan', 'Jawaban']);
+            fputcsv($handle, ['Nama Lembaga', 'Program', 'Tahun', 'Status Submit', 'No Pertanyaan', 'Pertanyaan', 'Jawaban']);
             foreach ($reports as $report) {
                 $answers = $this->reportAnswers($report);
                 foreach ($this->monitoring->reportQuestions($report) as $question) {
                     $value = data_get($answers, $this->monitoring->answerKey($question->kode));
+                    if (in_array($question->kode, ['10', '11', '12a', '12b'], true) && is_numeric($value)) {
+                        $value = (string) (int) $value;
+                    }
                     fputcsv($handle, [
                         $this->safeCsvValue($report->profile->nama_lembaga ?? ''),
                         $this->safeCsvValue($report->jenisPengajuan->nama ?? ''),
                         $report->report_year, $report->status, $question->kode,
+                        $this->safeCsvValue($question->pertanyaan ?? 'Pertanyaan ' . $question->kode),
                         $this->safeCsvValue(is_array($value) ? implode(', ', $value) : ($value ?? '')),
                     ]);
                 }

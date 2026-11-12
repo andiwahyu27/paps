@@ -6,10 +6,12 @@ Rapikan ekspor dan tampilan sekretariat, terapkan kewajiban pelaporan mulai tahu
 
 ## Task 1 — Ekspor CSV per laporan
 
-- [ ] Nama berkas detail mengikuti `monitoring-lapor-nama-lemdik-tahun.csv`, dengan nama lembaga disanitasi untuk nama berkas.
-- [ ] Kolom CSV memuat Nama Lembaga, Program, Tahun, Status Submit, No Pertanyaan, Pertanyaan, dan Jawaban. Nilai pertanyaan 10, 11, 12a, 12b diekspor sebagai bilangan bulat.
-- [ ] Pastikan ekspor terfilter tetap menggunakan format kolom yang sama dan nama berkas yang menandakan hasil filter.
-- [ ] Verifikasi dengan PHPUnit dan commit terpisah.
+- [x] Nama berkas detail mengikuti `monitoring-lapor-nama-lemdik-tahun.csv`, dengan nama lembaga disanitasi untuk nama berkas.
+- [x] Kolom CSV memuat Nama Lembaga, Program, Tahun, Status Submit, No Pertanyaan, Pertanyaan, dan Jawaban. Nilai pertanyaan 10, 11, 12a, 12b diekspor sebagai bilangan bulat.
+- [x] Pastikan ekspor terfilter tetap menggunakan format kolom yang sama dan nama berkas yang menandakan hasil filter.
+- [x] Verifikasi dengan PHPUnit dan commit terpisah.
+
+**Hasil.** CSV detail memakai nama lembaga dan tahun. Kolom pertanyaan dan jawaban numerik sudah sesuai. PHPUnit 28 tes, 246 asersi.
 
 ## Task 2 — Tampilan tabel sekretariat
 

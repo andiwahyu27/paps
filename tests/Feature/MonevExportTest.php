@@ -101,9 +101,10 @@ class MonevExportTest extends TestCase
 
         $response->assertOk();
         $rows = $this->csvRows($response->streamedContent());
-        $this->assertSame(['Lembaga', 'Program', 'Tahun', 'Status', 'Pertanyaan', 'Jawaban'], $rows[0]);
-        $answers = array_column(array_slice($rows, 1), 5, 4);
+        $this->assertSame(['Nama Lembaga', 'Program', 'Tahun', 'Status Submit', 'No Pertanyaan', 'Pertanyaan', 'Jawaban'], $rows[0]);
+        $answers = array_column(array_slice($rows, 1), 6, 4);
         $this->assertSame('0', $answers['11']);
+        $this->assertSame('Pertanyaan 11', $rows[1][5]);
         $this->assertSame('0', $answers['12a']);
         $this->assertSame('0', $answers['12b']);
         $this->assertSame('Tatap muka, Daring', $answers['14']);
@@ -162,7 +163,7 @@ class MonevExportTest extends TestCase
             ->assertSeeText('Jenis Kuesioner')->assertSeeText('monev')->assertDontSeeText('versi-aktif')
             ->assertSeeText('Versi Kuesioner')->assertSeeText('11/11/2026 14:35:12 WIB')->assertDontSeeText('Terlambat');
         $csv = $this->get(route('monitoring-evaluasi.export', $report))->assertOk()->streamedContent();
-        $rows = array_column(array_slice($this->csvRows($csv), 1), 5, 4);
+        $rows = array_column(array_slice($this->csvRows($csv), 1), 6, 4);
         $this->assertSame('0', $rows['12a']);
         $this->assertSame('Tatap muka, Daring', $rows['14']);
     }
