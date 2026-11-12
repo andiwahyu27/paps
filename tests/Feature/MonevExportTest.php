@@ -156,6 +156,7 @@ class MonevExportTest extends TestCase
         Schema::drop('monitoring_reports');
         $this->actingAs($this->secretariat());
         $dashboard = $this->get(route('monitoring-evaluasi', ['year' => 2026]))->assertOk();
+        $dashboard->assertDontSee("@include('monitoring-akreditasi.report-status", false);
         $this->assertSame(1, $dashboard->viewData('stats')['nihil']);
         $detail = $this->get(route('monitoring-evaluasi.detail', $legacy))->assertOk();
         $this->assertSame(0, $detail->viewData('answers')[12]['internal']);

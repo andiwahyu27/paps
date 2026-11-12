@@ -13,7 +13,9 @@
         @continue(request()->filled('status') && !$report)
         @php($link = $report?->links->first())
 
-        <tr><td>{{ $loop->iteration }}</td><td>{{ $accreditation->profile->nama_lembaga ?? '-' }}</td><td>{{ $accreditation->jenisPengajuan->nama ?? '-' }}</td><td>{{ $year }}</td><td>@if(!$report)<span class="badge bg-secondary">Belum dibuat</span>@else@include('monitoring-akreditasi.report-status', ['status' => $report->status])@endif</td><td>@if(!$link)<span class="badge bg-secondary">Belum dibuat</span>@elseif($link->deleted_at)<span class="badge bg-danger">Dihapus</span>@elseif($link->expires_at->lte(now()))<span class="badge bg-warning">Kedaluwarsa</span>@else<span class="badge bg-success">Aktif</span>@endif</td><td>{{ $link?->expires_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i') ?? '—' }}</td><td class="text-nowrap">
+        <tr><td>{{ $loop->iteration }}</td><td>{{ $accreditation->profile->nama_lembaga ?? '-' }}</td><td>{{ $accreditation->jenisPengajuan->nama ?? '-' }}</td><td>{{ $year }}</td><td>@if(!$report)<span class="badge bg-secondary">Belum dibuat</span>@else
+            @include('monitoring-akreditasi.report-status', ['status' => $report->status])
+        @endif</td><td>@if(!$link)<span class="badge bg-secondary">Belum dibuat</span>@elseif($link->deleted_at)<span class="badge bg-danger">Dihapus</span>@elseif($link->expires_at->lte(now()))<span class="badge bg-warning">Kedaluwarsa</span>@else<span class="badge bg-success">Aktif</span>@endif</td><td>{{ $link?->expires_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i') ?? '—' }}</td><td class="text-nowrap">
         @if($report)<a class="btn btn-sm btn-outline-primary" href="{{ route('monitoring-evaluasi.detail',$report) }}">Detail</a>@endif
         @if(!$link)<form method="POST" action="{{ route('monitoring-evaluasi.link.generate',[$accreditation->profile_id,$accreditation->jenis_pengajuan_id,$year]) }}" class="d-inline">@csrf <button class="btn btn-sm btn-primary">Generate Link (3 hari)</button></form> <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#generate-{{ $accreditation->profile_id }}-{{ $accreditation->jenis_pengajuan_id }}">Generate dengan tanggal</button><div class="modal fade" id="generate-{{ $accreditation->profile_id }}-{{ $accreditation->jenis_pengajuan_id }}" tabindex="-1"><div class="modal-dialog"><form method="POST" action="{{ route('monitoring-evaluasi.link.generate',[$accreditation->profile_id,$accreditation->jenis_pengajuan_id,$year]) }}" class="modal-content">@csrf<div class="modal-header"><h5>Generate Link Monitoring</h5></div><div class="modal-body"><p>{{ $accreditation->profile->nama_lembaga }} — {{ $accreditation->jenisPengajuan->nama }} — {{ $year }}</p><label class="form-label">Tanggal dan waktu kedaluwarsa (WIB)</label><input type="datetime-local" name="expires_at" class="form-control" required></div><div class="modal-footer"><button class="btn btn-primary">Generate Link</button></div></form></div></div>@elseif($link->deleted_at)
             <form method="POST" action="{{ route('monitoring-evaluasi.link.regenerate',$report) }}">@csrf<button class="btn btn-sm btn-primary">Generate Ulang</button></form>
@@ -25,7 +27,21 @@
             <div class="modal fade" id="expiry-{{ $link->id }}" tabindex="-1"><div class="modal-dialog"><form method="POST" action="{{ route('monitoring-evaluasi.link.expiry',$link) }}" class="modal-content">@csrf @method('PUT')<div class="modal-header"><h5>Edit Kedaluwarsa</h5></div><div class="modal-body"><label class="form-label">Tanggal dan waktu (WIB)</label><input type="datetime-local" name="expires_at" class="form-control" required></div><div class="modal-footer"><button class="btn btn-primary">Simpan</button></div></form></div></div>
         @endif</td></tr>
     @endforeach
-    @foreach($reports as $report) @if($report->report_year !== $year || !$accreditations->contains(fn($a) => $a->profile_id === $report->profile_id && $a->jenis_pengajuan_id === $report->jenis_pengajuan_id))<tr><td>—</td><td>{{ $report->profile->nama_lembaga ?? '-' }}</td><td>{{ $report->jenisPengajuan->nama ?? '-' }}</td><td>{{ $report->report_year }}</td><td>@include('monitoring-akreditasi.report-status', ['status' => $report->status])</td><td>Program tidak aktif</td><td>—</td><td><a href="{{ route('monitoring-evaluasi.detail',$report) }}">Detail</a></td></tr>@endif @endforeach
+    @foreach ($reports as $report)
+        @if ($report->report_year !== $year || !$accreditations->contains(fn ($accreditation) =>
+            $accreditation->profile_id === $report->profile_id && $accreditation->jenis_pengajuan_id === $report->jenis_pengajuan_id))
+            <tr>
+                <td>—</td>
+                <td>{{ $report->profile->nama_lembaga ?? '-' }}</td>
+                <td>{{ $report->jenisPengajuan->nama ?? '-' }}</td>
+                <td>{{ $report->report_year }}</td>
+                <td>@include('monitoring-akreditasi.report-status', ['status' => $report->status])</td>
+                <td><span class="badge bg-secondary">Program tidak aktif</span></td>
+                <td>—</td>
+                <td><a class="btn btn-sm btn-outline-primary" href="{{ route('monitoring-evaluasi.detail', $report) }}">Detail</a></td>
+            </tr>
+        @endif
+    @endforeach
     </tbody></table></div></div></div>
 </div>
 @endsection

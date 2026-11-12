@@ -15,10 +15,12 @@ Rapikan ekspor dan tampilan sekretariat, terapkan kewajiban pelaporan mulai tahu
 
 ## Task 2 — Tampilan tabel sekretariat
 
-- [ ] Perbaiki keluaran `@include` yang muncul mentah pada status laporan.
-- [ ] Samakan tampilan baris laporan historis tahun 2025 dengan badge status, badge status link, dan tombol Detail.
-- [ ] Pastikan nama, program, tahun, dan tautan detail tetap benar untuk laporan historis yang tidak tercakup register aktif.
-- [ ] Verifikasi HTML dashboard dan commit terpisah.
+- [x] Perbaiki keluaran `@include` yang muncul mentah pada status laporan.
+- [x] Samakan tampilan baris laporan historis tahun 2025 dengan badge status, badge status link, dan tombol Detail.
+- [x] Pastikan nama, program, tahun, dan tautan detail tetap benar untuk laporan historis yang tidak tercakup register aktif.
+- [x] Verifikasi HTML dashboard dan commit terpisah.
+
+**Hasil.** Status laporan dan status link berbentuk badge. Baris historis memakai tombol Detail. PHPUnit 28 tes, 247 asersi.
 
 ## Task 3 — Kewajiban pelaporan mulai T+1
 
