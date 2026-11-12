@@ -226,7 +226,7 @@ class MonevAccessTest extends TestCase
         DB::table('mt_jenis_pengajuans')->insert(['id' => $program, 'nama' => $name]);
         DB::table('monitoring_accreditations')->insert([
             'profile_id' => $profile, 'jenis_pengajuan_id' => $program,
-            'valid_from' => '2026-01-01', 'valid_until' => '2027-01-01',
+            'valid_from' => '2025-01-01', 'valid_until' => '2027-01-01',
             'certificate_number' => 'UJI', 'predicate' => 'A',
         ]);
     }
@@ -235,6 +235,27 @@ class MonevAccessTest extends TestCase
     {
         $google = (new \Laravel\Socialite\Two\User())->map(['email' => $member->email]);
         \Laravel\Socialite\Facades\Socialite::shouldReceive('driver->user')->once()->andReturn($google);
+    }
+
+    public function test_reporting_starts_in_the_year_after_accreditation(): void
+    {
+        DB::table('tb_profile_lembagas')->insert(['id' => 1, 'nama_lembaga' => 'Lembaga T+1']);
+        DB::table('mt_jenis_pengajuans')->insert(['id' => 1, 'nama' => 'Program T+1']);
+        DB::table('monitoring_accreditations')->insert([
+            'profile_id' => 1, 'jenis_pengajuan_id' => 1,
+            'valid_from' => '2025-04-01', 'valid_until' => '2028-04-01',
+        ]);
+        $profile = \App\Models\Profile::findOrFail(1);
+        $service = app(\App\Services\MonitoringReportService::class);
+        $this->assertCount(0, $service->programsFor($profile, 2025));
+        $this->assertCount(1, $service->programsFor($profile, 2026));
+
+        $secretariat = User::create(['name' => 'Sekretariat', 'role' => 2]);
+        $this->actingAs($secretariat)->get(route('monitoring-evaluasi', ['year' => 2025]))
+            ->assertOk()->assertDontSeeText('Program T+1');
+        $this->get(route('monitoring-evaluasi', ['year' => 2026]))
+            ->assertOk()->assertSeeText('Program T+1');
+        $this->post(route('monitoring-evaluasi.link.generate', [1, 1, 2025]))->assertNotFound();
     }
 
     public function test_reporting_deadline_applies_to_old_tabs_and_individual_links(): void

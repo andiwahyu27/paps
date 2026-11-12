@@ -137,7 +137,7 @@ class MonitoringReportService
     {
         return MonitoringAccreditation::with('jenisPengajuan')
             ->where('profile_id', $profile->id)
-            ->whereDate('valid_from', '<=', $year . '-12-31')
+            ->whereDate('valid_from', '<=', ($year - 1) . '-12-31')
             ->whereDate('valid_until', '>=', $year . '-01-01')
             ->get();
     }
@@ -168,7 +168,7 @@ class MonitoringReportService
             $version = $report->edit_version;
             $accreditation = MonitoringAccreditation::with('jenisPengajuan')
                 ->where('profile_id', $profile->id)->where('jenis_pengajuan_id', $report->jenis_pengajuan_id)
-                ->whereDate('valid_from', '<=', $report->report_year . '-12-31')->whereDate('valid_until', '>=', $report->report_year . '-01-01')->firstOrFail();
+                ->whereDate('valid_from', '<=', ($report->report_year - 1) . '-12-31')->whereDate('valid_until', '>=', $report->report_year . '-01-01')->firstOrFail();
             $report->fill(['status' => 'submitted', 'edit_version' => $version + 1, 'submitted_version' => $version, 'updated_by' => $userId])->save();
             $submission = $report->versions()->create([
                 'version' => $version, 'answers' => $answers, 'submitted_by' => $userId, 'submitted_at' => $receivedAt, 'submission_channel' => $channel,

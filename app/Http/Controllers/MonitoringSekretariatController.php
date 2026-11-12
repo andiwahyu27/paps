@@ -42,7 +42,7 @@ class MonitoringSekretariatController extends Controller
             })->count(),
         ];
         $accreditations = MonitoringAccreditation::with(['jenisPengajuan', 'profile'])
-            ->whereDate('valid_from', '<=', $year . '-12-31')->whereDate('valid_until', '>=', $year . '-01-01')
+            ->whereDate('valid_from', '<=', ($year - 1) . '-12-31')->whereDate('valid_until', '>=', $year . '-01-01')
             ->when($request->program, fn ($query, $program) => $query->where('jenis_pengajuan_id', $program))
             ->when($request->search, fn ($query, $name) => $query->whereHas('profile', fn ($profile) => $profile->where('nama_lembaga', 'like', "%{$name}%")))
             ->get();
@@ -135,7 +135,7 @@ class MonitoringSekretariatController extends Controller
     {
         abort_if($year < 2020 || $year > 9999 || ($year > now()->year && !$this->monitoring->periodForYear($year)), 422);
         abort_unless(MonitoringAccreditation::where('profile_id', $profileId)->where('jenis_pengajuan_id', $programId)
-            ->whereDate('valid_from', '<=', $year . '-12-31')->whereDate('valid_until', '>=', $year . '-01-01')->exists(), 404);
+            ->whereDate('valid_from', '<=', ($year - 1) . '-12-31')->whereDate('valid_until', '>=', $year . '-01-01')->exists(), 404);
     }
 
     public function show(string $report)

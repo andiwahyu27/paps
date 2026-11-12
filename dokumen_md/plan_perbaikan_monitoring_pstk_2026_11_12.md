@@ -24,10 +24,12 @@ Rapikan ekspor dan tampilan sekretariat, terapkan kewajiban pelaporan mulai tahu
 
 ## Task 3 — Kewajiban pelaporan mulai T+1
 
-- [ ] Program dengan tahun awal akreditasi T mulai masuk daftar pelaporan tahun T+1. Tahun awal diambil dari `monitoring_accreditations.valid_from`.
-- [ ] Terapkan aturan pada daftar sekretariat, daftar program lembaga, validasi pembuatan link, dan submit. Laporan historis yang sudah tersimpan tetap terlihat pada daftar sekretariat.
-- [ ] Verifikasi kasus akreditasi 2024 untuk pelaporan 2025 dan akreditasi 2025 untuk pelaporan 2026, termasuk penolakan laporan tahun akreditasi.
-- [ ] Commit terpisah setelah tes lulus.
+- [x] Program dengan tahun awal akreditasi T mulai masuk daftar pelaporan tahun T+1. Tahun awal diambil dari `monitoring_accreditations.valid_from`.
+- [x] Terapkan aturan pada daftar sekretariat, daftar program lembaga, validasi pembuatan link, dan submit. Laporan historis yang sudah tersimpan tetap terlihat pada daftar sekretariat.
+- [x] Verifikasi kasus akreditasi 2024 untuk pelaporan 2025 dan akreditasi 2025 untuk pelaporan 2026, termasuk penolakan laporan tahun akreditasi.
+- [x] Commit terpisah setelah tes lulus.
+
+**Hasil.** Program baru muncul pada tahun T+1. Jalur daftar, link, dan submit memakai batas yang sama. PHPUnit 29 tes, 254 asersi.
 
 ## Task 4 — Detail pelapor dan versi kuesioner
 
