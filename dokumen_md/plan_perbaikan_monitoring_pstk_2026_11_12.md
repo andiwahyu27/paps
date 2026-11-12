@@ -33,10 +33,12 @@ Rapikan ekspor dan tampilan sekretariat, terapkan kewajiban pelaporan mulai tahu
 
 ## Task 4 — Detail pelapor dan versi kuesioner
 
-- [ ] Tampilkan nama akun dari `submitted_by` pada kiriman resmi terakhir. Jika belum ada kiriman atau akun tidak ditemukan, tampilkan keterangan yang sesuai.
-- [ ] Tampilkan versi kuesioner dalam format `tahun.nomor`. Versi instrumen yang sudah ada bernama `2025.1`. Pertahankan kaitan laporan dengan instrumen aslinya.
-- [ ] Verifikasi detail untuk draf, draf revisi, dan kiriman serta migrasi versi pada MySQL dev.
-- [ ] Commit terpisah setelah verifikasi.
+- [x] Tampilkan nama akun dari `submitted_by` pada kiriman resmi terakhir. Jika belum ada kiriman atau akun tidak ditemukan, tampilkan keterangan yang sesuai.
+- [x] Tampilkan versi kuesioner dalam format `tahun.nomor`. Versi instrumen yang sudah ada bernama `2025.1`. Pertahankan kaitan laporan dengan instrumen aslinya.
+- [x] Verifikasi detail untuk draf, draf revisi, dan kiriman serta migrasi versi pada MySQL dev.
+- [x] Commit terpisah setelah verifikasi.
+
+**Hasil.** Detail menampilkan nama akun kiriman terakhir. Versi instrumen sekarang dilabeli 2025.1 di MySQL dev. Angka `versi` lama tetap digunakan untuk urutan internal. PHPUnit 29 tes, 258 asersi.
 
 ## Task 5 — Verifikasi akhir
 

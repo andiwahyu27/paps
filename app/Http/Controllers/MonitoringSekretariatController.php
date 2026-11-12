@@ -144,10 +144,12 @@ class MonitoringSekretariatController extends Controller
         $report->load(['profile', 'jenisPengajuan']);
         $submission = $this->monitoring->latestSubmission($report);
         $submittedAt = $submission?->submitted_at ?? ($report instanceof Monev ? $report->submitted_at : null);
+        $submitterId = $submission?->submitted_by ?? ($report instanceof Monev ? $report->submitted_by : null);
+        $submitter = $submitterId ? \App\Models\User::find($submitterId) : null;
         $questionnaire = $this->monitoring->questionnaireForReport($report);
         $questions = $this->monitoring->reportQuestions($report);
         $answers = $this->reportAnswers($report);
-        return view('sekretariat.monitoring-akreditasi-detail', compact('report', 'submission', 'submittedAt', 'questionnaire', 'questions', 'answers'));
+        return view('sekretariat.monitoring-akreditasi-detail', compact('report', 'submission', 'submittedAt', 'submitter', 'questionnaire', 'questions', 'answers'));
     }
 
     public function export(string $report)

@@ -19,6 +19,8 @@
                 <div class="col-md-6">
                     <strong>Status</strong>
                     <p>@include('monitoring-akreditasi.report-status', ['status' => $report->status])</p>
+                    <strong>Pelapor Terakhir</strong>
+                    <p>{{ $submitter?->name ?? ($submittedAt ? 'Akun tidak ditemukan' : 'Belum dikirim') }}</p>
                     <strong>Waktu Kirim Terakhir</strong>
                     <p>
                         {{ $submittedAt ? $submittedAt->copy()->timezone('Asia/Jakarta')->format('d/m/Y H:i:s') . ' WIB' : 'Belum dikirim' }}

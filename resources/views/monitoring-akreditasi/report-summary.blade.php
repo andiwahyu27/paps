@@ -13,7 +13,7 @@
             </div>
             <div class="col-md-6">
                 <dt>Versi Kuesioner</dt>
-                <dd>{{ $questionnaire?->versi ?? '—' }}</dd>
+                <dd>{{ $questionnaire?->display_version ?? '—' }}</dd>
             </div>
         </dl>
         <div class="row g-3">

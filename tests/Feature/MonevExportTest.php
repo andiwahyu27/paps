@@ -141,7 +141,10 @@ class MonevExportTest extends TestCase
     public function test_normalized_dashboard_keeps_last_submission_stats_and_exports_current_draft(): void
     {
         $legacy = $this->fixture();
+        $migration = require database_path('migrations/2026_11_12_000001_add_questionnaire_version_labels.php');
+        $migration->up();
         $report = \App\Models\Monev::firstOrFail();
+        $this->assertSame('2025.1', $report->questionnaire->display_version);
         $report->update(['status' => 'revision_draft']);
         DB::table('monev_submissions')->insert([
             'monev_id' => $report->id, 'version' => 1, 'answers' => '{"has_training":"Tidak"}',
@@ -162,7 +165,9 @@ class MonevExportTest extends TestCase
         $this->assertSame(0, $detail->viewData('answers')[12]['internal']);
         $detail->assertSeeText('Tatap muka, Daring')->assertSeeText('Draf Revisi')
             ->assertSeeText('Jenis Kuesioner')->assertSeeText('monev')->assertDontSeeText('versi-aktif')
-            ->assertSeeText('Versi Kuesioner')->assertSeeText('11/11/2026 14:35:12 WIB')->assertDontSeeText('Terlambat');
+            ->assertSeeText('Versi Kuesioner')->assertSeeText('2025.1')
+            ->assertSeeText('Pelapor Terakhir')->assertSeeText('Sekretariat')
+            ->assertSeeText('11/11/2026 14:35:12 WIB')->assertDontSeeText('Terlambat');
         $csv = $this->get(route('monitoring-evaluasi.export', $report))->assertOk()->streamedContent();
         $rows = array_column(array_slice($this->csvRows($csv), 1), 6, 4);
         $this->assertSame('0', $rows['12a']);
