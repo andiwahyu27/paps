@@ -30,14 +30,21 @@
     @foreach ($reports as $report)
         @if ($report->report_year !== $year || !$accreditations->contains(fn ($accreditation) =>
             $accreditation->profile_id === $report->profile_id && $accreditation->jenis_pengajuan_id === $report->jenis_pengajuan_id))
+            @php($historicalLink = $report->links->first())
             <tr>
                 <td>—</td>
                 <td>{{ $report->profile->nama_lembaga ?? '-' }}</td>
                 <td>{{ $report->jenisPengajuan->nama ?? '-' }}</td>
                 <td>{{ $report->report_year }}</td>
                 <td>@include('monitoring-akreditasi.report-status', ['status' => $report->status])</td>
-                <td><span class="badge bg-secondary">{{ $report->report_year !== $year ? 'Laporan tahun lain' : 'Akreditasi di luar periode' }}</span></td>
-                <td>—</td>
+                <td>
+                    @if ($historicalLink && !$historicalLink->deleted_at && $historicalLink->expires_at?->gt(now()))
+                        <span class="badge bg-success">Aktif</span>
+                    @else
+                        <span class="badge bg-secondary">Tidak Aktif</span>
+                    @endif
+                </td>
+                <td>{{ $historicalLink?->expires_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i') ?? '—' }}</td>
                 <td><a class="btn btn-sm btn-outline-primary" href="{{ route('monitoring-evaluasi.detail', $report) }}">Detail</a></td>
             </tr>
         @endif

@@ -87,6 +87,9 @@ class MonevExportTest extends TestCase
         Schema::create('monitoring_report_links', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('monev_id');
+            $table->text('token_encrypted')->nullable();
+            $table->timestamp('expires_at')->nullable();
+            $table->timestamp('deleted_at')->nullable();
         });
         $migration = require database_path('migrations/2026_11_11_000002_create_monev_submissions.php');
         $migration->up();
@@ -216,7 +219,15 @@ class MonevExportTest extends TestCase
             ->get(route('monitoring-evaluasi.detail', $report))
             ->assertOk()->assertSeeText('Import data dari Excel')->assertDontSeeText('Akun tidak ditemukan');
         $this->get(route('monitoring-evaluasi'))
-            ->assertOk()->assertSeeText('Laporan tahun lain')->assertDontSeeText('Program tidak aktif');
+            ->assertOk()->assertSeeText('Tidak Aktif')->assertDontSeeText('Program tidak aktif')
+            ->assertDontSeeText('Laporan tahun lain');
+        DB::table('monitoring_report_links')->insert([
+            'monev_id' => $report->id,
+            'token_encrypted' => \Illuminate\Support\Facades\Crypt::encryptString(str_repeat('a', 64)),
+            'expires_at' => now()->addDay(),
+        ]);
+        $this->get(route('monitoring-evaluasi'))->assertOk()->assertSeeText('Aktif')
+            ->assertDontSeeText('Program tidak aktif');
     }
 
     private function fixture(): MonitoringReport
