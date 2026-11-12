@@ -140,10 +140,16 @@ class MonevAccessTest extends TestCase
         $url = route('monitoring-evaluasi.delete', $report);
         $this->actingAs($member)->delete($url)->assertForbidden();
         $this->assertDatabaseHas('tr_monev', ['id' => $report->id]);
-        $this->actingAs($secretariat)->get(route('monitoring-evaluasi', ['year' => 2026]))
+        $dashboard = $this->actingAs($secretariat)->get(route('monitoring-evaluasi', ['year' => 2026]));
+        $dashboard
             ->assertOk()->assertSeeText('Hapus Laporan')->assertSeeText('Lembaga Satu')
             ->assertSeeText('Apakah Anda yakin ingin menghapus laporan monitoring')
             ->assertSeeText('Batal');
+        $document = new \DOMDocument();
+        @$document->loadHTML($dashboard->getContent());
+        $xpath = new \DOMXPath($document);
+        $this->assertSame(0, $xpath->query('//table//div[starts-with(@id, "hapus-laporan-")]')->length);
+        $this->assertSame(1, $xpath->query('//div[starts-with(@id, "hapus-laporan-")]')->length);
         $this->delete($url)->assertRedirect(route('monitoring-evaluasi'));
         $this->assertDatabaseMissing('tr_monev', ['id' => $report->id]);
         $this->assertDatabaseMissing('monitoring_reports', ['id' => $legacy->id]);

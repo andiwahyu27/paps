@@ -56,5 +56,8 @@
         @endif
     @endforeach
     </tbody></table></div></div></div>
+    @foreach ($reports as $report)
+        @include('sekretariat.monitoring-report-delete', ['modalOnly' => true])
+    @endforeach
 </div>
 @endsection
