@@ -42,5 +42,7 @@ Rapikan ekspor dan tampilan sekretariat, terapkan kewajiban pelaporan mulai tahu
 
 ## Task 5 — Verifikasi akhir
 
-- [ ] Jalankan seluruh PHPUnit, periksa keluaran HTML dan CSV, serta verifikasi migrasi dan data aktual di MySQL dev.
-- [ ] Catat hasil dan keputusan implementasi pada dokumen ini lalu commit.
+- [x] Jalankan seluruh PHPUnit, periksa keluaran HTML dan CSV, serta verifikasi migrasi dan data aktual di MySQL dev.
+- [x] Catat hasil dan keputusan implementasi pada dokumen ini lalu commit.
+
+**Verifikasi akhir, 12 November 2026.** PHPUnit lulus 29 tes dan 258 asersi. MySQL dev menerima migrasi label versi dan menampilkan `2025.1`. Pemeriksaan register menemukan dua akreditasi yang baru dimulai tahun 2025 dan tiga akreditasi lebih lama yang memenuhi syarat pelaporan tahun 2025. Aturan T+1 dan baris historis diuji otomatis.
