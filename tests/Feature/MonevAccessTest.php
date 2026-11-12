@@ -123,6 +123,35 @@ class MonevAccessTest extends TestCase
         ])->assertForbidden();
     }
 
+    public function test_only_secretariat_can_delete_a_report_and_its_related_records(): void
+    {
+        config(['monev.use_normalized_reports' => true]);
+        $legacy = $this->report();
+        $secretariat = User::create(['name' => 'Sekretariat', 'role' => 2]);
+        $member = $this->member(1);
+        $report = app(\App\Services\MonitoringReportService::class)->ensureMonevReport($legacy);
+        $link = app(\App\Services\MonitoringReportLinkService::class)->issue($report, $secretariat->id);
+        DB::table('monev_submissions')->insert([
+            'monev_id' => $report->id, 'version' => 1, 'answers' => '{}',
+            'identity_snapshot' => '{}', 'accreditation_snapshot' => '{}',
+            'submitted_by' => $member->id, 'submitted_at' => now(), 'submission_channel' => 'account',
+        ]);
+
+        $url = route('monitoring-evaluasi.delete', $report);
+        $this->actingAs($member)->delete($url)->assertForbidden();
+        $this->assertDatabaseHas('tr_monev', ['id' => $report->id]);
+        $this->actingAs($secretariat)->get(route('monitoring-evaluasi', ['year' => 2026]))
+            ->assertOk()->assertSeeText('Hapus Laporan')->assertSeeText('Lembaga Satu')
+            ->assertSeeText('Apakah Anda yakin ingin menghapus laporan monitoring')
+            ->assertSeeText('Batal');
+        $this->delete($url)->assertRedirect(route('monitoring-evaluasi'));
+        $this->assertDatabaseMissing('tr_monev', ['id' => $report->id]);
+        $this->assertDatabaseMissing('monitoring_reports', ['id' => $legacy->id]);
+        $this->assertDatabaseMissing('monev_submissions', ['monev_id' => $report->id]);
+        $this->assertDatabaseMissing('monitoring_report_links', ['id' => $link['link']->id]);
+        $this->assertDatabaseCount('monitoring_report_link_audits', 0);
+    }
+
     public function test_secretariat_can_schedule_and_switch_the_permanent_reporting_link(): void
     {
         $secretariat = User::create(['name' => 'Sekretariat', 'role' => 2]);

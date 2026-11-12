@@ -13,6 +13,7 @@ use App\Services\MonitoringReportService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class MonitoringSekretariatController extends Controller
 {
@@ -150,6 +151,37 @@ class MonitoringSekretariatController extends Controller
         $questions = $this->monitoring->reportQuestions($report);
         $answers = $this->reportAnswers($report);
         return view('sekretariat.monitoring-akreditasi-detail', compact('report', 'submission', 'submittedAt', 'submitter', 'questionnaire', 'questions', 'answers'));
+    }
+
+    public function destroy(string $report)
+    {
+        DB::transaction(function () use ($report) {
+            $record = $this->monitoring->resolveReport($report);
+            $record = $record->newQuery()->whereKey($record->id)->lockForUpdate()->firstOrFail();
+            $monev = $record instanceof Monev
+                ? $record
+                : Monev::where('legacy_report_id', $record->id)->lockForUpdate()->first();
+
+            if ($monev) {
+                DB::table('monitoring_report_link_audits')->where('monev_id', $monev->id)->delete();
+                DB::table('monitoring_report_links')->where('monev_id', $monev->id)->delete();
+                if (Schema::hasTable('monitoring_report_import_sources')) {
+                    DB::table('monitoring_report_import_sources')->where('monev_id', $monev->id)->delete();
+                }
+                $monev->submissions()->delete();
+                $monev->answers()->delete();
+                $monev->delete();
+            }
+
+            if (Schema::hasTable('monitoring_reports')) {
+                $legacyId = $record instanceof MonitoringReport ? $record->id : $record->legacy_report_id;
+                if ($legacyId) {
+                    MonitoringReport::whereKey($legacyId)->delete();
+                }
+            }
+        }, 3);
+
+        return redirect()->route('monitoring-evaluasi')->with('success', 'Laporan monitoring berhasil dihapus.');
     }
 
     public function export(string $report)

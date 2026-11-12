@@ -16,7 +16,10 @@
         <tr><td>{{ $loop->iteration }}</td><td>{{ $accreditation->profile->nama_lembaga ?? '-' }}</td><td>{{ $accreditation->jenisPengajuan->nama ?? '-' }}</td><td>{{ $year }}</td><td>@if(!$report)<span class="badge bg-secondary">Belum dibuat</span>@else
             @include('monitoring-akreditasi.report-status', ['status' => $report->status])
         @endif</td><td>@if(!$link)<span class="badge bg-secondary">Belum dibuat</span>@elseif($link->deleted_at)<span class="badge bg-danger">Dihapus</span>@elseif($link->expires_at->lte(now()))<span class="badge bg-warning">Kedaluwarsa</span>@else<span class="badge bg-success">Aktif</span>@endif</td><td>{{ $link?->expires_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i') ?? '—' }}</td><td class="text-nowrap">
-        @if($report)<a class="btn btn-sm btn-outline-primary" href="{{ route('monitoring-evaluasi.detail',$report) }}">Detail</a>@endif
+        @if($report)
+            <a class="btn btn-sm btn-outline-primary" href="{{ route('monitoring-evaluasi.detail',$report) }}">Detail</a>
+            @include('sekretariat.monitoring-report-delete')
+        @endif
         @if(!$link)<form method="POST" action="{{ route('monitoring-evaluasi.link.generate',[$accreditation->profile_id,$accreditation->jenis_pengajuan_id,$year]) }}" class="d-inline">@csrf <button class="btn btn-sm btn-primary">Generate Link (3 hari)</button></form> <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#generate-{{ $accreditation->profile_id }}-{{ $accreditation->jenis_pengajuan_id }}">Generate dengan tanggal</button><div class="modal fade" id="generate-{{ $accreditation->profile_id }}-{{ $accreditation->jenis_pengajuan_id }}" tabindex="-1"><div class="modal-dialog"><form method="POST" action="{{ route('monitoring-evaluasi.link.generate',[$accreditation->profile_id,$accreditation->jenis_pengajuan_id,$year]) }}" class="modal-content">@csrf<div class="modal-header"><h5>Generate Link Monitoring</h5></div><div class="modal-body"><p>{{ $accreditation->profile->nama_lembaga }} — {{ $accreditation->jenisPengajuan->nama }} — {{ $year }}</p><label class="form-label">Tanggal dan waktu kedaluwarsa (WIB)</label><input type="datetime-local" name="expires_at" class="form-control" required></div><div class="modal-footer"><button class="btn btn-primary">Generate Link</button></div></form></div></div>@elseif($link->deleted_at)
             <form method="POST" action="{{ route('monitoring-evaluasi.link.regenerate',$report) }}">@csrf<button class="btn btn-sm btn-primary">Generate Ulang</button></form>
         @else
@@ -45,7 +48,10 @@
                     @endif
                 </td>
                 <td>{{ $historicalLink?->expires_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i') ?? '—' }}</td>
-                <td><a class="btn btn-sm btn-outline-primary" href="{{ route('monitoring-evaluasi.detail', $report) }}">Detail</a></td>
+                <td>
+                    <a class="btn btn-sm btn-outline-primary" href="{{ route('monitoring-evaluasi.detail', $report) }}">Detail</a>
+                    @include('sekretariat.monitoring-report-delete')
+                </td>
             </tr>
         @endif
     @endforeach

@@ -72,6 +72,7 @@ Route::get('/monitoring-evaluasi', [MonitoringSekretariatController::class, 'ind
 Route::post('/monitoring-evaluasi/periode', [MonitoringSekretariatController::class, 'savePeriod'])->name('monitoring-evaluasi.period.save');
 Route::get('/monitoring-evaluasi/export', [MonitoringSekretariatController::class, 'exportFiltered'])->middleware(['auth','is.sekretariat'])->name('monitoring-evaluasi.export-filtered');
 Route::get('/monitoring-evaluasi/{report}', [MonitoringSekretariatController::class, 'show'])->name('monitoring-evaluasi.detail');
+Route::delete('/monitoring-evaluasi/{report}', [MonitoringSekretariatController::class, 'destroy'])->name('monitoring-evaluasi.delete');
 Route::get('/monitoring-evaluasi/{report}/export', [MonitoringSekretariatController::class, 'export'])->middleware(['auth','is.sekretariat'])->name('monitoring-evaluasi.export');
 Route::post('/monitoring-evaluasi/{profile}/{program}/{year}/link', [MonitoringSekretariatController::class, 'generateLink'])->middleware(['auth','is.sekretariat'])->name('monitoring-evaluasi.link.generate');
 Route::put('/monitoring-evaluasi/link/{link}/expiry', [MonitoringSekretariatController::class, 'updateLinkExpiry'])->middleware(['auth','is.sekretariat'])->name('monitoring-evaluasi.link.expiry');
