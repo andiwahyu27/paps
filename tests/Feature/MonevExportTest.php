@@ -163,7 +163,8 @@ class MonevExportTest extends TestCase
         $this->actingAs($this->secretariat());
         $dashboard = $this->get(route('monitoring-evaluasi', ['year' => 2026]))->assertOk();
         $dashboard->assertDontSee("@include('monitoring-akreditasi.report-status", false);
-        $this->assertSame(1, $dashboard->viewData('stats')['nihil']);
+        $this->assertSame(0, $dashboard->viewData('stats')['training']);
+        $dashboard->assertSeeText('Pelatihan Terselenggara');
         $detail = $this->get(route('monitoring-evaluasi.detail', $legacy))->assertOk();
         $this->assertSame(0, $detail->viewData('answers')[12]['internal']);
         $detail->assertSeeText('Tatap muka, Daring')->assertSeeText('Draf Revisi')
@@ -200,6 +201,39 @@ class MonevExportTest extends TestCase
         $this->actingAs($this->secretariat())->get(route('monitoring-evaluasi.detail', $report))->assertOk()
             ->assertSeeText('Belum dikirim')->assertSeeText('Tahun pemantauan')->assertSeeText('2026')
             ->assertDontSeeText('Pertanyaan yang kosong')->assertDontSeeText('Tatap muka, Daring');
+    }
+
+    public function test_training_card_sums_question_ten_from_latest_submissions_and_respects_year_filter(): void
+    {
+        $this->fixture();
+        $current = \App\Models\Monev::firstOrFail();
+        $current->update(['status' => 'revision_draft']);
+        $historicalLegacy = MonitoringReport::create([
+            'profile_id' => 1, 'jenis_pengajuan_id' => 1,
+            'report_year' => 2025, 'status' => 'submitted',
+        ]);
+        $historical = \App\Models\Monev::create([
+            'uuid' => $historicalLegacy->uuid, 'kuesioner_id' => $current->kuesioner_id,
+            'profile_id' => 1, 'jenis_pengajuan_id' => 1, 'report_year' => 2025,
+            'status' => 'submitted', 'edit_version' => 1, 'legacy_report_id' => $historicalLegacy->id,
+        ]);
+        $secretariat = $this->secretariat();
+        foreach ([[$current->id, 1, 3], [$current->id, 2, 5], [$historical->id, 1, 2]] as [$reportId, $version, $trainingCount]) {
+            DB::table('monev_submissions')->insert([
+                'monev_id' => $reportId, 'version' => $version,
+                'answers' => json_encode(['10' => $trainingCount]),
+                'identity_snapshot' => '{}', 'accreditation_snapshot' => '{}',
+                'submitted_at' => '2026-11-11 10:00:00', 'submitted_by' => $secretariat->id,
+                'submission_channel' => 'account',
+            ]);
+        }
+        config(['monev.use_normalized_reports' => true]);
+        $this->actingAs($secretariat);
+
+        $allYears = $this->get(route('monitoring-evaluasi'))->assertOk();
+        $this->assertSame(7, $allYears->viewData('stats')['training']);
+        $currentYear = $this->get(route('monitoring-evaluasi', ['year' => 2026]))->assertOk();
+        $this->assertSame(5, $currentYear->viewData('stats')['training']);
     }
 
     public function test_imported_2025_report_identifies_excel_as_the_source(): void

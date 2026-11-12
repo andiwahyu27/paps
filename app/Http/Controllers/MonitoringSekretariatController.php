@@ -37,10 +37,9 @@ class MonitoringSekretariatController extends Controller
             'total' => $reports->count(),
             'submitted' => $reports->where('status', 'submitted')->count(),
             'draft' => $reports->whereIn('status', ['draft', 'revision_draft'])->count(),
-            'nihil' => $reports->filter(function ($report) {
-                $answers = $this->monitoring->latestSubmission($report)?->answers;
-                return data_get($answers, 'has_training') === 'Tidak' || (int) data_get($answers, '10', -1) === 0;
-            })->count(),
+            'training' => $reports->sum(fn ($report) => (int) data_get(
+                $this->monitoring->latestSubmission($report)?->answers, '10', 0
+            )),
         ];
         $accreditations = MonitoringAccreditation::with(['jenisPengajuan', 'profile'])
             ->whereDate('valid_from', '<=', ($year - 1) . '-12-31')->whereDate('valid_until', '>=', $year . '-01-01')
