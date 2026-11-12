@@ -1,5 +1,5 @@
 @if (!($modalOnly ?? false))
-<button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+<button type="button" class="dropdown-item text-danger" data-bs-toggle="modal"
     data-bs-target="#hapus-laporan-{{ $report->uuid }}">Hapus Laporan</button>
 @else
 <div class="modal fade" id="hapus-laporan-{{ $report->uuid }}" tabindex="-1"

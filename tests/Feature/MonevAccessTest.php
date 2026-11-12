@@ -127,6 +127,8 @@ class MonevAccessTest extends TestCase
     {
         config(['monev.use_normalized_reports' => true]);
         $legacy = $this->report();
+        $this->accreditProgram(1, 1, 'Program Lembaga Satu');
+        $this->accreditProgram(2, 2, 'Program Lembaga Dua');
         $secretariat = User::create(['name' => 'Sekretariat', 'role' => 2]);
         $member = $this->member(1);
         $report = app(\App\Services\MonitoringReportService::class)->ensureMonevReport($legacy);
@@ -150,6 +152,21 @@ class MonevAccessTest extends TestCase
         $xpath = new \DOMXPath($document);
         $this->assertSame(0, $xpath->query('//table//div[starts-with(@id, "hapus-laporan-")]')->length);
         $this->assertSame(1, $xpath->query('//div[starts-with(@id, "hapus-laporan-")]')->length);
+        $this->assertSame(0, $xpath->query('//table[thead/tr/th[contains(., "Status Link")]]//div[contains(@class, "modal")]')->length);
+        $activeRow = $xpath->query('//table//tr[td[2][contains(., "Lembaga Satu")]]')->item(0);
+        $emptyRow = $xpath->query('//table//tr[td[2][contains(., "Lembaga Dua")]]')->item(0);
+        $this->assertNotNull($activeRow);
+        $this->assertNotNull($emptyRow);
+        $this->assertSame(1, $xpath->query('./td[6]//button[contains(., "Kelola Link")]', $activeRow)->length);
+        $this->assertSame(1, $xpath->query('./td[6]//button[contains(., "Salin Link")]', $activeRow)->length);
+        $this->assertSame(1, $xpath->query('./td[7]//button[contains(., "Ubah")]', $activeRow)->length);
+        $this->assertSame(1, $xpath->query('//div[@id="expiry-' . $link['link']->id . '"]')->length);
+        $this->assertSame(1, $xpath->query('./td[8]//button[contains(., "Lainnya")]', $activeRow)->length);
+        $this->assertSame(0, $xpath->query('./td[8]//button[contains(., "Salin Link") or contains(., "Generate Ulang") or contains(., "Hapus Link")]', $activeRow)->length);
+        $this->assertSame(1, $xpath->query('./td[6]//button[contains(., "3 hari")]', $emptyRow)->length);
+        $this->assertSame(1, $xpath->query('./td[6]//button[contains(., "Tentukan tanggal")]', $emptyRow)->length);
+        $this->assertSame(1, $xpath->query('//div[@id="generate-2-2"]')->length);
+        $this->assertSame(0, $xpath->query('./td[8]//button', $emptyRow)->length);
         $this->delete($url)->assertRedirect(route('monitoring-evaluasi'));
         $this->assertDatabaseMissing('tr_monev', ['id' => $report->id]);
         $this->assertDatabaseMissing('monitoring_reports', ['id' => $legacy->id]);
