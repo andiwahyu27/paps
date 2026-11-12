@@ -36,7 +36,7 @@
                 <td>{{ $report->jenisPengajuan->nama ?? '-' }}</td>
                 <td>{{ $report->report_year }}</td>
                 <td>@include('monitoring-akreditasi.report-status', ['status' => $report->status])</td>
-                <td><span class="badge bg-secondary">Program tidak aktif</span></td>
+                <td><span class="badge bg-secondary">{{ $report->report_year !== $year ? 'Laporan tahun lain' : 'Akreditasi di luar periode' }}</span></td>
                 <td>—</td>
                 <td><a class="btn btn-sm btn-outline-primary" href="{{ route('monitoring-evaluasi.detail', $report) }}">Detail</a></td>
             </tr>

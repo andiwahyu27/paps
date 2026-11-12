@@ -20,7 +20,7 @@
                     <strong>Status</strong>
                     <p>@include('monitoring-akreditasi.report-status', ['status' => $report->status])</p>
                     <strong>Pelapor Terakhir</strong>
-                    <p>{{ $submitter?->name ?? ($submittedAt ? 'Akun tidak ditemukan' : 'Belum dikirim') }}</p>
+                    <p>{{ $submitter?->name ?? ($submittedAt ? ($report->report_year === 2025 ? 'Import data dari Excel' : 'Akun tidak ditemukan') : 'Belum dikirim') }}</p>
                     <strong>Waktu Kirim Terakhir</strong>
                     <p>
                         {{ $submittedAt ? $submittedAt->copy()->timezone('Asia/Jakarta')->format('d/m/Y H:i:s') . ' WIB' : 'Belum dikirim' }}

@@ -199,6 +199,26 @@ class MonevExportTest extends TestCase
             ->assertDontSeeText('Pertanyaan yang kosong')->assertDontSeeText('Tatap muka, Daring');
     }
 
+    public function test_imported_2025_report_identifies_excel_as_the_source(): void
+    {
+        $this->fixture();
+        $report = \App\Models\Monev::firstOrFail();
+        $report->update(['report_year' => 2025, 'status' => 'submitted']);
+        DB::table('monev_submissions')->insert([
+            'monev_id' => $report->id, 'version' => 1, 'answers' => '{}',
+            'identity_snapshot' => '{}', 'accreditation_snapshot' => '{}',
+            'submitted_at' => '2025-12-31 10:00:00', 'submitted_by' => 9999,
+            'submission_channel' => 'historical_import',
+        ]);
+        config(['monev.use_normalized_reports' => true]);
+
+        $this->actingAs($this->secretariat())
+            ->get(route('monitoring-evaluasi.detail', $report))
+            ->assertOk()->assertSeeText('Import data dari Excel')->assertDontSeeText('Akun tidak ditemukan');
+        $this->get(route('monitoring-evaluasi'))
+            ->assertOk()->assertSeeText('Laporan tahun lain')->assertDontSeeText('Program tidak aktif');
+    }
+
     private function fixture(): MonitoringReport
     {
         DB::table('tb_profile_lembagas')->insert(['id' => 1, 'nama_lembaga' => 'Lembaga Uji']);
