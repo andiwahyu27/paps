@@ -175,6 +175,32 @@ class MonevAccessTest extends TestCase
         $this->assertDatabaseCount('monitoring_report_link_audits', 0);
     }
 
+    public function test_secretariat_report_numbers_follow_visible_rows_after_filtering(): void
+    {
+        config(['monev.use_normalized_reports' => false]);
+        $this->travelTo(\Carbon\Carbon::parse('2026-11-12 09:00:00', 'Asia/Jakarta'));
+        $this->report();
+        $this->accreditProgram(2, 2, 'Program Tanpa Laporan');
+        $this->accreditProgram(1, 1, 'Program Lembaga Satu');
+        MonitoringReport::create([
+            'profile_id' => 1, 'jenis_pengajuan_id' => 1,
+            'report_year' => 2025, 'status' => 'draft', 'edit_version' => 1,
+        ]);
+        $secretariat = User::create(['name' => 'Sekretariat', 'role' => 2]);
+
+        $dashboard = $this->actingAs($secretariat)->get(route('monitoring-evaluasi', [
+            'status' => 'draft',
+        ]))->assertOk();
+        $document = new \DOMDocument();
+        @$document->loadHTML($dashboard->getContent());
+        $xpath = new \DOMXPath($document);
+        $numberCells = $xpath->query('//table[thead/tr/th[contains(., "Status Link")]]/tbody/tr/td[1]');
+
+        $this->assertSame(['1', '2'], array_map(
+            fn ($cell) => trim($cell->textContent), iterator_to_array($numberCells)
+        ));
+    }
+
     public function test_secretariat_can_schedule_and_switch_the_permanent_reporting_link(): void
     {
         $secretariat = User::create(['name' => 'Sekretariat', 'role' => 2]);

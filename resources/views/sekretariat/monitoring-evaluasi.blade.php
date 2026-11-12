@@ -8,13 +8,15 @@
     @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
     @if(session('generated_link'))<div class="alert alert-info">Link form: <a href="{{ session('generated_link') }}">{{ session('generated_link') }}</a> <button class="btn btn-sm btn-outline-primary" type="button" onclick="navigator.clipboard.writeText(@js(session('generated_link')))">Salin Link</button></div>@endif
     <div class="card"><div class="card-header d-flex justify-content-between align-items-center"><h5 class="mb-0">Data Monitoring Akreditasi PSTK</h5><div class="d-flex gap-2"><a href="{{ route('monitoring-evaluasi.export-filtered', request()->only(['year', 'program', 'status', 'search'])) }}" class="btn btn-outline-primary btn-sm"><i class="bx bx-download"></i> Export CSV</a><button class="btn btn-primary btn-sm" onclick="window.print()"><i class="bx bx-printer"></i> Print</button></div></div><div class="card-body"><div class="table-responsive"><table class="table table-striped"><thead><tr><th>No</th><th>Nama Lembaga</th><th>Program</th><th>Tahun</th><th>Status Laporan</th><th>Status Link</th><th>Kedaluwarsa (WIB)</th><th>Aksi</th></tr></thead><tbody>
+    @php($rowNumber = 0)
     @foreach($accreditations as $accreditation)
         @php($report = $reports->first(fn($r) => $r->profile_id === $accreditation->profile_id && $r->jenis_pengajuan_id === $accreditation->jenis_pengajuan_id && $r->report_year === $year))
         @continue(request()->filled('status') && !$report)
         @php($link = $report?->links->first())
+        @php($rowNumber++)
 
         <tr>
-            <td>{{ $loop->iteration }}</td>
+            <td>{{ $rowNumber }}</td>
             <td>{{ $accreditation->profile->nama_lembaga ?? '-' }}</td>
             <td>{{ $accreditation->jenisPengajuan->nama ?? '-' }}</td>
             <td>{{ $year }}</td>
@@ -60,8 +62,9 @@
         @if ($report->report_year !== $year || !$accreditations->contains(fn ($accreditation) =>
             $accreditation->profile_id === $report->profile_id && $accreditation->jenis_pengajuan_id === $report->jenis_pengajuan_id))
             @php($historicalLink = $report->links->first())
+            @php($rowNumber++)
             <tr>
-                <td>—</td>
+                <td>{{ $rowNumber }}</td>
                 <td>{{ $report->profile->nama_lembaga ?? '-' }}</td>
                 <td>{{ $report->jenisPengajuan->nama ?? '-' }}</td>
                 <td>{{ $report->report_year }}</td>
