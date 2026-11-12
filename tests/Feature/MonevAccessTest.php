@@ -456,7 +456,8 @@ class MonevAccessTest extends TestCase
     public function test_another_member_of_same_profile_can_view_a_draft(): void
     {
         $report = $this->report();
-        $this->actingAs($this->member(1))->get(route('monitoring-akreditasi.view', $report))->assertOk();
+        $this->actingAs($this->member(1))->get(route('monitoring-akreditasi.view', $report))
+            ->assertOk()->assertSeeText('24. Kendala atau permasalahan dalam penyelenggaraan pelatihan');
     }
 
     public function test_stale_revision_is_rejected_without_overwriting_answers(): void

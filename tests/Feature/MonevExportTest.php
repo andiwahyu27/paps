@@ -168,6 +168,7 @@ class MonevExportTest extends TestCase
         $detail = $this->get(route('monitoring-evaluasi.detail', $legacy))->assertOk();
         $this->assertSame(0, $detail->viewData('answers')[12]['internal']);
         $detail->assertSeeText('Tatap muka, Daring')->assertSeeText('Draf Revisi')
+            ->assertSeeText('12a. Pertanyaan 12a')
             ->assertSeeText('Jenis Kuesioner')->assertSeeText('monev')->assertDontSeeText('versi-aktif')
             ->assertSeeText('Versi Kuesioner')->assertSeeText('2025.1')
             ->assertSeeText('Pelapor Terakhir')->assertSeeText('Sekretariat')
@@ -200,6 +201,7 @@ class MonevExportTest extends TestCase
         config(['monev.use_normalized_reports' => true]);
         $this->actingAs($this->secretariat())->get(route('monitoring-evaluasi.detail', $report))->assertOk()
             ->assertSeeText('Belum dikirim')->assertSeeText('Tahun pemantauan')->assertSeeText('2026')
+            ->assertSeeText('24. Pertanyaan 24')
             ->assertDontSeeText('Pertanyaan yang kosong')->assertDontSeeText('Tatap muka, Daring');
     }
 

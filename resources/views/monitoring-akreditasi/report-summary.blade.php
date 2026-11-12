@@ -27,7 +27,7 @@
                 @continue(($withoutTraining && $number >= 10 && $number <= 23) || !$filled($value))
                 <div class="col-md-6">
                     <div class="border rounded p-3 h-100">
-                        <strong>{{ $question->pertanyaan ?? 'Pertanyaan ' . $code }}</strong>
+                        <strong><span class="text-primary">{{ $code === 'has_training' ? 'Penyaring:' : $code . '.' }}</span> {{ $question->pertanyaan ?? 'Pertanyaan ' . $code }}</strong>
                         <div class="mt-2 text-break">{!! nl2br(e($code === '9' ? sprintf('%04d', (int) $value) : $value)) !!}</div>
                     </div>
                 </div>
